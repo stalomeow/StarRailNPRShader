@@ -1,0 +1,2 @@
+*.hlsl linguist-language=HLSL
+*.shader linguist-language=ShaderLab
