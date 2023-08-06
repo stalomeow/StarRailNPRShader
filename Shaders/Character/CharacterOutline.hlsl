@@ -42,8 +42,8 @@ void FixOutlineWidth(float3 positionVS, float4 vertexColor, float modelScale, in
     // unity_CameraProjection._m11: cot(FOV / 2)
     // 2.414 是 FOV 为 45 度时的值
     float fixScale = 2.414 / unity_CameraProjection._m11; // FOV 越小，角色越大，描边越细（在屏幕上看上去一致）
-    fixScale *= -positionVS.z / 15; // 近小远大
-    outlineWidth *= clamp(fixScale, 0.04, 0.12);
+    fixScale *= -positionVS.z * modelScale / 40; // 近小远大
+    outlineWidth *= clamp(fixScale, 0.04, 0.1);
 }
 
 float4 ApplyOutline(
