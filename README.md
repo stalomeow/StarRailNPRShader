@@ -2,13 +2,17 @@
 
 Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
 
-![my wife 1](/Sreenshots/silwolf.png)
+![my wife 1](/Screenshots/silwolf.png)
 
 <p align="center">↑↑↑ My Wife ↑↑↑</p>
 
-![my wife 2](/Sreenshots/fuxuan.png)
+![my wife 2](/Screenshots/fuxuan.png)
 
 <p align="center">↑↑↑ Also My Wife ↑↑↑</p>
+
+![my wife 2](/Screenshots/fuxuan_near.png)
+
+<p align="center">↑↑↑ Near ↑↑↑</p>
 
 ## Requirements
 
