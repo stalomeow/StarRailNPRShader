@@ -8,7 +8,7 @@ namespace HSR.Editor.Extensions
 {
     public class TexturePostprocessor : AssetPostprocessor
     {
-        public override uint GetVersion() => 3u;
+        public override uint GetVersion() => 4u;
 
         private void OnPreprocessTexture()
         {
@@ -69,7 +69,7 @@ namespace HSR.Editor.Extensions
 
             importer.mipmapEnabled = false;
             importer.wrapMode = TextureWrapMode.Clamp;
-            importer.filterMode = FilterMode.Point;
+            importer.filterMode = FilterMode.Bilinear;
             importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
             {
                 maxTextureSize = 256, // 宽度 256，高度 2 或 16
