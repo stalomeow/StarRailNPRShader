@@ -6,11 +6,11 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         _ModelScale("Model Scale", Float) = 1
 
         [HeaderFoldout(Shader Options)]
-        [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 0                      // 默认 Off
-        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendColor("Src Blend (RGB)", Float) = 1 // 默认 One
-        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendColor("Dst Blend (RGB)", Float) = 0 // 默认 Zero
-        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha("Src Blend (A)", Float) = 0   // 默认 Zero
-        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendAlpha("Dst Blend (A)", Float) = 0   // 默认 Zero
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 0                       // 默认 Off
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendColor("Src Blend (RGB)", Float) = 5  // 默认 SrcAlpha
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendColor("Dst Blend (RGB)", Float) = 10 // 默认 OneMinusSrcAlpha
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha("Src Blend (A)", Float) = 0    // 默认 Zero
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendAlpha("Dst Blend (A)", Float) = 0    // 默认 Zero
         [Header(Debug)] [Space(5)]
         [Toggle] _SingleMaterial("Show Part", Float) = 0
         [If(_SINGLEMATERIAL_ON)] [Indent] [IntRange] _SingleMaterialID("Material Index", Range(-1, 7)) = -1
