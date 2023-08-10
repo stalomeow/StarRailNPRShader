@@ -39,6 +39,10 @@ CBUFFER_START(UnityPerMaterial)
     float _MaxEyeHairDistance;
 
     float _DitherAlpha;
+
+    float4 _MMDHeadBoneForward;
+    float4 _MMDHeadBoneUp;
+    float4 _MMDHeadBoneRight;
 CBUFFER_END
 
 CharacterVaryings FaceVertex(CharacterAttributes i)
@@ -53,9 +57,9 @@ float3 SDFFaceShadow(Light light, float4 uv)
         uv.xyzw = uv.zwxy;
     #endif
 
-    float3 up = GetCharacterHeadBoneUpWS();
-    float3 right = GetCharacterHeadBoneRightWS();
-    float3 forward = GetCharacterHeadBoneForwardWS();
+    float3 up = GetCharacterHeadBoneUpWS(_MMDHeadBoneUp);
+    float3 right = GetCharacterHeadBoneRightWS(_MMDHeadBoneRight);
+    float3 forward = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
 
     // light 在物体 XZ 平面的投影方向
     float3 fixedLightDir = normalize(light.direction - dot(light.direction, up) * up);
@@ -94,7 +98,7 @@ void FaceOpaqueAndZFragment(
     Light light = GetMainLight();
 
     // Nose Line
-    float3 F = GetCharacterHeadBoneForwardWS();
+    float3 F = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
     float3 V = normalize(GetWorldSpaceViewDir(i.positionWS));
     float3 FdotV = pow(abs(dot(F, V)), _NoseLinePower);
     baseColor *= lerp(1, _NoseLineColor.rgb, step(1.03 - faceMap.b, FdotV));
@@ -139,7 +143,7 @@ void FaceWriteEyeStencilFragment(CharacterVaryings i)
 
 CharacterOutlineVaryings FaceOutlineVertex(CharacterOutlineAttributes i)
 {
-    return CharacterFaceOutlineVertex(i, _Maps_ST, _ModelScale, _OutlineWidth, _OutlineZOffset);
+    return CharacterFaceOutlineVertex(i, _Maps_ST, _MMDHeadBoneForward, _ModelScale, _OutlineWidth, _OutlineZOffset);
 }
 
 float4 FaceOutlineFragment(CharacterOutlineVaryings i) : SV_Target0

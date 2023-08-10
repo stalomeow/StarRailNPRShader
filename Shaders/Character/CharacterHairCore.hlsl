@@ -51,6 +51,10 @@ CBUFFER_START(UnityPerMaterial)
     float _HairBlendAlpha;
 
     float _DitherAlpha;
+
+    float4 _MMDHeadBoneForward;
+    float4 _MMDHeadBoneUp;
+    float4 _MMDHeadBoneRight;
 CBUFFER_END
 
 CharacterVaryings HairVertex(CharacterAttributes i)
@@ -115,9 +119,9 @@ void HairFakeTransparentFragment(
 {
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 
-    float3 up = GetCharacterHeadBoneUpWS();
-    float3 forward = GetCharacterHeadBoneForwardWS();
-    float3 right = GetCharacterHeadBoneRightWS();
+    float3 up = GetCharacterHeadBoneUpWS(_MMDHeadBoneUp);
+    float3 forward = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
+    float3 right = GetCharacterHeadBoneRightWS(_MMDHeadBoneRight);
     float3 viewDirWS = GetWorldSpaceViewDir(i.positionWS);
 
     // Horizontal 70 度

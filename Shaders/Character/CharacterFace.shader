@@ -47,6 +47,11 @@ Shader "Honkai Star Rail/Character/Face"
 
         [HeaderFoldout(Dither)]
         _DitherAlpha("Alpha", Range(0, 1)) = 1
+
+        // Head Bone
+        [HideInInspector] _MMDHeadBoneForward("MMD Head Bone Forward", Vector) = (0, 0, 1, 0)
+        [HideInInspector] _MMDHeadBoneUp("MMD Head Bone Up", Vector) = (0, 1, 0, 0)
+        [HideInInspector] _MMDHeadBoneRight("MMD Head Bone Right", Vector) = (1, 0, 0, 0)
     }
 
     SubShader

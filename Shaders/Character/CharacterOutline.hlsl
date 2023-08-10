@@ -67,6 +67,7 @@ float4 ApplyFaceOutline(
     float3 positionVS,
     float3 normalVS,
     float4 vertexColor,
+    float4 mmdHeadBoneForward,
     float modelScale,
     float outlineWidth,
     float outlineZOffset)
@@ -75,7 +76,7 @@ float4 ApplyFaceOutline(
 
     // 当嘴从侧面看在脸外面时再启用描边
     #if defined(_MODEL_GAME)
-        float3 F = GetCharacterHeadBoneForwardWS();
+        float3 F = GetCharacterHeadBoneForwardWS(mmdHeadBoneForward);
         float3 V = normalize(GetWorldSpaceViewDir(positionWS));
         float FdotV = pow(max(0, dot(F, V)), 0.8);
         outlineWidth *= smoothstep(-0.05, 0, 1 - FdotV - vertexColor.b);
@@ -119,6 +120,7 @@ CharacterOutlineVaryings CharacterOutlineVertex(
 CharacterOutlineVaryings CharacterFaceOutlineVertex(
     CharacterOutlineAttributes i,
     float4 mapST,
+    float4 mmdHeadBoneForward,
     float modelScale,
     float outlineWidth,
     float outlineZOffset)
@@ -138,7 +140,7 @@ CharacterOutlineVaryings CharacterFaceOutlineVertex(
     float3 normalWS = TransformObjectToWorldNormal(normalOS);
     float3 normalVS = TransformWorldToViewNormal(normalWS);
 
-    o.positionHCS = ApplyFaceOutline(positionWS, positionVS, normalVS, i.color, modelScale, outlineWidth, outlineZOffset);
+    o.positionHCS = ApplyFaceOutline(positionWS, positionVS, normalVS, i.color, mmdHeadBoneForward, modelScale, outlineWidth, outlineZOffset);
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
     return o;
 }
