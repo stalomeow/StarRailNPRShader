@@ -21,6 +21,8 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 - My [ShaderUtilsForSRP](https://github.com/stalomeow/ShaderUtilsForSRP) package.
 - Newtonsoft Json package 3.2.1 or higher (Optional).
 
+Newtonsoft Json is used by a custom editor util called `Game Material Inspector` which can help us read Material JSON files ripped by a certain tool. To enable that tool, add the scripting define symbol `PACKAGE_NEWTONSOFT_JSON` in player settings after importing Newtonsoft Json package.
+
 ## Extra features
 
 Asset preprocess:
