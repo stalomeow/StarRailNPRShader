@@ -143,18 +143,20 @@ float3 GetRimLight(
     float rimIntensityBackFace,
     FRONT_FACE_TYPE isFrontFace)
 {
-    rimWidth *= modelScale / 2000;
-    rimThresholdMin *= modelScale * 10;
-    rimThresholdMax *= modelScale * 10;
+    rimWidth *= 1.0 / 2000.0; // rimWidth 表示的是屏幕上像素的偏移量，和 modelScale 无关
+    rimThresholdMin *= modelScale * 10.0;
+    rimThresholdMax *= modelScale * 10.0;
 
     float depth = LinearEyeDepth(positionHCSFrag.z, _ZBufferParams);
 
-    // unity_CameraProjection._m11: cot(FOV / 2)
-    // 2.414 是 FOV 为 45 度时的值
-    rimWidth *= unity_CameraProjection._m11 / 2.414; // FOV 越小，角色越大，边缘光越宽
-    rimWidth *= 8 / clamp(depth, 0.02, 10); // 近大远小
     rimWidth *= lightMap.r; // 有些地方不要边缘光
     rimWidth *= _ScaledScreenParams.y; // 在不同分辨率下看起来等宽
+
+    // unity_CameraProjection._m11: cot(FOV / 2)
+    // 2.414 是 FOV 为 45 度时的值
+    float fixScale = unity_CameraProjection._m11 / 2.414; // FOV 越小，角色越大，边缘光越宽
+    fixScale *= 10.0 * rsqrt(depth / modelScale); // 近大远小
+    rimWidth *= fixScale;
 
     float3 normalVS = TransformWorldToViewNormal(normalWS);
     float2 uvOffset = normalize(normalVS.xy) * rimWidth;

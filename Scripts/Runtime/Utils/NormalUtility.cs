@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HSR.Utils
 {
@@ -34,39 +35,70 @@ namespace HSR.Utils
         {
             CheckMeshTopology(mesh, MeshTopology.Triangles);
 
-            Dictionary<Vector3, Vector3> weightedNormals = new();
             Vector3[] vertices = mesh.vertices;
-            int[] triangles = mesh.triangles;
+            List<int> indices = new();
+            Vector3[] normals = new Vector3[vertices.Length];
+            Dictionary<Vector3, Vector3> weightedNormals = new();
 
-            for (int i = 0; i <= triangles.Length - 3; i += 3)
+            // 一些 MMD 模型有背面顶点，如果整个 Mesh 一起计算平滑法线，正反法线会相互抵消，最后变成零向量
+            // 有背面顶点是因为材质、法线和正面的不一样，所以背面顶点和对应的正面顶点不在一个 SubMesh 里
+            // 下面，以 SubMesh 为单位分开计算
+            for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
             {
-                for (int j = 0; j < 3; j++)
+                SubMeshDescriptor subMesh = mesh.GetSubMesh(subMeshIndex);
+                mesh.GetIndices(indices, subMeshIndex, applyBaseVertex: true); // subMesh.baseVertex
+
+                for (int i = 0; i <= indices.Count - 3; i += 3)
                 {
-                    // Unity 中满足左手定则
-
-                    (int offset1, int offset2) = j switch
+                    for (int j = 0; j < 3; j++)
                     {
-                        0 => (1, 2),
-                        1 => (2, 0),
-                        2 => (0, 1),
-                        _ => throw new NotSupportedException() // Unreachable
-                    };
+                        // Unity 中满足左手定则
+                        (int offset1, int offset2) = j switch
+                        {
+                            0 => (1, 2),
+                            1 => (2, 0),
+                            2 => (0, 1),
+                            _ => throw new NotSupportedException() // Unreachable
+                        };
 
-                    Vector3 vertex = vertices[triangles[i + j]];
-                    Vector3 vec1 = vertices[triangles[i + offset1]] - vertex;
-                    Vector3 vec2 = vertices[triangles[i + offset2]] - vertex;
-                    Vector3 normal = GetWeightedNormal(vec1, vec2);
+                        Vector3 vertex = vertices[indices[i + j]];
+                        Vector3 vec1 = vertices[indices[i + offset1]] - vertex;
+                        Vector3 vec2 = vertices[indices[i + offset2]] - vertex;
+                        Vector3 normal = GetWeightedNormal(vec1, vec2);
 
-                    // 这里应该可以直接用 Vector3 当 Key
-                    // TODO: 如果有精度问题再改
-                    weightedNormals.TryAdd(vertex, Vector3.zero);
-                    weightedNormals[vertex] += normal;
+                        // 这里应该可以直接用 Vector3 当 Key
+                        // TODO: 如果有精度问题再改
+                        weightedNormals.TryAdd(vertex, Vector3.zero);
+                        weightedNormals[vertex] += normal;
+                    }
                 }
+
+                for (int i = 0; i < subMesh.vertexCount; i++)
+                {
+                    int vertexIndex = subMesh.firstVertex + i;
+                    Vector3 vertex = vertices[vertexIndex];
+
+                    // 看 Unity 官方文档
+                    // 顶点可能不在当前 SubMesh 里
+                    // 顶点也可能同时在多个 SubMesh 里
+
+                    if (weightedNormals.TryGetValue(vertex, out Vector3 n))
+                    {
+                        normals[vertexIndex] += n;
+                    }
+                }
+
+                indices.Clear();
+                weightedNormals.Clear();
             }
 
-            // 没必要除以所有权重之和，它不会改变方向。直接归一化就行
-            Vector3[] newNormals = Array.ConvertAll(vertices, v => weightedNormals[v].normalized);
-            StoreNormals(newNormals, mesh, storeMode, upload);
+            for (int i = 0; i < normals.Length; i++)
+            {
+                // 没必要除以所有权重之和，它不会改变方向。直接归一化就行
+                normals[i] = normals[i].normalized;
+            }
+
+            StoreNormals(normals, mesh, storeMode, upload);
         }
 
         private static Vector3 GetWeightedNormal(Vector3 vec1, Vector3 vec2)
