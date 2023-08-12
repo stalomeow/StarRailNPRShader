@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -45,7 +46,7 @@ namespace HSR.Utils
             // 下面，以 SubMesh 为单位分开计算
             for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
             {
-                SubMeshDescriptor subMesh = mesh.GetSubMesh(subMeshIndex);
+                // SubMeshDescriptor subMesh = mesh.GetSubMesh(subMeshIndex);
                 mesh.GetIndices(indices, subMeshIndex, applyBaseVertex: true); // subMesh.baseVertex
 
                 for (int i = 0; i <= indices.Count - 3; i += 3)
@@ -73,19 +74,25 @@ namespace HSR.Utils
                     }
                 }
 
-                for (int i = 0; i < subMesh.vertexCount; i++)
+                // for (int i = 0; i < subMesh.vertexCount; i++)
+                // {
+                //     int vertexIndex = subMesh.firstVertex + i;
+                //     Vector3 vertex = vertices[vertexIndex];
+                //
+                //     // 看 Unity 官方文档
+                //     // 顶点可能不在当前 SubMesh 里
+                //     // 顶点也可能同时在多个 SubMesh 里
+                //
+                //     if (weightedNormals.TryGetValue(vertex, out Vector3 n))
+                //     {
+                //         normals[vertexIndex] += n;
+                //     }
+                // }
+
+                foreach (int vertexIndex in indices.Distinct())
                 {
-                    int vertexIndex = subMesh.firstVertex + i;
                     Vector3 vertex = vertices[vertexIndex];
-
-                    // 看 Unity 官方文档
-                    // 顶点可能不在当前 SubMesh 里
-                    // 顶点也可能同时在多个 SubMesh 里
-
-                    if (weightedNormals.TryGetValue(vertex, out Vector3 n))
-                    {
-                        normals[vertexIndex] += n;
-                    }
+                    normals[vertexIndex] += weightedNormals[vertex];
                 }
 
                 indices.Clear();

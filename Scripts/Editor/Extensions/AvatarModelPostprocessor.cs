@@ -12,7 +12,7 @@ namespace HSR.Editor.Extensions
     {
         public static readonly ModelImporterTangents ImportTangents = ModelImporterTangents.None;
         public static readonly NormalUtility.StoreMode NormalStoreMode = NormalUtility.StoreMode.ObjectSpaceTangent;
-        public static readonly uint Version = 9u;
+        public static readonly uint Version = 10u;
 
         private bool IsAvatarModel
         {
