@@ -6,13 +6,13 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 
 <p align="center">↑↑↑ My Wife ↑↑↑</p>
 
-![my wife 2](/Screenshots/fuxuan.png)
+![my wife 2](/Screenshots/fuxuan_near.png)
 
 <p align="center">↑↑↑ Also My Wife ↑↑↑</p>
 
-![my wife 2](/Screenshots/fuxuan_near.png)
+![our mum](/Screenshots/kafka_near.png)
 
-<p align="center">↑↑↑ Near ↑↑↑</p>
+<p align="center">↑↑↑ Our Mum ↑↑↑</p>
 
 ## Requirements
 
@@ -55,7 +55,7 @@ PostProcessing:
 
 ## Guide
 
-- Make sure you have the basic knowledge of anime style rendering.
+- MAKE SURE you have the basic knowledge of anime style rendering.
 - Use linear color space instead of gamma.
 - HDR should be enabled.
 - Depth priming must be disabled.
@@ -63,6 +63,7 @@ PostProcessing:
 - Rendering path must be forward currently.
 - Renderer Feature `StarRailForward` must be added to the renderer.
 - Make good use of [the extra features](#extra-features) mentioned above! They are important.
+- Reset the material after changing its shader.
 
 ### Recommended post-processing settings
 
