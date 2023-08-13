@@ -22,6 +22,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _Maps_ST;
 
     float4 _ShadowColor;
+    float4 _EyeShadowColor;
 
     float4 _EmissionColor;
     float _EmissionThreshold;
@@ -38,6 +39,14 @@ CBUFFER_START(UnityPerMaterial)
 
     float _MaxEyeHairDistance;
 
+    float4 _ExCheekColor;
+    float _ExCheekIntensity;
+    float4 _ExShyColor;
+    float _ExShyIntensity;
+    float4 _ExShadowColor;
+    float4 _ExEyeColor;
+    float _ExShadowIntensity;
+
     float _DitherAlpha;
 
     float4 _MMDHeadBoneForward;
@@ -50,7 +59,7 @@ CharacterVaryings FaceVertex(CharacterAttributes i)
     return CharacterVertex(i, _Maps_ST);
 }
 
-float3 SDFFaceShadow(Light light, float4 uv)
+float3 GetFaceOrEyeDiffuse(Light light, float4 uv, float3 baseColor, float4 faceMap)
 {
     // 游戏模型才有 UV2
     #if defined(_MODEL_GAME) && defined(_FACEMAPUV2_ON)
@@ -60,16 +69,16 @@ float3 SDFFaceShadow(Light light, float4 uv)
     float3 up = GetCharacterHeadBoneUpWS(_MMDHeadBoneUp);
     float3 right = GetCharacterHeadBoneRightWS(_MMDHeadBoneRight);
     float3 forward = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
+    float3 lightDirProj = normalize(light.direction - dot(light.direction, up) * up); // 做一次投影
 
-    // light 在物体 XZ 平面的投影方向
-    float3 fixedLightDir = normalize(light.direction - dot(light.direction, up) * up);
-
-    bool isRight = dot(fixedLightDir, right) > 0;
+    bool isRight = dot(lightDirProj, right) > 0;
     float2 sdfUV = isRight ? float2(1 - uv.x, uv.y) : uv.xy;
     float threshold = SAMPLE_TEXTURE2D(_FaceMap, sampler_FaceMap, sdfUV).a;
 
-    float FdotL01 = dot(forward, fixedLightDir) * 0.5 + 0.5;
-    return lerp(_ShadowColor.rgb, 1, step(1 - threshold, FdotL01));
+    float FoL01 = dot(forward, lightDirProj) * 0.5 + 0.5;
+    float3 faceShadow = lerp(_ShadowColor.rgb, 1, step(1 - threshold, FoL01)); // SDF Shadow
+    float3 eyeShadow = lerp(_EyeShadowColor.rgb, 1, smoothstep(0.3, 0.5, FoL01));
+    return baseColor * lerp(faceShadow, eyeShadow, faceMap.r);
 }
 
 void FaceOpaqueAndZFragment(
@@ -83,8 +92,10 @@ void FaceOpaqueAndZFragment(
     // 游戏模型才有 UV2
     #if defined(_MODEL_GAME) && defined(_FACEMAPUV2_ON)
         float4 faceMap = SAMPLE_TEXTURE2D(_FaceMap, sampler_FaceMap, i.uv.zw);
+        float4 exprMap = SAMPLE_TEXTURE2D(_ExpressionMap, sampler_ExpressionMap, i.uv.zw);
     #else
         float4 faceMap = SAMPLE_TEXTURE2D(_FaceMap, sampler_FaceMap, i.uv.xy);
+        float4 exprMap = SAMPLE_TEXTURE2D(_ExpressionMap, sampler_ExpressionMap, i.uv.xy);
     #endif
 
     // Colors
@@ -101,16 +112,25 @@ void FaceOpaqueAndZFragment(
     float3 F = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
     float3 V = normalize(GetWorldSpaceViewDir(i.positionWS));
     float3 FdotV = pow(abs(dot(F, V)), _NoseLinePower);
-    baseColor *= lerp(1, _NoseLineColor.rgb, step(1.03 - faceMap.b, FdotV));
+    baseColor = lerp(baseColor, baseColor * _NoseLineColor.rgb, step(1.03 - faceMap.b, FdotV));
 
-    // SDF
-    float3 diffuse = baseColor * SDFFaceShadow(light, i.uv);
+    // Expression
+    float3 exCheek = lerp(baseColor, baseColor * _ExCheekColor.rgb, exprMap.r);
+    baseColor = lerp(baseColor, exCheek, _ExCheekIntensity);
+    float3 exShy = lerp(baseColor, baseColor * _ExShyColor.rgb, exprMap.g);
+    baseColor = lerp(baseColor, exShy, _ExShyIntensity);
+    float3 exShadow = lerp(baseColor, baseColor * _ExShadowColor.rgb, exprMap.b);
+    baseColor = lerp(baseColor, exShadow, _ExShadowIntensity);
+    float3 exEyeShadow = lerp(baseColor, baseColor * _ExEyeColor.rgb, faceMap.r);
+    baseColor = lerp(baseColor, exEyeShadow, _ExShadowIntensity);
 
-    // TODO: faceMap R 通道未使用
-    // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
+    // Diffuse
+    float3 diffuse = GetFaceOrEyeDiffuse(light, i.uv, baseColor, faceMap);
 
     // 眼睛的高亮
     float3 emission = GetEmission(baseColor, alpha, _EmissionThreshold, _EmissionIntensity, _EmissionColor.rgb);
+
+    // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
 
     // Output
     colorTarget = float4(diffuse * light.color + emission, alpha);
@@ -129,7 +149,7 @@ void FaceWriteEyeStencilFragment(CharacterVaryings i)
     float eyeDepth = LinearEyeDepth(i.positionHCS.z, _ZBufferParams);
     float depthMask = step(abs(sceneDepth - eyeDepth), _MaxEyeHairDistance * _ModelScale);
 
-    // 眼睛、眼眶、眉毛的遮罩（不包括高光点）
+    // 眼睛、眼眶、眉毛的遮罩（不包括高光）
     #if defined(_MODEL_GAME)
         // 游戏模型使用 uv2 采样！！！景元和刃只有一边的眼睛需要写 Stencil，用 uv1 会把两只眼睛的都写进去
         float eyeMask = SAMPLE_TEXTURE2D(_FaceMap, sampler_FaceMap, i.uv.zw).g;

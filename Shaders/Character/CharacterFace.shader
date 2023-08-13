@@ -22,7 +22,8 @@ Shader "Honkai Star Rail/Character/Face"
         [If(_MODEL_GAME)] [Toggle] _FaceMapUV2("Face Map Use UV2", Float) = 0
 
         [HeaderFoldout(Diffuse)]
-        _ShadowColor("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
+        _ShadowColor("Face Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
+        _EyeShadowColor("Eye Shadow Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
@@ -44,6 +45,17 @@ Shader "Honkai Star Rail/Character/Face"
 
         [HeaderFoldout(Eye Hair Blend)]
         _MaxEyeHairDistance("Max Eye Hair Distance", Float) = 0.1
+
+        [HeaderFoldout(Expression)]
+        _ExCheekColor("Cheek Color", Color) = (1, 1, 1, 1)
+        _ExCheekIntensity("Cheek Intensity", Range(0, 1)) = 0
+        [Space(10)]
+        _ExShyColor("Shy Color", Color) = (1, 1, 1, 1)
+        _ExShyIntensity("Shy Intensity", Range(0, 1)) = 0
+        [Space(10)]
+        _ExShadowColor("Shadow Color", Color) = (1, 1, 1, 1)
+        _ExEyeColor("Eye Color", Color) = (1, 1, 1, 1)
+        _ExShadowIntensity("Shadow Intensity", Range(0, 1)) = 0
 
         [HeaderFoldout(Dither)]
         _DitherAlpha("Alpha", Range(0, 1)) = 1
