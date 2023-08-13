@@ -174,7 +174,8 @@ Shader "Honkai Star Rail/Character/Body"
 
             Tags
             {
-                "LightMode" = "HSRForward2"
+                // 在头发的两个 Pass 之后绘制，避免干扰透明刘海对眼睛区域的判断
+                "LightMode" = "HSRForward3"
             }
 
             Cull [_Cull]

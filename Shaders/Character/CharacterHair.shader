@@ -142,7 +142,9 @@ Shader "Honkai Star Rail/Character/Hair"
                 Fail Keep
             }
 
-            Cull [_Cull]
+            // 这个 pass 画的是刘海，Back Face 一般情况下看不见
+            // 把 Back Face 剔除掉，避免 alpha 混合时和 Front Face 叠加导致颜色错误
+            Cull Back // [_Cull]
             ZWrite On
 
             Blend 0 SrcAlpha OneMinusSrcAlpha, [_SrcBlendAlpha] [_DstBlendAlpha]

@@ -3,6 +3,7 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "CharacterOutline.hlsl"
 #include "CharacterCommon.hlsl"
 #include "CharacterUtils.hlsl"
@@ -117,6 +118,11 @@ void HairFakeTransparentFragment(
     out float4 colorTarget      : SV_Target0,
     out float4 bloomTarget      : SV_Target1)
 {
+    // 手动做一次深度测试，保证只有最上面一层头发和眼睛做 alpha 混合。这样看上去更加通透
+    float sceneDepth = LinearEyeDepth(LoadSceneDepth(i.positionHCS.xy), _ZBufferParams);
+    float hairDepth = LinearEyeDepth(i.positionHCS.z, _ZBufferParams);
+    clip(sceneDepth - hairDepth); // if (hairDepth > sceneDepth) discard;
+
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 
     float3 up = GetCharacterHeadBoneUpWS(_MMDHeadBoneUp);
