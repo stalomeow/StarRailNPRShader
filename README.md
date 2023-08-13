@@ -90,4 +90,4 @@ Some extra steps must be done:
 
 ### Why outlines/rim-lights do not work?
 
-Change the `Model Scale` on the top of the material.
+Change the `Model Scale` at the top of the material.
