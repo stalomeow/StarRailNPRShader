@@ -1,9 +1,11 @@
 # StarRailNPRShader
 
-Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
-
 > [!IMPORTANT]
 > Please read this file before using the shaders!!!
+>
+> [中文翻译点这里](README_CN.md)
+
+Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
 
 ![my wife 1](/Screenshots/silwolf.png)
 
@@ -39,9 +41,7 @@ Asset preprocess:
 PostProcessing:
 
 - Custom bloom using the method shared by Jack He in Unite 2018.
-- Custom ACES tonemapping.
-
-    The formula is
+- Custom ACES tonemapping. The formula is
 
     $$f(x)=\frac{x(ax+b)}{x(cx+d)+e}$$
 
