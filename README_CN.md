@@ -5,15 +5,15 @@
 
 这是基于 Unity URP 的仿星穹铁道渲染 Shader。这不是逆向工程，Shader 代码不可能和游戏里的一模一样，我只是尽力去还原渲染效果。
 
-![我老婆 1](/Screenshots/silwolf.png)
+![我老婆 1](Screenshots/silwolf.png)
 
 <p align="center">↑↑↑ 我老婆 ↑↑↑</p>
 
-![我老婆 2](/Screenshots/fuxuan_near.png)
+![我老婆 2](Screenshots/fuxuan_near.png)
 
 <p align="center">↑↑↑ 也是我老婆 ↑↑↑</p>
 
-![咱妈](/Screenshots/kafka_near.png)
+![咱妈](Screenshots/kafka_near.png)
 
 <p align="center">↑↑↑ 咱妈 ↑↑↑</p>
 
@@ -68,7 +68,7 @@ Newtonsoft Json 被一个叫 `Game Material Inspector` 的编辑器工具使用�
 
 ### 推荐的后处理设置
 
-![后处理设置](/Screenshots/_postprocessing.png)
+![后处理设置](Screenshots/_postprocessing.png)
 
 ### 关于 MMD 模型
 
@@ -77,7 +77,7 @@ Newtonsoft Json 被一个叫 `Game Material Inspector` 的编辑器工具使用�
 - 在材质球上面把 `Model Type` 换成 `MMD`。
 - 在挂有 SkinnedMeshRenderer 的游戏物体上加一个 `SyncMMDHeadBone` 组件。
 
-    ![sync-mmd-head-bone](/Screenshots/_sync_mmd_head_bone.png)
+    ![sync-mmd-head-bone](Screenshots/_sync_mmd_head_bone.png)
 
 **注意：** MMD 模型缺少一些细节信息，所以最后渲染出来可能没有想象中那么好。
 

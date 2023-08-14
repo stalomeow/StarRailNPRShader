@@ -3,19 +3,19 @@
 > [!IMPORTANT]
 > Please read this file before using the shaders!!!
 >
-> [中文翻译点这里](./README_CN.md)
+> [中文翻译点这里](README_CN.md)
 
 Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
 
-![my wife 1](/Screenshots/silwolf.png)
+![my wife 1](Screenshots/silwolf.png)
 
 <p align="center">↑↑↑ My Wife ↑↑↑</p>
 
-![my wife 2](/Screenshots/fuxuan_near.png)
+![my wife 2](Screenshots/fuxuan_near.png)
 
 <p align="center">↑↑↑ Also My Wife ↑↑↑</p>
 
-![our mum](/Screenshots/kafka_near.png)
+![our mum](Screenshots/kafka_near.png)
 
 <p align="center">↑↑↑ Our Mum ↑↑↑</p>
 
@@ -70,7 +70,7 @@ Newtonsoft Json is used by a custom editor util called `Game Material Inspector`
 
 ### Recommended post-processing settings
 
-![post-processing settings](/Screenshots/_postprocessing.png)
+![post-processing settings](Screenshots/_postprocessing.png)
 
 ### For MMD models
 
@@ -79,7 +79,7 @@ Some extra steps must be done:
 - Change `Model Type` to `MMD` on each material.
 - Add component `SyncMMDHeadBone` to the GameObject to which SkinnedMeshRenderer is attached.
 
-    ![sync-mmd-head-bone](/Screenshots/_sync_mmd_head_bone.png)
+    ![sync-mmd-head-bone](Screenshots/_sync_mmd_head_bone.png)
 
 **Note that** MMD models do not contain some detailed information so the final rendering result may not fully meet your expectation.
 
