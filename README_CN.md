@@ -63,7 +63,7 @@ Newtonsoft Json 被一个叫 `Game Material Inspector` 的编辑器工具使用�
 - 开 Depth texture 和 Depth prepass。
 - 目前只能用 Forward 渲染路径。
 - 在 Renderer 上加 Renderer Feature `StarRailForward`。
-- 好好利用上面提到的那些 [额外功能](#extra-features)！
+- 好好利用上面提到的那些 [额外功能](#额外功能)！
 - 材质球换 Shader 以后记得先重置一下。
 
 ### 推荐的后处理设置
