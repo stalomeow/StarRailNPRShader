@@ -2,6 +2,8 @@
 
 Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
 
+<p style="font-size:2rem;text-align:center;color:red;">Please Read Me Before Using The Shaders!!!</p>
+
 ![my wife 1](/Screenshots/silwolf.png)
 
 <p align="center">↑↑↑ My Wife ↑↑↑</p>
@@ -13,15 +15,6 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 ![our mum](/Screenshots/kafka_near.png)
 
 <p align="center">↑↑↑ Our Mum ↑↑↑</p>
-
-## Requirements
-
-- Unity 2022.3 (Recommended).
-- Universal RP 14.0 (Recommended) or higher.
-- My [ShaderUtilsForSRP](https://github.com/stalomeow/ShaderUtilsForSRP) package.
-- (Optional) Newtonsoft Json package 3.2.1 or higher.
-
-Newtonsoft Json is used by a custom editor util called `Game Material Inspector` which can help us read Material JSON files ripped by a certain tool. To enable that util, add the scripting define symbol `PACKAGE_NEWTONSOFT_JSON` in player settings after importing Newtonsoft Json package.
 
 ## Shaders included
 
@@ -53,9 +46,18 @@ PostProcessing:
 
     where $a,b,c,d,e$ are all parameters.
 
+## Requirements
+
+- Basic knowledge of anime style rendering.
+- Unity 2022.3 (Recommended).
+- Universal RP 14.0 (Recommended) or higher.
+- My [ShaderUtilsForSRP](https://github.com/stalomeow/ShaderUtilsForSRP) package.
+- (Optional) Newtonsoft Json package 3.2.1 or higher.
+
+Newtonsoft Json is used by a custom editor util called `Game Material Inspector` which can help us read Material JSON files ripped by a certain tool. To enable that util, add the scripting define symbol `PACKAGE_NEWTONSOFT_JSON` in player settings after importing Newtonsoft Json package.
+
 ## Guide
 
-- MAKE SURE you have the basic knowledge of anime style rendering.
 - Use linear color space instead of gamma.
 - HDR should be enabled.
 - Depth priming must be disabled.
