@@ -1,2 +1,3 @@
+* text=auto eol=lf
 *.hlsl linguist-language=HLSL
 *.shader linguist-language=ShaderLab
