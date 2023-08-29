@@ -83,6 +83,10 @@ Some extra steps must be done:
 
 **Note that** MMD models do not contain some detailed information so the final rendering result may not fully meet your expectation.
 
+## Rules
+
+In addition to GPL-3.0 license, please give proper credits as well as a link to this repo when redistributing or using my code.
+
 ## Special thanks
 
 - miHoYo

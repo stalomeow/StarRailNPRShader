@@ -27,7 +27,7 @@
 
 角色渲染用了 MRT，这个 MRT Pass 是在 URP 的 Forward Pass 之后执行的。渲染透明物体的时候可能会出问题。
 
-为了维护起来方便，我不会重写整个渲染管线，你可以自己来。
+*为了维护起来方便，我不会重写整个渲染管线，你可以自己来。
 
 ## 额外功能
 
@@ -80,6 +80,10 @@ Newtonsoft Json 被一个叫 `Game Material Inspector` 的编辑器工具使用�
     ![sync-mmd-head-bone](Screenshots/_sync_mmd_head_bone.png)
 
 **注意：** MMD 模型缺少一些细节信息，所以最后渲染出来可能没有想象中那么好。
+
+## 规则
+
+当使用或者再发行我的代码时，除了遵守 GPL-3.0 协议，请提供这个代码仓库的链接并注明原作者。
 
 ## 特别感谢
 
