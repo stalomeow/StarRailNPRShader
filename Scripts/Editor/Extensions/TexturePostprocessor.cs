@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -29,58 +28,38 @@ namespace HSR.Editor.Extensions
 {
     public class TexturePostprocessor : AssetPostprocessor
     {
-        public override uint GetVersion() => 4u;
+        public override uint GetVersion() => 5u;
 
         private void OnPreprocessTexture()
         {
             string textureName = Path.GetFileNameWithoutExtension(assetPath);
 
-            if (textureName.StartsWith("Avatar_", StringComparison.Ordinal))
+            if (textureName.StartsWith("Avatar_", StringComparison.OrdinalIgnoreCase))
             {
-                string[] entries = textureName.Split('_', StringSplitOptions.RemoveEmptyEntries);
-
-                if (entries[^1].ToLowerInvariant() == "ramp")
+                if (textureName.Contains("_Ramp", StringComparison.OrdinalIgnoreCase))
                 {
                     PreprocessRamp();
                 }
-                else switch (entries[4].ToLowerInvariant())
+                else if (textureName.Contains("_LightMap", StringComparison.OrdinalIgnoreCase))
                 {
-                    case "lightmap":
-                    {
-                        PreprocessLightMap(GetTextureModifiers(entries));
-                        break;
-                    }
-                    case "color":
-                    {
-                        PreprocessColor(GetTextureModifiers(entries));
-                        break;
-                    }
-                    case "stockings":
-                    {
-                        PreprocessStockingsRangeMap();
-                        break;
-                    }
+                    PreprocessLightMap();
+                }
+                else if (textureName.Contains("_Color", StringComparison.OrdinalIgnoreCase))
+                {
+                    PreprocessColor();
+                }
+                else if (textureName.Contains("_Stockings", StringComparison.OrdinalIgnoreCase))
+                {
+                    PreprocessStockingsRangeMap();
                 }
             }
-            else if (textureName.Contains("_FaceMap", StringComparison.Ordinal))
+            else if (textureName.Contains("_FaceMap", StringComparison.OrdinalIgnoreCase))
             {
                 PreprocessFaceMap();
             }
-            else if (textureName.Contains("_Face_ExpressionMap", StringComparison.Ordinal))
+            else if (textureName.Contains("_Face_ExpressionMap", StringComparison.OrdinalIgnoreCase))
             {
                 PreprocessFaceExpressionMap();
-            }
-
-            static HashSet<string> GetTextureModifiers(string[] entries)
-            {
-                HashSet<string> modifiers = new();
-
-                for (int i = 5; i < entries.Length; i++)
-                {
-                    modifiers.Add(entries[i]);
-                }
-
-                return modifiers;
             }
         }
 
@@ -101,7 +80,7 @@ namespace HSR.Editor.Extensions
             Debug.Log("<b>[Preprocess Ramp]</b> " + assetPath);
         }
 
-        private void PreprocessLightMap(HashSet<string> modifiers)
+        private void PreprocessLightMap()
         {
             TextureImporter importer = (TextureImporter)assetImporter;
 
@@ -117,7 +96,7 @@ namespace HSR.Editor.Extensions
             Debug.Log("<b>[Preprocess LightMap]</b> " + assetPath);
         }
 
-        private void PreprocessColor(HashSet<string> modifiers)
+        private void PreprocessColor()
         {
             TextureImporter importer = (TextureImporter)assetImporter;
 
