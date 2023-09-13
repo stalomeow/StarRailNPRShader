@@ -79,6 +79,10 @@ Newtonsoft Json 被一个叫 `Game Material Inspector` 的编辑器工具使用�
 
     ![sync-mmd-head-bone](Screenshots/_sync_mmd_head_bone.png)
 
+    现在，头骨骼方向的值可以自行设置了。另外，组件的菜单里还提供了两个预设。
+
+    ![sync-mmd-head-bone-ex](Screenshots/_sync_mmd_head_bone_ex.png)
+
 **注意：** MMD 模型缺少一些细节信息，所以最后渲染出来可能没有想象中那么好。
 
 ## 规则

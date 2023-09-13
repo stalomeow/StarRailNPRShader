@@ -81,6 +81,10 @@ Some extra steps must be done:
 
     ![sync-mmd-head-bone](Screenshots/_sync_mmd_head_bone.png)
 
+    Now, you can override the direction values of the head bone. Besides, two presets are provided in the context menu of the component.
+
+    ![sync-mmd-head-bone-ex](Screenshots/_sync_mmd_head_bone_ex.png)
+
 **Note that** MMD models do not contain some detailed information so the final rendering result may not fully meet your expectation.
 
 ## Rules

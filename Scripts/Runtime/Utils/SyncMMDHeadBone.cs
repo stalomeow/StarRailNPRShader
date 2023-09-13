@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,8 +30,26 @@ namespace HSR.Utils
     [RequireComponent(typeof(SkinnedMeshRenderer))]
     public class SyncMMDHeadBone : MonoBehaviour
     {
+        private enum TransformDirection
+        {
+            Forward,
+            Back,
+            Left,
+            Right,
+            Up,
+            Down
+        }
+
         [SerializeField, Delayed]
         private string m_HeadBonePath = "センター/グルーブ/腰/上半身/上半身2/首/頭";
+        [SerializeField]
+        private TransformDirection m_HeadBoneForward = TransformDirection.Forward;
+        [SerializeField]
+        private TransformDirection m_HeadBoneUp = TransformDirection.Up;
+        [SerializeField]
+        private TransformDirection m_HeadBoneRight = TransformDirection.Right;
+
+        [Space]
 
         [SerializeField, Delayed]
         private List<string> m_ShaderWhitelist = new()
@@ -42,14 +61,49 @@ namespace HSR.Utils
         private SkinnedMeshRenderer m_Renderer;
         private Transform m_HeadBone;
 
-        private void Start() => Init();
+        [ContextMenu("Presets/MMD Model")]
+        private void Presets_MMDModel()
+        {
+#if UNITY_EDITOR
+            UnityEditor.Undo.RecordObject(this, $"Assign MMD Model Preset to {name}");
 
-        private void OnValidate() => Init();
+            m_HeadBonePath = "センター/グルーブ/腰/上半身/上半身2/首/頭";
+            m_HeadBoneForward = TransformDirection.Forward;
+            m_HeadBoneUp = TransformDirection.Up;
+            m_HeadBoneRight = TransformDirection.Right;
 
-        private void Init()
+            Reinitialize();
+#endif
+        }
+
+        [ContextMenu("Presets/Game Model")]
+        private void Presets_GameModel()
+        {
+#if UNITY_EDITOR
+            UnityEditor.Undo.RecordObject(this, $"Assign Game Model Preset to {name}");
+
+            m_HeadBonePath = "Root_M/Spine1_M/Spine2_M/Chest_M/Neck_M/Head_M";
+            m_HeadBoneForward = TransformDirection.Up;
+            m_HeadBoneUp = TransformDirection.Left;
+            m_HeadBoneRight = TransformDirection.Back;
+
+            Reinitialize();
+#endif
+        }
+
+        private void Start() => Reinitialize();
+
+        private void OnValidate() => Reinitialize();
+
+        private void Reinitialize()
         {
             m_Renderer = GetComponent<SkinnedMeshRenderer>();
             m_HeadBone = m_Renderer.rootBone.Find(m_HeadBonePath);
+
+            if (m_HeadBone == null)
+            {
+                Debug.LogWarning("Can not find head bone! ", this);
+            }
         }
 
         private void Update()
@@ -59,9 +113,9 @@ namespace HSR.Utils
                 return;
             }
 
-            Vector4 forward = m_HeadBone.forward;
-            Vector4 up = m_HeadBone.up;
-            Vector4 right = m_HeadBone.right;
+            Vector4 forward = GetTransformDirection(m_HeadBone, m_HeadBoneForward);
+            Vector4 up = GetTransformDirection(m_HeadBone, m_HeadBoneUp);
+            Vector4 right = GetTransformDirection(m_HeadBone, m_HeadBoneRight);
 
             foreach (Material material in m_Renderer.sharedMaterials)
             {
@@ -75,6 +129,18 @@ namespace HSR.Utils
                 material.SetVector(ShaderConstants._MMDHeadBoneRight, right);
             }
         }
+
+        private static Vector3 GetTransformDirection(Transform transform, TransformDirection direction) =>
+            direction switch
+            {
+                TransformDirection.Forward => transform.forward,
+                TransformDirection.Back => -transform.forward,
+                TransformDirection.Left => -transform.right,
+                TransformDirection.Right => transform.right,
+                TransformDirection.Up => transform.up,
+                TransformDirection.Down => -transform.up,
+                _ => throw new NotSupportedException()
+            };
 
         private static class ShaderConstants
         {
