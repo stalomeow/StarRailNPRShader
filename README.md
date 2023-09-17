@@ -42,7 +42,7 @@ The rendering of character takes advantage of MRT whose pass is always executed 
 
 ## Requirements
 
-- Basic knowledge of anime style rendering!
+- Basic knowledge of anime style rendering!!!
 - Unity >= 2022.3.
 - Universal RP >= 14.0.
 - My [ShaderUtilsForSRP](https://github.com/stalomeow/ShaderUtilsForSRP) package.
