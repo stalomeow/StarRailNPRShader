@@ -173,9 +173,27 @@ float3 GetRimLight(
     rimWidth *= lightMap.r; // 有些地方不要边缘光
     rimWidth *= _ScaledScreenParams.y; // 在不同分辨率下看起来等宽
 
-    // unity_CameraProjection._m11: cot(FOV / 2)
-    // 2.414 是 FOV 为 45 度时的值
-    float fixScale = unity_CameraProjection._m11 / 2.414; // FOV 越小，角色越大，边缘光越宽
+    float fixScale;
+    if (unity_OrthoParams.w == 0)
+    {
+        // ------------------------
+        // Perspective camera
+        // ------------------------
+
+        // unity_CameraProjection._m11: cot(FOV / 2)
+        // 2.414 是 FOV 为 45 度时的值
+        fixScale = unity_CameraProjection._m11 / 2.414; // FOV 越小，角色越大，边缘光越宽
+    }
+    else
+    {
+        // ------------------------
+        // Orthographic camera
+        // ------------------------
+
+        // unity_CameraProjection._m11: (1 / Size)
+        // 15.996 纯 Magic Number
+        fixScale = unity_CameraProjection._m11 / 15.996; // Size 越小，角色越大，边缘光越宽
+    }
     fixScale *= 10.0 * rsqrt(depth / modelScale); // 近大远小
     rimWidth *= fixScale;
 
@@ -194,16 +212,17 @@ float3 GetRimLight(
 
 static float DitherAlphaThresholds[16] =
 {
-    01.0 / 17.0, 09.0 / 17.0, 03.0 / 17.0, 11.0 /17.0,
-    13.0 / 17.0, 05.0 / 17.0, 15.0 / 17.0, 07.0 /17.0,
-    04.0 / 17.0, 12.0 / 17.0, 02.0 / 17.0, 10.0 /17.0,
-    16.0 / 17.0, 08.0 / 17.0, 14.0 / 17.0, 06.0 /17.0
+    01.0 / 17.0, 09.0 / 17.0, 03.0 / 17.0, 11.0 / 17.0,
+    13.0 / 17.0, 05.0 / 17.0, 15.0 / 17.0, 07.0 / 17.0,
+    04.0 / 17.0, 12.0 / 17.0, 02.0 / 17.0, 10.0 / 17.0,
+    16.0 / 17.0, 08.0 / 17.0, 14.0 / 17.0, 06.0 / 17.0
 };
 
 void DitherAlphaEffect(float4 positionHCSFrag, float ditherAlpha)
 {
     uint index = fmod(positionHCSFrag.x, 4) * 4 + fmod(positionHCSFrag.y, 4);
-    clip(ditherAlpha - min(DitherAlphaThresholds[index], 0.9));
+    index = clamp(index, 0u, 15u); // 需要 clamp 避免下标越界
+    clip(ditherAlpha - DitherAlphaThresholds[index]);
 }
 
 void DoAlphaClip(float alpha, float cutoff)

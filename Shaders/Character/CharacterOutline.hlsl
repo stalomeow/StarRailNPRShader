@@ -60,9 +60,27 @@ void FixOutlineWidth(float3 positionVS, float4 vertexColor, float modelScale, in
         outlineWidth *= 0.5;
     #endif
 
-    // unity_CameraProjection._m11: cot(FOV / 2)
-    // 2.414 是 FOV 为 45 度时的值
-    float fixScale = 2.414 / unity_CameraProjection._m11; // FOV 越小，角色越大，描边越细（在屏幕上看上去一致）
+    float fixScale;
+    if (unity_OrthoParams.w == 0)
+    {
+        // ------------------------
+        // Perspective camera
+        // ------------------------
+
+        // unity_CameraProjection._m11: cot(FOV / 2)
+        // 2.414 是 FOV 为 45 度时的值
+        fixScale = 2.414 / unity_CameraProjection._m11; // FOV 越小，角色越大，描边越细（在屏幕上看上去一致）
+    }
+    else
+    {
+        // ------------------------
+        // Orthographic camera
+        // ------------------------
+
+        // unity_CameraProjection._m11: (1 / Size)
+        // 1.5996 纯 Magic Number
+        fixScale = 1.5996 / unity_CameraProjection._m11; // Size 越小，角色越大，描边越细（在屏幕上看上去一致）
+    }
     fixScale *= (-positionVS.z / modelScale) / 40.0; // 近小远大
     outlineWidth *= clamp(fixScale, 0.04, 0.1);
 }
