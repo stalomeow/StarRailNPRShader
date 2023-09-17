@@ -23,7 +23,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HSR.PostProcessing
+namespace HSR.NPRShader.PostProcessing
 {
     public enum CustomTonemappingMode
     {

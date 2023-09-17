@@ -20,11 +20,11 @@
  */
 
 using System;
-using HSR.Passes;
+using HSR.NPRShader.Passes;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HSR
+namespace HSR.NPRShader
 {
     [DisallowMultipleRendererFeature]
     public class StarRailForward : ScriptableRendererFeature

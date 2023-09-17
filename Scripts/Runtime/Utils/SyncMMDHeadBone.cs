@@ -23,11 +23,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HSR.Utils
+namespace HSR.NPRShader.Utils
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SkinnedMeshRenderer))]
+    [AddComponentMenu("Honkai Star Rail/NPR Shader/Sync MMD Head Bone")]
     public class SyncMMDHeadBone : MonoBehaviour
     {
         private enum TransformDirection

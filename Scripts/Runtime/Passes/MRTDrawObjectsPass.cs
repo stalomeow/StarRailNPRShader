@@ -24,7 +24,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.Universal.Internal;
 
-namespace HSR.Passes
+namespace HSR.NPRShader.Passes
 {
     public class MRTDrawObjectsPass : DrawObjectsPass
     {

@@ -23,11 +23,11 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace HSR.Editor.Tools
+namespace HSR.NPRShader.Editor.Tools
 {
     public class SplitTextures : EditorWindow
     {
-        [MenuItem("HSR Tools/Split Textures")]
+        [MenuItem("Honkai Star Rail/NPR Shader Tools/Split Textures")]
         public static void Open()
         {
             GetWindow<SplitTextures>("Split Textures");

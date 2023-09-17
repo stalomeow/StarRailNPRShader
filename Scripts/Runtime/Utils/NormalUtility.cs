@@ -25,7 +25,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HSR.Utils
+namespace HSR.NPRShader.Utils
 {
     public static class NormalUtility
     {

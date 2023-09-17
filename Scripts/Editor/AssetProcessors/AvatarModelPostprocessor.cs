@@ -25,9 +25,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-using HSR.Utils;
+using HSR.NPRShader.Utils;
 
-namespace HSR.Editor.Extensions
+namespace HSR.NPRShader.Editor.AssetProcessors
 {
     public class AvatarModelPostprocessor : AssetPostprocessor
     {

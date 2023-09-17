@@ -24,7 +24,7 @@ using UnityEditor;
 using UnityEngine;
 using Stalo.ShaderUtils.Editor;
 
-namespace HSR.Editor.MaterialDrawers
+namespace HSR.NPRShader.Editor.MaterialDrawers
 {
     [PublicAPI]
     public class HSRMaterialIDFoldoutDrawer : MaterialPropertyDrawer

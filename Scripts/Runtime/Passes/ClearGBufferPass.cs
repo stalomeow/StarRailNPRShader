@@ -23,7 +23,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HSR.Passes
+namespace HSR.NPRShader.Passes
 {
     public class ClearGBufferPass : ScriptableRenderPass
     {

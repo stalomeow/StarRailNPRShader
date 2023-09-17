@@ -26,11 +26,11 @@ using UnityEngine;
 using Newtonsoft.Json.Linq;
 using Stalo.ShaderUtils.Editor;
 
-namespace HSR.Editor.Tools
+namespace HSR.NPRShader.Editor.Tools
 {
     public class GameMaterialInspector : EditorWindow
     {
-        [MenuItem("HSR Tools/Game Material Inspector")]
+        [MenuItem("Honkai Star Rail/NPR Shader Tools/Game Material Inspector")]
         public static void Open()
         {
             GetWindow<GameMaterialInspector>("Game Material Inspector");

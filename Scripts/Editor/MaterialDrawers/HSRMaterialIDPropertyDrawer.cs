@@ -23,7 +23,7 @@ using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 
-namespace HSR.Editor.MaterialDrawers
+namespace HSR.NPRShader.Editor.MaterialDrawers
 {
     [PublicAPI]
     public class HSRMaterialIDPropertyDrawer : MaterialPropertyDrawer

@@ -24,7 +24,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HSR.PostProcessing
+namespace HSR.NPRShader.PostProcessing
 {
     [Serializable]
     [VolumeComponentMenuForRenderPipeline("Honkai Star Rail/Bloom", typeof(UniversalRenderPipeline))]

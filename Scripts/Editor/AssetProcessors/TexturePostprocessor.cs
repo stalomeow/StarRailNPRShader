@@ -24,7 +24,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace HSR.Editor.Extensions
+namespace HSR.NPRShader.Editor.AssetProcessors
 {
     public class TexturePostprocessor : AssetPostprocessor
     {

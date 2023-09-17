@@ -24,7 +24,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HSR
+namespace HSR.NPRShader
 {
     public class ForwardGBuffers : IDisposable
     {
