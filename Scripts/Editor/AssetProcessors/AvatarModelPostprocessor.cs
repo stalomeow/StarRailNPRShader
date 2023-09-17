@@ -19,13 +19,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using HSR.NPRShader.Editor.Settings;
+using HSR.NPRShader.Utils;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-using HSR.NPRShader.Utils;
 
 namespace HSR.NPRShader.Editor.AssetProcessors
 {
@@ -33,16 +33,10 @@ namespace HSR.NPRShader.Editor.AssetProcessors
     {
         public static readonly ModelImporterTangents ImportTangents = ModelImporterTangents.None;
         public static readonly NormalUtility.StoreMode NormalStoreMode = NormalUtility.StoreMode.ObjectSpaceTangent;
-        public static readonly uint Version = 10u;
+        public static readonly uint LogicVersion = 11u;
 
-        private bool IsAvatarModel
-        {
-            get
-            {
-                string modelName = Path.GetFileNameWithoutExtension(assetPath);
-                return Regex.IsMatch(modelName, @"^Avatar_.+_00$");
-            }
-        }
+        private bool IsAvatarModel => Regex.IsMatch(assetPath,
+            EditorProjectSettings.instance.AvatarModelPathPattern, RegexOptions.IgnoreCase);
 
         private void OnPreprocessModel()
         {
@@ -70,7 +64,7 @@ namespace HSR.NPRShader.Editor.AssetProcessors
 
         public override uint GetVersion()
         {
-            return Version;
+            return EditorProjectSettings.instance.AvatarModelPostprocessorVersion + LogicVersion;
         }
     }
 }

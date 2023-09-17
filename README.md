@@ -35,8 +35,11 @@ The rendering of character takes advantage of MRT whose pass is always executed 
 
 Asset preprocess:
 
-- Automatically smooth the normals of character models and store them into tangents. The file name of the model must match pattern `^Avatar_.+_00$`, e.g., `Avatar_Kafka_00`.
-- Automatically process textures (if you haven't changed the file names after ripping them).
+- Automatically smooth the normals of character models and store them into tangents.
+- Automatically process textures.
+- The path patterns of the assets that need preprocessing can be configured in `Project Settings/Honkai Star Rail/NPR Shader`. The default patterns are designed to align with the naming style of in-game assets.
+
+    ![asset-path-patterns](Screenshots/_asset_path_patterns.png)
 
 PostProcessing:
 

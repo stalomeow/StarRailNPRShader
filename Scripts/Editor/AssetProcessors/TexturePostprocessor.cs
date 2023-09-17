@@ -19,8 +19,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.IO;
+using HSR.NPRShader.Editor.Settings;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -28,36 +28,35 @@ namespace HSR.NPRShader.Editor.AssetProcessors
 {
     public class TexturePostprocessor : AssetPostprocessor
     {
-        public override uint GetVersion() => 5u;
+        public static readonly uint LogicVersion = 6u;
+
+        public override uint GetVersion() => EditorProjectSettings.instance.TexturePostprocessorVersion + LogicVersion;
 
         private void OnPreprocessTexture()
         {
-            string textureName = Path.GetFileNameWithoutExtension(assetPath);
+            var settings = EditorProjectSettings.instance;
 
-            if (textureName.StartsWith("Avatar_", StringComparison.OrdinalIgnoreCase))
+            if (Regex.IsMatch(assetPath, settings.RampTexturePathPattern, RegexOptions.IgnoreCase))
             {
-                if (textureName.Contains("_Ramp", StringComparison.OrdinalIgnoreCase))
-                {
-                    PreprocessRamp();
-                }
-                else if (textureName.Contains("_LightMap", StringComparison.OrdinalIgnoreCase))
-                {
-                    PreprocessLightMap();
-                }
-                else if (textureName.Contains("_Color", StringComparison.OrdinalIgnoreCase))
-                {
-                    PreprocessColor();
-                }
-                else if (textureName.Contains("_Stockings", StringComparison.OrdinalIgnoreCase))
-                {
-                    PreprocessStockingsRangeMap();
-                }
+                PreprocessRamp();
             }
-            else if (textureName.Contains("_FaceMap", StringComparison.OrdinalIgnoreCase))
+            else if (Regex.IsMatch(assetPath, settings.LightMapPathPattern, RegexOptions.IgnoreCase))
+            {
+                PreprocessLightMap();
+            }
+            else if (Regex.IsMatch(assetPath, settings.ColorTexturePathPattern, RegexOptions.IgnoreCase))
+            {
+                PreprocessColor();
+            }
+            else if (Regex.IsMatch(assetPath, settings.StockingsRangeMapPathPattern, RegexOptions.IgnoreCase))
+            {
+                PreprocessStockingsRangeMap();
+            }
+            else if (Regex.IsMatch(assetPath, settings.FaceMapPathPattern, RegexOptions.IgnoreCase))
             {
                 PreprocessFaceMap();
             }
-            else if (textureName.Contains("_Face_ExpressionMap", StringComparison.OrdinalIgnoreCase))
+            else if (Regex.IsMatch(assetPath, settings.FaceExpressionMapPathPattern, RegexOptions.IgnoreCase))
             {
                 PreprocessFaceExpressionMap();
             }

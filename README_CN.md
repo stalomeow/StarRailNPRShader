@@ -33,8 +33,11 @@
 
 资源预处理:
 
-- 自动平滑角色模型的法线，然后存进切线里。模型文件的名称需要匹配 `^Avatar_.+_00$` 模式。举个例子，`Avatar_Kafka_00`。
-- 自动处理贴图（贴图文件解包出来以后不要改名字）。
+- 自动平滑角色模型的法线，然后存进切线里。
+- 自动处理贴图。
+- 可以在 `Project Settings/Honkai Star Rail/NPR Shader` 中配置需要被预处理的资源的路径模式。默认的路径模式旨在与游戏内资源的命名风格保持一致。
+
+    ![asset-path-patterns](Screenshots/_asset_path_patterns.png)
 
 屏幕后处理:
 
