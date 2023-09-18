@@ -150,7 +150,7 @@ float3 GetEmission(
 }
 
 float3 GetRimLight(
-    float4 positionHCSFrag,
+    float4 svPosition,
     float3 normalWS,
     float4 lightMap,
     float modelScale,
@@ -162,13 +162,14 @@ float3 GetRimLight(
     float rimDarkenValue,
     float rimIntensityFrontFace,
     float rimIntensityBackFace,
-    FRONT_FACE_TYPE isFrontFace)
+    FRONT_FACE_TYPE isFrontFace,
+    float ditherAlpha)
 {
     rimWidth *= 1.0 / 2000.0; // rimWidth 表示的是屏幕上像素的偏移量，和 modelScale 无关
     rimThresholdMin *= modelScale * 10.0;
     rimThresholdMax *= modelScale * 10.0;
 
-    float depth = LinearEyeDepth(positionHCSFrag.z, _ZBufferParams);
+    float depth = LinearEyeDepth(svPosition.z, _ZBufferParams);
 
     rimWidth *= lightMap.r; // 有些地方不要边缘光
     rimWidth *= _ScaledScreenParams.y; // 在不同分辨率下看起来等宽
@@ -199,7 +200,7 @@ float3 GetRimLight(
 
     float3 normalVS = TransformWorldToViewNormal(normalWS);
     float2 uvOffset = normalize(normalVS.xy) * rimWidth;
-    uint2 uv = clamp(positionHCSFrag.xy + uvOffset, 0, _ScaledScreenParams.xy - 1); // 避免出界
+    uint2 uv = clamp(svPosition.xy + uvOffset, 0, _ScaledScreenParams.xy - 1); // 避免出界
     float offsetDepth = LinearEyeDepth(LoadSceneDepth(uv), _ZBufferParams);
 
     float depthDelta = (offsetDepth - depth) * 50; // 只有 depth 小于 offsetDepth 的时候再画
@@ -207,7 +208,11 @@ float3 GetRimLight(
     intensity = lerp(intensity, 1, smoothstep(0, rimEdgeSoftness, depthDelta - rimThresholdMax));
     intensity *= IS_FRONT_VFACE(isFrontFace, rimIntensityFrontFace, rimIntensityBackFace);
 
-    return rimColor * intensity;
+    // Dither Alpha 效果会扣掉角色的一部分像素，导致角色身上出现不该有的边缘光
+    // 所以这里在 ditherAlpha 较强时隐去边缘光
+    float ditherAlphaFadeOut = smoothstep(0.8, 1, ditherAlpha);
+
+    return rimColor * intensity * ditherAlphaFadeOut;
 }
 
 static float DitherAlphaThresholds[16] =
@@ -218,9 +223,9 @@ static float DitherAlphaThresholds[16] =
     16.0 / 17.0, 08.0 / 17.0, 14.0 / 17.0, 06.0 / 17.0
 };
 
-void DitherAlphaEffect(float4 positionHCSFrag, float ditherAlpha)
+void DitherAlphaEffect(float4 svPosition, float ditherAlpha)
 {
-    uint index = fmod(positionHCSFrag.x, 4) * 4 + fmod(positionHCSFrag.y, 4);
+    uint index = fmod(svPosition.x, 4) * 4 + fmod(svPosition.y, 4);
     index = clamp(index, 0u, 15u); // 需要 clamp 避免下标越界
     clip(ditherAlpha - DitherAlphaThresholds[index]);
 }

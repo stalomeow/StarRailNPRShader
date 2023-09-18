@@ -177,7 +177,7 @@ void BodyColorFragment(
 
     float3 diffuse = GetDiffuse(NoL, i.color, lightMap, false, baseColor, TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm), _RampCoolWarmLerpFactor);
     float3 specular = GetSpecular(NoH, lightMap, baseColor, specularColor.rgb, specularShininess, specularEdgeSoftness, specularIntensity, specularMetallic);
-    float3 rimLight = GetRimLight(i.positionHCS, i.normalWS, lightMap, _ModelScale, rimColor.rgb, rimWidth, _RimEdgeSoftness, _RimThresholdMin, _RimThresholdMax, rimDark, _RimIntensity, _RimIntensityBackFace, isFrontFace);
+    float3 rimLight = GetRimLight(i.positionHCS, i.normalWS, lightMap, _ModelScale, rimColor.rgb, rimWidth, _RimEdgeSoftness, _RimThresholdMin, _RimThresholdMax, rimDark, _RimIntensity, _RimIntensityBackFace, isFrontFace, _DitherAlpha);
     float3 emission = GetEmission(baseColor, alpha, _EmissionThreshold, _EmissionIntensity, _EmissionColor.rgb);
 
     // Output

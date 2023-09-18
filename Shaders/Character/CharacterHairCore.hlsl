@@ -114,7 +114,7 @@ float4 BaseHairOpaqueFragment(
 
     float3 diffuse = GetDiffuse(NoL, i.color, lightMap, true, baseColor, TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm), _RampCoolWarmLerpFactor);
     float3 specular = GetSpecular(NoV, lightMap, baseColor, _SpecularColor0.rgb, _SpecularShininess0, _SpecularEdgeSoftness0, _SpecularIntensity0, 0);
-    float3 rimLight = GetRimLight(i.positionHCS, i.normalWS, lightMap, _ModelScale, _RimColor0.rgb, _RimWidth0, _RimEdgeSoftness, _RimThresholdMin, _RimThresholdMax, _RimDark0, _RimIntensity, _RimIntensityBackFace, isFrontFace);
+    float3 rimLight = GetRimLight(i.positionHCS, i.normalWS, lightMap, _ModelScale, _RimColor0.rgb, _RimWidth0, _RimEdgeSoftness, _RimThresholdMin, _RimThresholdMax, _RimDark0, _RimIntensity, _RimIntensityBackFace, isFrontFace, _DitherAlpha);
     float3 emission = GetEmission(baseColor, alpha, _EmissionThreshold, _EmissionIntensity, _EmissionColor.rgb);
 
     // Output
