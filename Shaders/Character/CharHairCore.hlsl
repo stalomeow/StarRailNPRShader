@@ -19,17 +19,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _CHARACTER_HAIR_CORE_INCLUDED
-#define _CHARACTER_HAIR_CORE_INCLUDED
+#ifndef _CHAR_HAIR_CORE_INCLUDED
+#define _CHAR_HAIR_CORE_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-#include "CharacterOutline.hlsl"
-#include "CharacterCommon.hlsl"
-#include "CharacterUtils.hlsl"
-#include "CharacterShadow.hlsl"
-#include "CharacterDepthOnly.hlsl"
+#include "Shared/CharCore.hlsl"
+#include "Shared/CharDepthOnly.hlsl"
+#include "Shared/CharOutline.hlsl"
+#include "Shared/CharShadow.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_LightMap); SAMPLER(sampler_LightMap);
@@ -79,50 +78,70 @@ CBUFFER_START(UnityPerMaterial)
     float4 _MMDHeadBoneRight;
 CBUFFER_END
 
-CharacterVaryings HairVertex(CharacterAttributes i)
+CharCoreVaryings HairVertex(CharCoreAttributes i)
 {
-    return CharacterVertex(i, _Maps_ST);
+    return CharCoreVertex(i, _Maps_ST);
 }
 
 float4 BaseHairOpaqueFragment(
-    inout CharacterVaryings i,
+    inout CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace)
 {
-    ValidateDualFaceVaryings(i.normalWS, i.uv, isFrontFace);
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
-    // Textures
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     float4 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    // Colors
-    float3 baseColor = texColor.rgb;
-    float alpha = texColor.a;
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    DoAlphaClip(alpha, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
-
-    // Calc
     Light light = GetMainLight();
+    Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
-    float3 N = normalize(i.normalWS);
-    float3 V = normalize(GetWorldSpaceViewDir(i.positionWS));
-    float3 L = normalize(light.direction);
+    DiffuseData diffuseData;
+    diffuseData.NoL = dirWS.NoL;
+    diffuseData.singleMaterial = true;
+    diffuseData.rampCoolOrWarm = _RampCoolWarmLerpFactor;
 
-    float NoL = dot(N, L);
-    float NoV = dot(N, V) * (NoL > 0); // 感觉 NoV 做头发高光更好看！有随视线流动的效果
+    SpecularData specularData;
+    specularData.color = _SpecularColor0.rgb;
+    specularData.NoH = dirWS.NoV * (dirWS.NoL > 0); // 感觉 NoV 做头发高光更好看！有随视线流动的效果
+    specularData.shininess = _SpecularShininess0;
+    specularData.edgeSoftness = _SpecularEdgeSoftness0;
+    specularData.intensity = _SpecularIntensity0;
+    specularData.metallic = 0;
 
-    float3 diffuse = GetDiffuse(NoL, i.color, lightMap, true, baseColor, TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm), _RampCoolWarmLerpFactor);
-    float3 specular = GetSpecular(NoV, lightMap, baseColor, _SpecularColor0.rgb, _SpecularShininess0, _SpecularEdgeSoftness0, _SpecularIntensity0, 0);
-    float3 rimLight = GetRimLight(i.positionHCS, i.normalWS, lightMap, _ModelScale, _RimColor0.rgb, _RimWidth0, _RimEdgeSoftness, _RimThresholdMin, _RimThresholdMax, _RimDark0, _RimIntensity, _RimIntensityBackFace, isFrontFace, _DitherAlpha);
-    float3 emission = GetEmission(baseColor, alpha, _EmissionThreshold, _EmissionIntensity, _EmissionColor.rgb);
+    RimLightData rimLightData;
+    rimLightData.color = _RimColor0.rgb;
+    rimLightData.width = _RimWidth0;
+    rimLightData.edgeSoftness = _RimEdgeSoftness;
+    rimLightData.thresholdMin = _RimThresholdMin;
+    rimLightData.thresholdMax = _RimThresholdMax;
+    rimLightData.darkenValue = _RimDark0;
+    rimLightData.intensityFrontFace = _RimIntensity;
+    rimLightData.intensityBackFace = _RimIntensityBackFace;
+    rimLightData.modelScale = _ModelScale;
+    rimLightData.ditherAlpha = _DitherAlpha;
+
+    EmissionData emissionData;
+    emissionData.color = _EmissionColor.rgb;
+    emissionData.value = texColor.a;
+    emissionData.threshold = _EmissionThreshold;
+    emissionData.intensity = _EmissionIntensity;
+
+    float3 diffuse = GetDiffuse(diffuseData, i.color, texColor.rgb, lightMap,
+        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
+    float3 specular = GetSpecular(specularData, texColor.rgb, lightMap);
+    float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
+    float3 emission = GetEmission(emissionData, texColor.rgb);
 
     // Output
-    return float4((diffuse + specular) * light.color + rimLight + emission, alpha);
+    return float4((diffuse + specular) * light.color + rimLight + emission, texColor.a);
 }
 
 void HairOpaqueFragment(
-    CharacterVaryings i,
+    CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC,
     out float4 colorTarget      : SV_Target0,
     out float4 bloomTarget      : SV_Target1)
@@ -134,31 +153,29 @@ void HairOpaqueFragment(
 }
 
 void HairFakeTransparentFragment(
-    CharacterVaryings i,
+    CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC,
     out float4 colorTarget      : SV_Target0,
     out float4 bloomTarget      : SV_Target1)
 {
     // 手动做一次深度测试，保证只有最上面一层头发和眼睛做 alpha 混合。这样看上去更加通透
-    float sceneDepth = LinearEyeDepth(LoadSceneDepth(i.positionHCS.xy), _ZBufferParams);
-    float hairDepth = LinearEyeDepth(i.positionHCS.z, _ZBufferParams);
+    float sceneDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(i.positionHCS.xy - 0.5));
+    float hairDepth = GetLinearEyeDepthAnyProjection(i.positionHCS);
     clip(sceneDepth - hairDepth); // if (hairDepth > sceneDepth) discard;
 
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 
-    float3 up = GetCharacterHeadBoneUpWS(_MMDHeadBoneUp);
-    float3 forward = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
-    float3 right = GetCharacterHeadBoneRightWS(_MMDHeadBoneRight);
+    HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
     float3 viewDirWS = GetWorldSpaceViewDir(i.positionWS);
 
     // Horizontal 70 度
-    float3 viewDirXZ = normalize(viewDirWS - dot(viewDirWS, up) * up);
-    float cosHorizontal = max(0, dot(viewDirXZ, forward));
+    float3 viewDirXZ = normalize(viewDirWS - dot(viewDirWS, headDirWS.up) * headDirWS.up);
+    float cosHorizontal = max(0, dot(viewDirXZ, headDirWS.forward));
     float alpha1 = saturate((1 - cosHorizontal) / 0.658); // 0.658: 1 - cos70°
 
     // Vertical 45 度
-    float3 viewDirYZ = normalize(viewDirWS - dot(viewDirWS, right) * right);
-    float cosVertical = max(0, dot(viewDirYZ, forward));
+    float3 viewDirYZ = normalize(viewDirWS - dot(viewDirWS, headDirWS.right) * headDirWS.right);
+    float cosVertical = max(0, dot(viewDirYZ, headDirWS.forward));
     float alpha2 = saturate((1 - cosVertical) / 0.293); // 0.293: 1 - cos45°
 
     // Output
@@ -166,57 +183,64 @@ void HairFakeTransparentFragment(
     bloomTarget = float4(_BloomIntensity0, 0, 0, 0);
 }
 
-CharacterOutlineVaryings HairOutlineVertex(CharacterOutlineAttributes i)
+CharOutlineVaryings HairOutlineVertex(CharOutlineAttributes i)
 {
-    return CharacterOutlineVertex(i, _Maps_ST, _ModelScale, _OutlineWidth, _OutlineZOffset);
+    VertexPositionInputs vertexInputs = GetVertexPositionInputs(i.positionOS);
+
+    OutlineData outlineData;
+    outlineData.modelScale = _ModelScale;
+    outlineData.width = _OutlineWidth;
+    outlineData.zOffset = _OutlineZOffset;
+
+    return CharOutlineVertex(outlineData, i, vertexInputs, _Maps_ST);
 }
 
-float4 HairOutlineFragment(CharacterOutlineVaryings i) : SV_Target0
+float4 HairOutlineFragment(CharOutlineVaryings i) : SV_Target0
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return float4(_OutlineColor0.rgb, 1);
 }
 
-CharacterShadowVaryings HairShadowVertex(CharacterShadowAttributes i)
+CharShadowVaryings HairShadowVertex(CharShadowAttributes i)
 {
-    return CharacterShadowVertex(i, _Maps_ST);
+    return CharShadowVertex(i, _Maps_ST);
 }
 
 void HairShadowFragment(
-    CharacterShadowVaryings i,
+    CharShadowVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC)
 {
-    ValidateDualFaceVaryings(i.normalWS, i.uv, isFrontFace);
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 }
 
-CharacterDepthOnlyVaryings HairDepthOnlyVertex(CharacterDepthOnlyAttributes i)
+CharDepthOnlyVaryings HairDepthOnlyVertex(CharDepthOnlyAttributes i)
 {
-    return CharacterDepthOnlyVertex(i, _Maps_ST);
+    return CharDepthOnlyVertex(i, _Maps_ST);
 }
 
 float4 HairDepthOnlyFragment(
-    CharacterDepthOnlyVaryings i,
+    CharDepthOnlyVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
 {
-    ValidateDualFaceVaryings(i.normalWS, i.uv, isFrontFace);
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    return CharacterDepthOnlyFragment(i);
+    return CharDepthOnlyFragment(i);
 }
 
 #endif

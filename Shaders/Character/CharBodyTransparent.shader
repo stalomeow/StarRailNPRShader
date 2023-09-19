@@ -227,7 +227,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             #pragma shader_feature_local_fragment _ _SINGLEMATERIAL_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
-            #include "CharacterBodyCore.hlsl"
+            #include "CharBodyCore.hlsl"
 
             ENDHLSL
         }
@@ -272,7 +272,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
             #pragma shader_feature_local_vertex _OUTLINENORMAL_TANGENT _OUTLINENORMAL_NORMAL
 
-            #include "CharacterBodyCore.hlsl"
+            #include "CharBodyCore.hlsl"
 
             ENDHLSL
         }
@@ -306,7 +306,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
-            #include "CharacterBodyCore.hlsl"
+            #include "CharBodyCore.hlsl"
 
             ENDHLSL
         }

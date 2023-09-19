@@ -19,40 +19,48 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _CHARACTER_DEPTH_ONLY_INCLUDED
-#define _CHARACTER_DEPTH_ONLY_INCLUDED
+#ifndef _CHAR_CORE_INCLUDED
+#define _CHAR_CORE_INCLUDED
+
+// ==========================
+// Stencil 使用低三位，高 -> 低
+// 1      1      1
+// 头发    脸     眼睛
+// ==========================
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-#include "CharacterDualFace.hlsl"
+#include "CharRenderingHelpers.hlsl"
 
-struct CharacterDepthOnlyAttributes
+struct CharCoreAttributes
 {
-    float4 positionOS   : POSITION;
-    float3 normalOS     : NORMAL;
-    float2 uv1          : TEXCOORD0;
-    float2 uv2          : TEXCOORD1;
+    float3 positionOS     : POSITION;
+    float3 normalOS       : NORMAL;
+    float4 color          : COLOR;
+    float2 uv1            : TEXCOORD0;
+    float2 uv2            : TEXCOORD1;
 };
 
-struct CharacterDepthOnlyVaryings
+struct CharCoreVaryings
 {
-    float4 positionHCS  : SV_POSITION;
-    float3 normalWS     : NORMAL;
-    float4 uv           : TEXCOORD0;
+    float4 positionHCS    : SV_POSITION;
+    float3 normalWS       : NORMAL;
+    float4 color          : COLOR;
+    float4 uv             : TEXCOORD0;
+    float3 positionWS     : TEXCOORD1;
 };
 
-CharacterDepthOnlyVaryings CharacterDepthOnlyVertex(CharacterDepthOnlyAttributes i, float4 mapST)
+CharCoreVaryings CharCoreVertex(CharCoreAttributes i, float4 mapST)
 {
-    CharacterDepthOnlyVaryings o;
+    CharCoreVaryings o;
 
-    o.positionHCS = TransformObjectToHClip(i.positionOS.xyz);
-    o.normalWS = TransformObjectToWorldNormal(i.normalOS);
+    float3 positionWS = TransformObjectToWorld(i.positionOS);
+    o.positionHCS = TransformWorldToHClip(positionWS);
+    o.normalWS = TransformObjectToWorldNormal(i.normalOS, true);
+    o.color = i.color;
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
-    return o;
-}
+    o.positionWS = positionWS;
 
-float4 CharacterDepthOnlyFragment(CharacterDepthOnlyVaryings i)
-{
-    return i.positionHCS.z;
+    return o;
 }
 
 #endif

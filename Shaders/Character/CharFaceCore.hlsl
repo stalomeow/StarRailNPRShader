@@ -19,17 +19,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _CHARACTER_FACE_CORE_INCLUDED
-#define _CHARACTER_FACE_CORE_INCLUDED
+#ifndef _CHAR_FACE_CORE_INCLUDED
+#define _CHAR_FACE_CORE_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-#include "CharacterOutline.hlsl"
-#include "CharacterCommon.hlsl"
-#include "CharacterUtils.hlsl"
-#include "CharacterShadow.hlsl"
-#include "CharacterDepthOnly.hlsl"
+#include "Shared/CharCore.hlsl"
+#include "Shared/CharDepthOnly.hlsl"
+#include "Shared/CharOutline.hlsl"
+#include "Shared/CharShadow.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_FaceMap); SAMPLER(sampler_FaceMap);
@@ -75,39 +74,35 @@ CBUFFER_START(UnityPerMaterial)
     float4 _MMDHeadBoneRight;
 CBUFFER_END
 
-CharacterVaryings FaceVertex(CharacterAttributes i)
+CharCoreVaryings FaceVertex(CharCoreAttributes i)
 {
-    return CharacterVertex(i, _Maps_ST);
+    return CharCoreVertex(i, _Maps_ST);
 }
 
-float3 GetFaceOrEyeDiffuse(Light light, float4 uv, float3 baseColor, float4 faceMap)
+float3 GetFaceOrEyeDiffuse(Directions dirWS, HeadDirections headDirWS, float4 uv, float3 baseColor, float4 faceMap)
 {
     // 游戏模型才有 UV2
     #if defined(_MODEL_GAME) && defined(_FACEMAPUV2_ON)
         uv.xyzw = uv.zwxy;
     #endif
 
-    float3 up = GetCharacterHeadBoneUpWS(_MMDHeadBoneUp);
-    float3 right = GetCharacterHeadBoneRightWS(_MMDHeadBoneRight);
-    float3 forward = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
-    float3 lightDirProj = normalize(light.direction - dot(light.direction, up) * up); // 做一次投影
+    float3 lightDirProj = normalize(dirWS.L - dot(dirWS.L, headDirWS.up) * headDirWS.up); // 做一次投影
 
-    bool isRight = dot(lightDirProj, right) > 0;
+    bool isRight = dot(lightDirProj, headDirWS.right) > 0;
     float2 sdfUV = isRight ? float2(1 - uv.x, uv.y) : uv.xy;
     float threshold = SAMPLE_TEXTURE2D(_FaceMap, sampler_FaceMap, sdfUV).a;
 
-    float FoL01 = dot(forward, lightDirProj) * 0.5 + 0.5;
+    float FoL01 = dot(headDirWS.forward, lightDirProj) * 0.5 + 0.5;
     float3 faceShadow = lerp(_ShadowColor.rgb, 1, step(1 - threshold, FoL01)); // SDF Shadow
     float3 eyeShadow = lerp(_EyeShadowColor.rgb, 1, smoothstep(0.3, 0.5, FoL01));
     return baseColor * lerp(faceShadow, eyeShadow, faceMap.r);
 }
 
 void FaceOpaqueAndZFragment(
-    CharacterVaryings i,
+    CharCoreVaryings i,
     out float4 colorTarget : SV_Target0,
     out float4 bloomTarget : SV_Target1)
 {
-    // Textures
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
     // 游戏模型才有 UV2
@@ -119,55 +114,56 @@ void FaceOpaqueAndZFragment(
         float4 exprMap = SAMPLE_TEXTURE2D(_ExpressionMap, sampler_ExpressionMap, i.uv.xy);
     #endif
 
-    // Colors
-    float3 baseColor = texColor.rgb;
-    float alpha = texColor.a;
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    DoAlphaClip(alpha, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
-
-    // Calc
     Light light = GetMainLight();
+    Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
+    HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
 
     // Nose Line
-    float3 F = GetCharacterHeadBoneForwardWS(_MMDHeadBoneForward);
-    float3 V = normalize(GetWorldSpaceViewDir(i.positionWS));
-    float3 FdotV = pow(abs(dot(F, V)), _NoseLinePower);
-    baseColor = lerp(baseColor, baseColor * _NoseLineColor.rgb, step(1.03 - faceMap.b, FdotV));
+    float3 FdotV = pow(abs(dot(headDirWS.forward, dirWS.V)), _NoseLinePower);
+    texColor.rgb = lerp(texColor.rgb, texColor.rgb * _NoseLineColor.rgb, step(1.03 - faceMap.b, FdotV));
 
     // Expression
-    float3 exCheek = lerp(baseColor, baseColor * _ExCheekColor.rgb, exprMap.r);
-    baseColor = lerp(baseColor, exCheek, _ExCheekIntensity);
-    float3 exShy = lerp(baseColor, baseColor * _ExShyColor.rgb, exprMap.g);
-    baseColor = lerp(baseColor, exShy, _ExShyIntensity);
-    float3 exShadow = lerp(baseColor, baseColor * _ExShadowColor.rgb, exprMap.b);
-    baseColor = lerp(baseColor, exShadow, _ExShadowIntensity);
-    float3 exEyeShadow = lerp(baseColor, baseColor * _ExEyeColor.rgb, faceMap.r);
-    baseColor = lerp(baseColor, exEyeShadow, _ExShadowIntensity);
+    float3 exCheek = lerp(texColor.rgb, texColor.rgb * _ExCheekColor.rgb, exprMap.r);
+    texColor.rgb = lerp(texColor.rgb, exCheek, _ExCheekIntensity);
+    float3 exShy = lerp(texColor.rgb, texColor.rgb * _ExShyColor.rgb, exprMap.g);
+    texColor.rgb = lerp(texColor.rgb, exShy, _ExShyIntensity);
+    float3 exShadow = lerp(texColor.rgb, texColor.rgb * _ExShadowColor.rgb, exprMap.b);
+    texColor.rgb = lerp(texColor.rgb, exShadow, _ExShadowIntensity);
+    float3 exEyeShadow = lerp(texColor.rgb, texColor.rgb * _ExEyeColor.rgb, faceMap.r);
+    texColor.rgb = lerp(texColor.rgb, exEyeShadow, _ExShadowIntensity);
 
     // Diffuse
-    float3 diffuse = GetFaceOrEyeDiffuse(light, i.uv, baseColor, faceMap);
+    float3 diffuse = GetFaceOrEyeDiffuse(dirWS, headDirWS, i.uv, texColor.rgb, faceMap);
+
+    EmissionData emissionData;
+    emissionData.color = _EmissionColor.rgb;
+    emissionData.value = texColor.a;
+    emissionData.threshold = _EmissionThreshold;
+    emissionData.intensity = _EmissionIntensity;
 
     // 眼睛的高亮
-    float3 emission = GetEmission(baseColor, alpha, _EmissionThreshold, _EmissionIntensity, _EmissionColor.rgb);
+    float3 emission = GetEmission(emissionData, texColor.rgb);
 
     // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
 
     // Output
-    colorTarget = float4(diffuse * light.color + emission, alpha);
+    colorTarget = float4(diffuse * light.color + emission, texColor.a);
     bloomTarget = float4(_BloomIntensity0, 0, 0, 0);
 }
 
-void FaceWriteEyeStencilFragment(CharacterVaryings i)
+void FaceWriteEyeStencilFragment(CharCoreVaryings i)
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     // （尽量）避免后一个角色的眼睛透过前一个角色的头发
-    float sceneDepth = LinearEyeDepth(LoadSceneDepth(i.positionHCS.xy), _ZBufferParams);
-    float eyeDepth = LinearEyeDepth(i.positionHCS.z, _ZBufferParams);
+    float sceneDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(i.positionHCS.xy - 0.5));
+    float eyeDepth = GetLinearEyeDepthAnyProjection(i.positionHCS);
     float depthMask = step(abs(sceneDepth - eyeDepth), _MaxEyeHairDistance * _ModelScale);
 
     // 眼睛、眼眶、眉毛的遮罩（不包括高光）
@@ -182,47 +178,65 @@ void FaceWriteEyeStencilFragment(CharacterVaryings i)
     clip(eyeMask * depthMask - 0.5);
 }
 
-CharacterOutlineVaryings FaceOutlineVertex(CharacterOutlineAttributes i)
+CharOutlineVaryings FaceOutlineVertex(CharOutlineAttributes i)
 {
-    return CharacterFaceOutlineVertex(i, _Maps_ST, _MMDHeadBoneForward, _ModelScale, _OutlineWidth, _OutlineZOffset);
+    VertexPositionInputs vertexInputs = GetVertexPositionInputs(i.positionOS);
+
+    OutlineData outlineData;
+    outlineData.modelScale = _ModelScale;
+    outlineData.width = _OutlineWidth;
+    outlineData.zOffset = _OutlineZOffset;
+
+    #if defined(_MODEL_GAME)
+        HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
+
+        // 当嘴从侧面看在脸外面时再启用描边
+        float3 viewDirWS = normalize(GetWorldSpaceViewDir(vertexInputs.positionWS));
+        float FdotV = pow(max(0, dot(headDirWS.forward, viewDirWS)), 0.8);
+        outlineData.width *= smoothstep(-0.05, 0, 1 - FdotV - i.color.b);
+
+        // TODO: Fix 脸颊的描边。大概是用 vertexColor.g
+    #endif
+
+    return CharOutlineVertex(outlineData, i, vertexInputs, _Maps_ST);
 }
 
-float4 FaceOutlineFragment(CharacterOutlineVaryings i) : SV_Target0
+float4 FaceOutlineFragment(CharOutlineVaryings i) : SV_Target0
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return float4(_OutlineColor0.rgb, 1);
 }
 
-CharacterShadowVaryings FaceShadowVertex(CharacterShadowAttributes i)
+CharShadowVaryings FaceShadowVertex(CharShadowAttributes i)
 {
-    return CharacterShadowVertex(i, _Maps_ST);
+    return CharShadowVertex(i, _Maps_ST);
 }
 
-void FaceShadowFragment(CharacterShadowVaryings i)
+void FaceShadowFragment(CharShadowVaryings i)
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 }
 
-CharacterDepthOnlyVaryings FaceDepthOnlyVertex(CharacterDepthOnlyAttributes i)
+CharDepthOnlyVaryings FaceDepthOnlyVertex(CharDepthOnlyAttributes i)
 {
-    return CharacterDepthOnlyVertex(i, _Maps_ST);
+    return CharDepthOnlyVertex(i, _Maps_ST);
 }
 
-float4 FaceDepthOnlyFragment(CharacterDepthOnlyVaryings i) : SV_Target
+float4 FaceDepthOnlyFragment(CharDepthOnlyVaryings i) : SV_Target
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    return CharacterDepthOnlyFragment(i);
+    return CharDepthOnlyFragment(i);
 }
 
 #endif

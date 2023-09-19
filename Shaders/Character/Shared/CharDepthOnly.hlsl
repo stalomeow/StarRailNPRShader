@@ -19,30 +19,41 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _CHARACTER_DUAL_FACE_INCLUDED
-#define _CHARACTER_DUAL_FACE_INCLUDED
+#ifndef _CHAR_DEPTH_ONLY_INCLUDED
+#define _CHAR_DEPTH_ONLY_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "CharRenderingHelpers.hlsl"
 
-float4 CombineAndTransformDualFaceUV(float2 uv1, float2 uv2, float4 mapST)
+struct CharDepthOnlyAttributes
 {
-    return float4(uv1, uv2) * mapST.xyxy + mapST.zwzw;
+    float4 positionOS   : POSITION;
+    float3 normalOS     : NORMAL;
+    float2 uv1          : TEXCOORD0;
+    float2 uv2          : TEXCOORD1;
+};
+
+struct CharDepthOnlyVaryings
+{
+    float4 positionHCS  : SV_POSITION;
+    float3 normalWS     : NORMAL;
+    float4 uv           : TEXCOORD0;
+};
+
+CharDepthOnlyVaryings CharDepthOnlyVertex(CharDepthOnlyAttributes i, float4 mapST)
+{
+    CharDepthOnlyVaryings o;
+
+    o.positionHCS = TransformObjectToHClip(i.positionOS.xyz);
+    o.normalWS = TransformObjectToWorldNormal(i.normalOS);
+    o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
+
+    return o;
 }
 
-void ValidateDualFaceVaryings(inout float3 normalWS, inout float4 uv, FRONT_FACE_TYPE isFrontFace)
+float4 CharDepthOnlyFragment(CharDepthOnlyVaryings i)
 {
-    // 游戏内的部分模型用了双面渲染
-
-    #if defined(_MODEL_GAME)
-        if (IS_FRONT_VFACE(isFrontFace, 1, 0))
-            return;
-
-        normalWS *= -1;
-
-        #if defined(_BACKFACEUV2_ON)
-            uv.xyzw = uv.zwxy; // Swap two uv
-        #endif
-    #endif
+    return i.positionHCS.z;
 }
 
 #endif

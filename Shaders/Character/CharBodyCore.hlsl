@@ -19,17 +19,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _CHARACTER_BODY_CORE_INCLUDED
-#define _CHARACTER_BODY_CORE_INCLUDED
+#ifndef _CHAR_BODY_CORE_INCLUDED
+#define _CHAR_BODY_CORE_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "CharacterDualFace.hlsl"
-#include "CharacterOutline.hlsl"
-#include "CharacterCommon.hlsl"
-#include "CharacterMaterials.hlsl"
-#include "CharacterShadow.hlsl"
-#include "CharacterDepthOnly.hlsl"
+#include "Shared/CharCore.hlsl"
+#include "Shared/CharDepthOnly.hlsl"
+#include "Shared/CharOutline.hlsl"
+#include "Shared/CharShadow.hlsl"
+#include "CharBodyMaterials.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_LightMap); SAMPLER(sampler_LightMap);
@@ -48,11 +47,11 @@ CBUFFER_START(UnityPerMaterial)
 
     float _RampCoolWarmLerpFactor;
 
-    CHARACTER_MATERIAL_PROPERTY(float4, _SpecularColor);
-    CHARACTER_MATERIAL_PROPERTY(float, _SpecularMetallic);
-    CHARACTER_MATERIAL_PROPERTY(float, _SpecularShininess);
-    CHARACTER_MATERIAL_PROPERTY(float, _SpecularIntensity);
-    CHARACTER_MATERIAL_PROPERTY(float, _SpecularEdgeSoftness);
+    CHAR_MAT_PROP(float4, _SpecularColor);
+    CHAR_MAT_PROP(float, _SpecularMetallic);
+    CHAR_MAT_PROP(float, _SpecularShininess);
+    CHAR_MAT_PROP(float, _SpecularIntensity);
+    CHAR_MAT_PROP(float, _SpecularEdgeSoftness);
 
     float4 _StockingsMap_ST;
     float4 _StockingsColor;
@@ -67,20 +66,20 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionThreshold;
     float _EmissionIntensity;
 
-    CHARACTER_MATERIAL_PROPERTY(float, _BloomIntensity);
+    CHAR_MAT_PROP(float, _BloomIntensity);
 
     float _RimIntensity;
     float _RimIntensityBackFace;
     float _RimThresholdMin;
     float _RimThresholdMax;
     float _RimEdgeSoftness;
-    CHARACTER_MATERIAL_PROPERTY(float, _RimWidth);
-    CHARACTER_MATERIAL_PROPERTY(float4, _RimColor);
-    CHARACTER_MATERIAL_PROPERTY(float, _RimDark);
+    CHAR_MAT_PROP(float, _RimWidth);
+    CHAR_MAT_PROP(float4, _RimColor);
+    CHAR_MAT_PROP(float, _RimDark);
 
     float _OutlineWidth;
     float _OutlineZOffset;
-    CHARACTER_MATERIAL_PROPERTY(float4, _OutlineColor);
+    CHAR_MAT_PROP(float4, _OutlineColor);
 
     float _DitherAlpha;
 CBUFFER_END
@@ -123,33 +122,27 @@ void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget, inout float4 
     #endif
 }
 
-CharacterVaryings BodyVertex(CharacterAttributes i)
+CharCoreVaryings BodyVertex(CharCoreAttributes i)
 {
-    return CharacterVertex(i, _Maps_ST);
+    return CharCoreVertex(i, _Maps_ST);
 }
 
 void BodyColorFragment(
-    CharacterVaryings i,
+    CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC,
     out float4 colorTarget      : SV_Target0,
     out float4 bloomTarget      : SV_Target1)
 {
-    ValidateDualFaceVaryings(i.normalWS, i.uv, isFrontFace);
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
-    // Textures
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     float4 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    // Colors
-    float3 baseColor = texColor.rgb;
-    float alpha = texColor.a;
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    DoAlphaClip(alpha, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
-
-    // HSR Material Properties
-    INIT_CHARACTER_MATERIAL_PROPERTIES_9(lightMap,
+    SELECT_CHAR_MAT_PROPS_9(lightMap,
         float4, specularColor        = _SpecularColor,
         float , specularMetallic     = _SpecularMetallic,
         float , specularShininess    = _SpecularShininess,
@@ -161,47 +154,77 @@ void BodyColorFragment(
         float , bloomIntensity       = _BloomIntensity
     );
 
-    // Calc
     Light light = GetMainLight();
+    Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
-    float3 N = normalize(i.normalWS);
-    float3 V = normalize(GetWorldSpaceViewDir(i.positionWS));
-    float3 L = normalize(light.direction);
-    float3 H = normalize(V + L);
+    ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);
 
-    float NoL = dot(N, L);
-    float NoH = dot(N, H);
-    float NoV = dot(N, V);
+    DiffuseData diffuseData;
+    diffuseData.NoL = dirWS.NoL;
+    diffuseData.singleMaterial = false;
+    diffuseData.rampCoolOrWarm = _RampCoolWarmLerpFactor;
 
-    ApplyStockings(baseColor, i.uv.xy, NoV);
+    SpecularData specularData;
+    specularData.color = specularColor.rgb;
+    specularData.NoH = dirWS.NoH;
+    specularData.shininess = specularShininess;
+    specularData.edgeSoftness = specularEdgeSoftness;
+    specularData.intensity = specularIntensity;
+    specularData.metallic = specularMetallic;
 
-    float3 diffuse = GetDiffuse(NoL, i.color, lightMap, false, baseColor, TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm), _RampCoolWarmLerpFactor);
-    float3 specular = GetSpecular(NoH, lightMap, baseColor, specularColor.rgb, specularShininess, specularEdgeSoftness, specularIntensity, specularMetallic);
-    float3 rimLight = GetRimLight(i.positionHCS, i.normalWS, lightMap, _ModelScale, rimColor.rgb, rimWidth, _RimEdgeSoftness, _RimThresholdMin, _RimThresholdMax, rimDark, _RimIntensity, _RimIntensityBackFace, isFrontFace, _DitherAlpha);
-    float3 emission = GetEmission(baseColor, alpha, _EmissionThreshold, _EmissionIntensity, _EmissionColor.rgb);
+    RimLightData rimLightData;
+    rimLightData.color = rimColor.rgb;
+    rimLightData.width = rimWidth;
+    rimLightData.edgeSoftness = _RimEdgeSoftness;
+    rimLightData.thresholdMin = _RimThresholdMin;
+    rimLightData.thresholdMax = _RimThresholdMax;
+    rimLightData.darkenValue = rimDark;
+    rimLightData.intensityFrontFace = _RimIntensity;
+    rimLightData.intensityBackFace = _RimIntensityBackFace;
+    rimLightData.modelScale = _ModelScale;
+    rimLightData.ditherAlpha = _DitherAlpha;
+
+    EmissionData emissionData;
+    emissionData.color = _EmissionColor.rgb;
+    emissionData.value = texColor.a;
+    emissionData.threshold = _EmissionThreshold;
+    emissionData.intensity = _EmissionIntensity;
+
+    float3 diffuse = GetDiffuse(diffuseData, i.color, texColor.rgb, lightMap,
+        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
+    float3 specular = GetSpecular(specularData, texColor.rgb, lightMap);
+    float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
+    float3 emission = GetEmission(emissionData, texColor.rgb);
 
     // Output
-    colorTarget = float4((diffuse + specular) * light.color + rimLight + emission, alpha);
+    colorTarget = float4((diffuse + specular) * light.color + rimLight + emission, texColor.a);
     bloomTarget = float4(bloomIntensity, 0, 0, 0);
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }
 
-CharacterOutlineVaryings BodyOutlineVertex(CharacterOutlineAttributes i)
+CharOutlineVaryings BodyOutlineVertex(CharOutlineAttributes i)
 {
-    return CharacterOutlineVertex(i, _Maps_ST, _ModelScale, _OutlineWidth, _OutlineZOffset);
+    VertexPositionInputs vertexInputs = GetVertexPositionInputs(i.positionOS);
+
+    OutlineData outlineData;
+    outlineData.modelScale = _ModelScale;
+    outlineData.width = _OutlineWidth;
+    outlineData.zOffset = _OutlineZOffset;
+
+    return CharOutlineVertex(outlineData, i, vertexInputs, _Maps_ST);
 }
 
 void BodyOutlineFragment(
-    CharacterOutlineVaryings i,
+    CharOutlineVaryings i,
     out float4 colorTarget : SV_TARGET0)
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
     float4 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv.xy);
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    INIT_CHARACTER_MATERIAL_PROPERTIES_1(lightMap,
+    SELECT_CHAR_MAT_PROPS_1(lightMap,
         float4, outlineColor = _OutlineColor
     );
 
@@ -210,42 +233,42 @@ void BodyOutlineFragment(
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }
 
-CharacterShadowVaryings BodyShadowVertex(CharacterShadowAttributes i)
+CharShadowVaryings BodyShadowVertex(CharShadowAttributes i)
 {
-    return CharacterShadowVertex(i, _Maps_ST);
+    return CharShadowVertex(i, _Maps_ST);
 }
 
 void BodyShadowFragment(
-    CharacterShadowVaryings i,
+    CharShadowVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC)
 {
-    ValidateDualFaceVaryings(i.normalWS, i.uv, isFrontFace);
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 }
 
-CharacterDepthOnlyVaryings BodyDepthOnlyVertex(CharacterDepthOnlyAttributes i)
+CharDepthOnlyVaryings BodyDepthOnlyVertex(CharDepthOnlyAttributes i)
 {
-    return CharacterDepthOnlyVertex(i, _Maps_ST);
+    return CharDepthOnlyVertex(i, _Maps_ST);
 }
 
 float4 BodyDepthOnlyFragment(
-    CharacterDepthOnlyVaryings i,
+    CharDepthOnlyVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
 {
-    ValidateDualFaceVaryings(i.normalWS, i.uv, isFrontFace);
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DitherAlphaEffect(i.positionHCS, _DitherAlpha);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    return CharacterDepthOnlyFragment(i);
+    return CharDepthOnlyFragment(i);
 }
 
 #endif

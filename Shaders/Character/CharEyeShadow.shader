@@ -69,7 +69,7 @@ Shader "Honkai Star Rail/Character/EyeShadow"
             HLSLPROGRAM
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "CharacterCommon.hlsl"
+            #include "Shared/CharRenderingHelpers.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
@@ -86,7 +86,7 @@ Shader "Honkai Star Rail/Character/EyeShadow"
 
             float4 frag(float4 positionHCS : SV_POSITION) : SV_Target0
             {
-                DitherAlphaEffect(positionHCS, _DitherAlpha);
+                DoDitherAlphaEffect(positionHCS, _DitherAlpha);
                 return _Color;
             }
 
