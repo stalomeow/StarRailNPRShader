@@ -130,14 +130,32 @@ float4 BaseHairOpaqueFragment(
     emissionData.threshold = _EmissionThreshold;
     emissionData.intensity = _EmissionIntensity;
 
-    float3 diffuse = GetDiffuse(diffuseData, i.color, texColor.rgb, lightMap,
+    float3 diffuse = GetRampDiffuse(diffuseData, i.color, texColor.rgb, light.color, lightMap,
         TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
-    float3 specular = GetSpecular(specularData, texColor.rgb, lightMap);
+    float3 specular = GetSpecular(specularData, texColor.rgb, light.color, lightMap);
     float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
+    float3 diffuseAdd = 0;
+    float3 specularAdd = 0;
+    uint pixelLightCount = GetAdditionalLightsCount();
+    LIGHT_LOOP_BEGIN(pixelLightCount)
+        Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+        Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
+        diffuseAdd += GetHalfLambertDiffuse(dirWSAdd.NoL, texColor.rgb, lightAdd.color);
+
+        SpecularData specularDataAdd;
+        specularDataAdd.color = _SpecularColor0.rgb;
+        specularDataAdd.NoH = dirWSAdd.NoH;
+        specularDataAdd.shininess = _SpecularShininess0;
+        specularDataAdd.edgeSoftness = _SpecularEdgeSoftness0;
+        specularDataAdd.intensity = _SpecularIntensity0;
+        specularDataAdd.metallic = 0;
+        specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap);
+    LIGHT_LOOP_END
+
     // Output
-    return float4((diffuse + specular) * light.color + rimLight + emission, texColor.a);
+    return float4(diffuse + specular + rimLight + emission + diffuseAdd + specularAdd, texColor.a);
 }
 
 void HairOpaqueFragment(

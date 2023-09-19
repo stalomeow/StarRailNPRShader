@@ -176,10 +176,11 @@ struct DiffuseData
     float rampCoolOrWarm;
 };
 
-float3 GetDiffuse(
+float3 GetRampDiffuse(
     DiffuseData data,
     float4 vertexColor,
     float3 baseColor,
+    float3 lightColor,
     float4 lightMap,
     TEXTURE2D_PARAM(rampMapCool, sampler_rampMapCool),
     TEXTURE2D_PARAM(rampMapWarm, sampler_rampMapWarm))
@@ -188,7 +189,13 @@ float3 GetDiffuse(
     float3 rampCool = SAMPLE_TEXTURE2D(rampMapCool, sampler_rampMapCool, rampUV).rgb;
     float3 rampWarm = SAMPLE_TEXTURE2D(rampMapWarm, sampler_rampMapWarm, rampUV).rgb;
     float3 rampColor = lerp(rampCool, rampWarm, data.rampCoolOrWarm);
-    return rampColor * baseColor;
+    return rampColor * baseColor * lightColor;
+}
+
+float3 GetHalfLambertDiffuse(float NoL, float3 baseColor, float3 lightColor)
+{
+    float halfLambert = pow(NoL * 0.5 + 0.5, 2);
+    return baseColor * lightColor * halfLambert;
 }
 
 struct SpecularData
@@ -201,7 +208,7 @@ struct SpecularData
     float metallic;
 };
 
-float3 GetSpecular(SpecularData data, float3 baseColor, float4 lightMap)
+float3 GetSpecular(SpecularData data, float3 baseColor, float3 lightColor, float4 lightMap)
 {
     // lightMap.r: specular intensity
     // lightMap.b: specular threshold
@@ -213,7 +220,7 @@ float3 GetSpecular(SpecularData data, float3 baseColor, float4 lightMap)
     // 用 F_Schlick 的效果不好看，我直接用 f0 了
     float3 fresnel = lerp(0.04, baseColor, data.metallic);
 
-    return data.color * fresnel * (blinnPhong * lightMap.r * data.intensity);
+    return data.color * fresnel * lightColor * (blinnPhong * lightMap.r * data.intensity);
 }
 
 struct EmissionData

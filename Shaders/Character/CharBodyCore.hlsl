@@ -190,14 +190,32 @@ void BodyColorFragment(
     emissionData.threshold = _EmissionThreshold;
     emissionData.intensity = _EmissionIntensity;
 
-    float3 diffuse = GetDiffuse(diffuseData, i.color, texColor.rgb, lightMap,
+    float3 diffuse = GetRampDiffuse(diffuseData, i.color, texColor.rgb, light.color, lightMap,
         TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
-    float3 specular = GetSpecular(specularData, texColor.rgb, lightMap);
+    float3 specular = GetSpecular(specularData, texColor.rgb, light.color, lightMap);
     float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
+    float3 diffuseAdd = 0;
+    float3 specularAdd = 0;
+    uint pixelLightCount = GetAdditionalLightsCount();
+    LIGHT_LOOP_BEGIN(pixelLightCount)
+        Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+        Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
+        diffuseAdd += GetHalfLambertDiffuse(dirWSAdd.NoL, texColor.rgb, lightAdd.color);
+
+        SpecularData specularDataAdd;
+        specularDataAdd.color = specularColor.rgb;
+        specularDataAdd.NoH = dirWSAdd.NoH;
+        specularDataAdd.shininess = specularShininess;
+        specularDataAdd.edgeSoftness = specularEdgeSoftness;
+        specularDataAdd.intensity = specularIntensity;
+        specularDataAdd.metallic = specularMetallic;
+        specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap);
+    LIGHT_LOOP_END
+
     // Output
-    colorTarget = float4((diffuse + specular) * light.color + rimLight + emission, texColor.a);
+    colorTarget = float4(diffuse + specular + rimLight + emission + diffuseAdd + specularAdd, texColor.a);
     bloomTarget = float4(bloomIntensity, 0, 0, 0);
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }

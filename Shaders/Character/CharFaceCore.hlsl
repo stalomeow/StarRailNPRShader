@@ -79,7 +79,13 @@ CharCoreVaryings FaceVertex(CharCoreAttributes i)
     return CharCoreVertex(i, _Maps_ST);
 }
 
-float3 GetFaceOrEyeDiffuse(Directions dirWS, HeadDirections headDirWS, float4 uv, float3 baseColor, float4 faceMap)
+float3 GetFaceOrEyeDiffuse(
+    Directions dirWS,
+    HeadDirections headDirWS,
+    float4 uv,
+    float3 baseColor,
+    float3 lightColor,
+    float4 faceMap)
 {
     // 游戏模型才有 UV2
     #if defined(_MODEL_GAME) && defined(_FACEMAPUV2_ON)
@@ -95,7 +101,7 @@ float3 GetFaceOrEyeDiffuse(Directions dirWS, HeadDirections headDirWS, float4 uv
     float FoL01 = dot(headDirWS.forward, lightDirProj) * 0.5 + 0.5;
     float3 faceShadow = lerp(_ShadowColor.rgb, 1, step(1 - threshold, FoL01)); // SDF Shadow
     float3 eyeShadow = lerp(_EyeShadowColor.rgb, 1, smoothstep(0.3, 0.5, FoL01));
-    return baseColor * lerp(faceShadow, eyeShadow, faceMap.r);
+    return baseColor * lightColor * lerp(faceShadow, eyeShadow, faceMap.r);
 }
 
 void FaceOpaqueAndZFragment(
@@ -136,7 +142,7 @@ void FaceOpaqueAndZFragment(
     texColor.rgb = lerp(texColor.rgb, exEyeShadow, _ExShadowIntensity);
 
     // Diffuse
-    float3 diffuse = GetFaceOrEyeDiffuse(dirWS, headDirWS, i.uv, texColor.rgb, faceMap);
+    float3 diffuse = GetFaceOrEyeDiffuse(dirWS, headDirWS, i.uv, texColor.rgb, light.color, faceMap);
 
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
@@ -149,8 +155,16 @@ void FaceOpaqueAndZFragment(
 
     // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
 
+    float3 diffuseAdd = 0;
+    uint pixelLightCount = GetAdditionalLightsCount();
+    LIGHT_LOOP_BEGIN(pixelLightCount)
+        Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+        Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
+        diffuseAdd += GetHalfLambertDiffuse(dirWSAdd.NoL, texColor.rgb, lightAdd.color);
+    LIGHT_LOOP_END
+
     // Output
-    colorTarget = float4(diffuse * light.color + emission, texColor.a);
+    colorTarget = float4(diffuse + emission + diffuseAdd, texColor.a);
     bloomTarget = float4(_BloomIntensity0, 0, 0, 0);
 }
 
