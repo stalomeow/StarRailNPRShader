@@ -276,7 +276,7 @@ namespace HSR.NPRShader.Passes
             {
                 if (s_BloomMaterial == null)
                 {
-                    var shader = Shader.Find("Hidden/Honkai Star Rail/Post Processing/Bloom");
+                    var shader = Shader.Find(StarRailBuiltinShaders.BloomShader);
                     s_BloomMaterial = CoreUtils.CreateEngineMaterial(shader);
                 }
 
@@ -287,7 +287,7 @@ namespace HSR.NPRShader.Passes
             {
                 if (s_UberMaterial == null)
                 {
-                    var shader = Shader.Find("Hidden/Honkai Star Rail/Post Processing/UberPost");
+                    var shader = Shader.Find(StarRailBuiltinShaders.UberPostShader);
                     s_UberMaterial = CoreUtils.CreateEngineMaterial(shader);
                 }
 
