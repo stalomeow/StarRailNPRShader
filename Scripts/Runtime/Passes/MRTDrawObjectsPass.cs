@@ -41,6 +41,8 @@ namespace HSR.NPRShader.Passes
         {
             m_GBuffers = gBuffers;
             m_ColorAttachments = new RTHandle[1 + gBuffers.GBuffers.Length];
+
+            ConfigureInput(ScriptableRenderPassInput.Depth);
         }
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
