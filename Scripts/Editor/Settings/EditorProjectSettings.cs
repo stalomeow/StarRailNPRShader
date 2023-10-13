@@ -38,13 +38,23 @@ namespace HSR.NPRShader.Editor.Settings
         public uint AvatarModelPostprocessorVersion = 0u;
         public uint TexturePostprocessorVersion = 0u;
 
-        private void OnEnable() => hideFlags &= ~HideFlags.NotEditable;
+        private void EnsureEditable() => hideFlags &= ~HideFlags.NotEditable;
+
+        private void OnEnable() => EnsureEditable();
 
         private void OnDisable() => Save();
 
-        public void Save() => Save(true);
+        public void Save()
+        {
+            EnsureEditable();
+            Save(true);
+        }
 
-        public SerializedObject AsSerializedObject() => new(this);
+        public SerializedObject AsSerializedObject()
+        {
+            EnsureEditable();
+            return new SerializedObject(this);
+        }
 
         public const string PathInProjectSettings = "Project/Honkai Star Rail/NPR Shader";
 

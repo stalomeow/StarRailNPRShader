@@ -44,10 +44,7 @@ namespace HSR.NPRShader.Editor.Settings
         private SerializedProperty TexturePostprocessorVersion;
 
         public EditorProjectSettingsProvider(string path, SettingsScope scopes, IEnumerable<string> keywords = null)
-            : base(path, scopes, keywords)
-        {
-            guiHandler = OnGUIHandler;
-        }
+            : base(path, scopes, keywords) { }
 
         public override void OnActivate(string searchContext, VisualElement rootElement)
         {
@@ -69,7 +66,7 @@ namespace HSR.NPRShader.Editor.Settings
             }
         }
 
-        private void OnGUIHandler(string searchContext)
+        public override void OnGUI(string searchContext)
         {
             m_SerializedObject.Update();
 
@@ -113,7 +110,7 @@ namespace HSR.NPRShader.Editor.Settings
         }
 
         [SettingsProvider]
-        public static SettingsProvider CreateAssetProjectSettingsProvider()
+        public static SettingsProvider CreateProjectSettingsProvider()
         {
             return new EditorProjectSettingsProvider(EditorProjectSettings.PathInProjectSettings, SettingsScope.Project);
         }
