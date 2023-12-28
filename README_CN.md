@@ -5,6 +5,10 @@
 
 这是基于 Unity URP 的仿星穹铁道渲染 Shader。这不是逆向工程，Shader 代码不可能和游戏里的一模一样，我只是尽力去还原渲染效果。
 
+![我老婆 0](Screenshots~/sparkle.png)
+
+<p align="center">↑↑↑ 我老婆 ↑↑↑</p>
+
 ![我老婆 1](Screenshots~/silwolf.png)
 
 <p align="center">↑↑↑ 我老婆 ↑↑↑</p>
