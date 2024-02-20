@@ -31,20 +31,14 @@ namespace HSR.NPRShader.PostProcessing
     public class CustomBloom : VolumeComponent, IPostProcessComponent
     {
         public MinFloatParameter Intensity = new(0, 0);
+        public ClampedFloatParameter Scatter = new(0.6f, 0.2f, 4.0f);
         public ColorParameter Tint = new(Color.white, false, false, true);
 
-        [Header("Threshold")]
+        [Header("Color Threshold")]
 
-        public MinFloatParameter ThresholdR = new(0.6f, 0);
-        public MinFloatParameter ThresholdG = new(0.6f, 0);
-        public MinFloatParameter ThresholdB = new(0.6f, 0);
-
-        [Header("Scatter")]
-
-        public ClampedFloatParameter Scatter1 = new(0.6f, 0.2f, 3.0f);
-        public ClampedFloatParameter Scatter2 = new(0.8f, 0.2f, 3.0f);
-        public ClampedFloatParameter Scatter3 = new(1.0f, 0.2f, 3.0f);
-        public ClampedFloatParameter Scatter4 = new(1.2f, 0.2f, 3.0f);
+        [DisplayInfo(name = "Red")] public MinFloatParameter ThresholdR = new(0.6f, 0);
+        [DisplayInfo(name = "Green")] public MinFloatParameter ThresholdG = new(0.6f, 0);
+        [DisplayInfo(name = "Blue")] public MinFloatParameter ThresholdB = new(0.6f, 0);
 
         public CustomBloom()
         {

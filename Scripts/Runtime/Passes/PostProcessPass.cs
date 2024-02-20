@@ -43,7 +43,7 @@ namespace HSR.NPRShader.Passes
 
         public PostProcessPass(ForwardGBuffers gBuffers)
         {
-            renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+            renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
             profilingSampler = new ProfilingSampler("CustomPostProcessing");
 
             m_GBuffers = gBuffers;
@@ -161,7 +161,7 @@ namespace HSR.NPRShader.Passes
                 RTHandle lastRTHandle = m_BloomHighlight;
                 for (int i = 0; i < m_BloomMipDownCount; i++)
                 {
-                    // use bilinear (pass 1) to avoid flickering
+                    // use bilinear (pass 1)
                     Blitter.BlitCameraTexture(cmd, lastRTHandle, m_BloomMipDown1[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, blitMaterial, 1);
                     lastRTHandle = m_BloomMipDown1[i];
@@ -170,7 +170,7 @@ namespace HSR.NPRShader.Passes
                 // Blur vertical
                 for (int i = 0; i < m_BloomMipDownCount; i++)
                 {
-                    cmd.SetGlobalFloat(PropertyUtils._BloomScatter, GetBloomScatterByIndex(i));
+                    cmd.SetGlobalFloat(PropertyUtils._BloomScatter, m_BloomConfig.Scatter.value);
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown2[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 1);
                 }
@@ -178,28 +178,19 @@ namespace HSR.NPRShader.Passes
                 // Blur horizontal
                 for (int i = 0; i < m_BloomMipDownCount; i++)
                 {
-                    cmd.SetGlobalFloat(PropertyUtils._BloomScatter, GetBloomScatterByIndex(i));
+                    cmd.SetGlobalFloat(PropertyUtils._BloomScatter, m_BloomConfig.Scatter.value);
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown2[i], m_BloomMipDown1[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 2);
                 }
 
-                // Add m_BloomMipDown1[1..] to m_BloomMipDown1[0]
-                for (int i = 1; i < m_BloomMipDownCount; i++)
+                // Mip up
+                for (int i = m_BloomMipDownCount - 1; i >= 1; i--)
                 {
-                    Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown1[0],
+                    Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown1[i - 1],
                         RenderBufferLoadAction.Load, RenderBufferStoreAction.Store, bloomMaterial, 3);
                 }
             }
         }
-
-        private float GetBloomScatterByIndex(int i) => i switch
-        {
-            0 => m_BloomConfig.Scatter1.value,
-            1 => m_BloomConfig.Scatter2.value,
-            2 => m_BloomConfig.Scatter3.value,
-            3 => m_BloomConfig.Scatter4.value,
-            _ => throw new NotSupportedException()
-        };
 
         #endregion
 

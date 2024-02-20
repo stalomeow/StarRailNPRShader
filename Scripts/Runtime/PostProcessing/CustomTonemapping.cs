@@ -34,11 +34,11 @@ namespace HSR.NPRShader.PostProcessing
 
         [Header("ACES Parameters")]
 
-        [DisplayInfo(name = "Param A"), AdditionalProperty] public FloatParameter ACESParamA = new(2.80f);
-        [DisplayInfo(name = "Param B"), AdditionalProperty] public FloatParameter ACESParamB = new(0.40f);
-        [DisplayInfo(name = "Param C"), AdditionalProperty] public FloatParameter ACESParamC = new(2.10f);
-        [DisplayInfo(name = "Param D"), AdditionalProperty] public FloatParameter ACESParamD = new(0.50f);
-        [DisplayInfo(name = "Param E"), AdditionalProperty] public FloatParameter ACESParamE = new(1.50f);
+        [DisplayInfo(name = "Param A")] public FloatParameter ACESParamA = new(2.80f);
+        [DisplayInfo(name = "Param B")] public FloatParameter ACESParamB = new(0.40f);
+        [DisplayInfo(name = "Param C")] public FloatParameter ACESParamC = new(2.10f);
+        [DisplayInfo(name = "Param D")] public FloatParameter ACESParamD = new(0.50f);
+        [DisplayInfo(name = "Param E")] public FloatParameter ACESParamE = new(1.50f);
 
         public CustomTonemapping()
         {
