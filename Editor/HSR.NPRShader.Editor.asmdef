@@ -1,0 +1,19 @@
+{
+    "name": "HSR.NPRShader.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6a57a02e00e601a45b8e15e0652b5700",
+        "GUID:67bcdf7bcb10dda49a0bd6ef19018e3d"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

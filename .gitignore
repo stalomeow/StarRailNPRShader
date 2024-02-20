@@ -1,1 +1,4 @@
-*.meta
+/Shaders/Character/GlassEdges.shader
+/Shaders/Character/GlassEdges.shader.meta
+/Shaders/Character/GlassEdgesCore.hlsl
+/Shaders/Character/GlassEdgesCore.hlsl.meta

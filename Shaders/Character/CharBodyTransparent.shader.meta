@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 10088bb375bd73d478691e66f3ee13df
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures:
+  - _MainTex: {instanceID: 0}
+  - _LightMap: {instanceID: 0}
+  - _RampMapCool: {instanceID: 0}
+  - _RampMapWarm: {instanceID: 0}
+  - _StockingsMap: {instanceID: 0}
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
