@@ -34,9 +34,8 @@ namespace HSR.NPRShader.Passes
         private readonly ProfilingSampler m_UberPostSampler;
 
         private RTHandle m_BloomHighlight;
-        private readonly int m_BloomMipDownCount;
-        private readonly RTHandle[] m_BloomMipDown1;
-        private readonly RTHandle[] m_BloomMipDown2;
+        private RTHandle[] m_BloomMipDown1;
+        private RTHandle[] m_BloomMipDown2;
 
         private CustomBloom m_BloomConfig;
         private CustomTonemapping m_TonemappingConfig;
@@ -51,9 +50,8 @@ namespace HSR.NPRShader.Passes
             m_UberPostSampler = new ProfilingSampler("UberPost");
 
             m_BloomHighlight = null;
-            m_BloomMipDownCount = 4;
-            m_BloomMipDown1 = new RTHandle[m_BloomMipDownCount];
-            m_BloomMipDown2 = new RTHandle[m_BloomMipDownCount];
+            m_BloomMipDown1 = Array.Empty<RTHandle>();
+            m_BloomMipDown2 = Array.Empty<RTHandle>();
         }
 
         public void Dispose()
@@ -65,6 +63,11 @@ namespace HSR.NPRShader.Passes
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             base.Configure(cmd, cameraTextureDescriptor);
+
+            VolumeStack stack = VolumeManager.instance.stack;
+            m_BloomConfig = stack.GetComponent<CustomBloom>();
+            m_TonemappingConfig = stack.GetComponent<CustomTonemapping>();
+
             AllocateBloomRTHandles(in cameraTextureDescriptor);
         }
 
@@ -76,10 +79,6 @@ namespace HSR.NPRShader.Passes
             }
 
             CommandBuffer cmd = CommandBufferPool.Get();
-            VolumeStack stack = VolumeManager.instance.stack;
-
-            m_BloomConfig = stack.GetComponent<CustomBloom>();
-            m_TonemappingConfig = stack.GetComponent<CustomTonemapping>();
 
             using (new ProfilingScope(cmd, profilingSampler))
             {
@@ -95,11 +94,18 @@ namespace HSR.NPRShader.Passes
 
         private void AllocateBloomRTHandles(in RenderTextureDescriptor cameraTextureDescriptor)
         {
+            if (!m_BloomConfig.IsActive())
+            {
+                return;
+            }
+
+            EnsureBloomMipDownArraySize();
+
             RenderTextureDescriptor descriptor = cameraTextureDescriptor;
             descriptor.depthBufferBits = 0;
             descriptor.msaaSamples = 1;
 
-            for (int i = -1; i < m_BloomMipDownCount; i++)
+            for (int i = -1; i < m_BloomConfig.Iteration.value; i++)
             {
                 descriptor.width = Mathf.Max(1, descriptor.width >> 1);
                 descriptor.height = Mathf.Max(1, descriptor.height >> 1);
@@ -115,9 +121,26 @@ namespace HSR.NPRShader.Passes
             }
         }
 
+        private void EnsureBloomMipDownArraySize()
+        {
+            for (int i = m_BloomConfig.Iteration.value; i < m_BloomMipDown1.Length; i++)
+            {
+                m_BloomMipDown1[i]?.Release();
+            }
+
+            for (int i = m_BloomConfig.Iteration.value; i < m_BloomMipDown2.Length; i++)
+            {
+                m_BloomMipDown2[i]?.Release();
+            }
+
+            Array.Resize(ref m_BloomMipDown1, m_BloomConfig.Iteration.value);
+            Array.Resize(ref m_BloomMipDown2, m_BloomConfig.Iteration.value);
+        }
+
         private void ReleaseBloomRTHandles()
         {
             m_BloomHighlight?.Release();
+            m_BloomHighlight = null;
 
             foreach (RTHandle rtHandle in m_BloomMipDown1)
             {
@@ -128,6 +151,9 @@ namespace HSR.NPRShader.Passes
             {
                 rtHandle?.Release();
             }
+
+            m_BloomMipDown1 = Array.Empty<RTHandle>();
+            m_BloomMipDown2 = Array.Empty<RTHandle>();
         }
 
         private void ExecuteBloom(CommandBuffer cmd, ref RenderingData renderingData)
@@ -159,7 +185,7 @@ namespace HSR.NPRShader.Passes
 
                 // Mip down
                 RTHandle lastRTHandle = m_BloomHighlight;
-                for (int i = 0; i < m_BloomMipDownCount; i++)
+                for (int i = 0; i < m_BloomMipDown1.Length; i++)
                 {
                     // use bilinear (pass 1)
                     Blitter.BlitCameraTexture(cmd, lastRTHandle, m_BloomMipDown1[i],
@@ -168,7 +194,7 @@ namespace HSR.NPRShader.Passes
                 }
 
                 // Blur vertical
-                for (int i = 0; i < m_BloomMipDownCount; i++)
+                for (int i = 0; i < m_BloomMipDown1.Length; i++)
                 {
                     cmd.SetGlobalFloat(PropertyUtils._BloomScatter, m_BloomConfig.Scatter.value);
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown2[i],
@@ -176,7 +202,7 @@ namespace HSR.NPRShader.Passes
                 }
 
                 // Blur horizontal
-                for (int i = 0; i < m_BloomMipDownCount; i++)
+                for (int i = 0; i < m_BloomMipDown1.Length; i++)
                 {
                     cmd.SetGlobalFloat(PropertyUtils._BloomScatter, m_BloomConfig.Scatter.value);
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown2[i], m_BloomMipDown1[i],
@@ -184,7 +210,7 @@ namespace HSR.NPRShader.Passes
                 }
 
                 // Mip up
-                for (int i = m_BloomMipDownCount - 1; i >= 1; i--)
+                for (int i = m_BloomMipDown1.Length - 1; i >= 1; i--)
                 {
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown1[i - 1],
                         RenderBufferLoadAction.Load, RenderBufferStoreAction.Store, bloomMaterial, 3);

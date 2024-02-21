@@ -32,6 +32,7 @@ namespace HSR.NPRShader.PostProcessing
     {
         public MinFloatParameter Intensity = new(0, 0);
         public ClampedFloatParameter Scatter = new(0.6f, 0.2f, 4.0f);
+        public ClampedIntParameter Iteration = new(4, 4, 8);
         public ColorParameter Tint = new(Color.white, false, false, true);
 
         [Header("Color Threshold")]
