@@ -65,7 +65,7 @@ Shader "Honkai Star Rail/Character/Face"
         _NoseLinePower("Power", Range(0, 8)) = 1
 
         [HeaderFoldout(Eye Hair Blend)]
-        _MaxEyeHairDistance("Max Eye Hair Distance", Float) = 0.1
+        _MaxEyeHairDistance("Max Eye Hair Distance", Float) = 0.2
 
         [HeaderFoldout(Expression)]
         _ExCheekColor("Cheek Color", Color) = (1, 1, 1, 1)
