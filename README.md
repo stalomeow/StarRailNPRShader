@@ -7,21 +7,13 @@
 
 Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
 
-![my wife 0](Screenshots~/sparkle.png)
+![sparkle](Screenshots~/sparkle.png)
 
-<p align="center">↑↑↑ My Wife ↑↑↑</p>
+<p align="center">↑↑↑ Sparkle ↑↑↑</p>
 
-![my wife 1](Screenshots~/silwolf.png)
+![firefly](Screenshots~/firefly.png)
 
-<p align="center">↑↑↑ My Wife ↑↑↑</p>
-
-![my wife 2](Screenshots~/fuxuan_near.png)
-
-<p align="center">↑↑↑ Also My Wife ↑↑↑</p>
-
-![our mum](Screenshots~/kafka_near.png)
-
-<p align="center">↑↑↑ Our Mum ↑↑↑</p>
+<p align="center">↑↑↑ Firefly ↑↑↑</p>
 
 ## Character Shaders
 
@@ -31,9 +23,7 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 - Honkai Star Rail/Character/Face
 - Honkai Star Rail/Character/Hair
 
-The rendering of character takes advantage of MRT whose pass is always executed after UniversalForward. As a result, when it comes to transparent objects, the rendering result may go wrong. 
-
-*To maintain this project more easily, I won't rewrite the whole render pipeline. You can do it yourself.
+The rendering of character takes advantage of MRT whose pass is always executed after UniversalForward. Transparent objects using normal URP Shader and transparent objects on characters are divided into two groups for rendering, which may cause problems.
 
 ## Post-processing
 
@@ -44,15 +34,14 @@ The rendering of character takes advantage of MRT whose pass is always executed 
 
     where $a,b,c,d,e$ are all parameters.
 
-## Requirements
+## Install via git URL
 
-- Basic knowledge of anime style rendering!!!
-- Unity >= 2022.3.
-- Universal RP >= 14.0.
-- My [ShaderUtilsForSRP](https://github.com/stalomeow/ShaderUtilsForSRP) package.
-- (Optional) Newtonsoft Json package >= 3.2.1.
+**This package requires Unity >= 2022.3.**
 
-Newtonsoft Json is used by a custom editor util called `Game Material Inspector` which can help us read Material JSON files ripped by a certain tool. To enable that util, add the scripting define symbol `PACKAGE_NEWTONSOFT_JSON` in player settings after importing Newtonsoft Json package.
+![install](Screenshots~/_install.png)
+
+1. https://github.com/stalomeow/ShaderUtilsForSRP.git
+2. https://github.com/stalomeow/StarRailNPRShader.git
 
 ## Guide
 
@@ -79,6 +68,12 @@ The path patterns of the assets that need preprocessing can be configured in `Pr
 
 ![asset-path-patterns](Screenshots~/_asset_path_patterns.png)
 
+### Working with HSRMaterialViewer
+
+HSRMaterialViewer can help you view `material.json` files and automatically assign some properties (not all properties) of materials. **Applying Floats and Ints are not well supported by this tool.**
+
+![hsr-mat-viewer](Screenshots~/_hsr_mat_viewer.gif)
+
 ### For MMD models
 
 Some extra steps must be done:
@@ -88,7 +83,7 @@ Some extra steps must be done:
 
     ![sync-mmd-head-bone](Screenshots~/_sync_mmd_head_bone.png)
 
-    Now, you can override the direction values of the head bone. Besides, two presets are provided in the context menu of the component.
+    You can override the direction values of the head bone. Besides, two presets are provided in the context menu of the component.
 
     ![sync-mmd-head-bone-ex](Screenshots~/_sync_mmd_head_bone_ex.png)
 
