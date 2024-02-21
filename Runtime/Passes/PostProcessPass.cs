@@ -42,12 +42,12 @@ namespace HSR.NPRShader.Passes
 
         public PostProcessPass(ForwardGBuffers gBuffers)
         {
-            renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
-            profilingSampler = new ProfilingSampler("CustomPostProcessing");
+            renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+            profilingSampler = new ProfilingSampler("Render StarRail PostProcessing");
 
             m_GBuffers = gBuffers;
             m_BloomSampler = new ProfilingSampler("Bloom");
-            m_UberPostSampler = new ProfilingSampler("UberPost");
+            m_UberPostSampler = new ProfilingSampler("UberPostProcess");
 
             m_BloomHighlight = null;
             m_BloomMipDown1 = Array.Empty<RTHandle>();

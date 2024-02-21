@@ -195,8 +195,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
             Tags
             {
-                // 与 BodyOpaque 保持一致
-                "LightMode" = "HSRForward3"
+                "LightMode" = "HSRForwardTransparent"
             }
 
             Stencil

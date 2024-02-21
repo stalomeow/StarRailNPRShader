@@ -38,9 +38,7 @@ namespace HSR.NPRShader
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueForward3Pass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueOutlinePass;
 
-        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentForward1Pass;
-        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentForward2Pass;
-        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentForward3Pass;
+        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentForwardPass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentOutlinePass;
 
         [NonSerialized] private PostProcessPass m_PostProcessPass;
@@ -55,7 +53,7 @@ namespace HSR.NPRShader
             (
                 gBuffers   : m_GBuffers,
                 isOpaque   : true,
-                profilerTag: "CustomOpaque (1)",
+                profilerTag: "DrawStarRailOpaque (1)",
                 shaderTagId: new ShaderTagId("HSRForward1"),
                 layerMask  : -1
             );
@@ -63,7 +61,7 @@ namespace HSR.NPRShader
             (
                 gBuffers   : m_GBuffers,
                 isOpaque   : true,
-                profilerTag: "CustomOpaque (2)",
+                profilerTag: "DrawStarRailOpaque (2)",
                 shaderTagId: new ShaderTagId("HSRForward2"),
                 layerMask  : -1
             );
@@ -71,7 +69,7 @@ namespace HSR.NPRShader
             (
                 gBuffers   : m_GBuffers,
                 isOpaque   : true,
-                profilerTag: "CustomOpaque (3)",
+                profilerTag: "DrawStarRailOpaque (3)",
                 shaderTagId: new ShaderTagId("HSRForward3"),
                 layerMask  : -1
             );
@@ -79,40 +77,24 @@ namespace HSR.NPRShader
             (
                 gBuffers   : m_GBuffers,
                 isOpaque   : true,
-                profilerTag: "CustomOpaque (Outline)",
+                profilerTag: "DrawStarRailOpaque (Outline)",
                 shaderTagId: new ShaderTagId("HSROutline"),
                 layerMask  : -1
             );
 
-            m_DrawTransparentForward1Pass = new MRTDrawObjectsPass
+            m_DrawTransparentForwardPass = new MRTDrawObjectsPass
             (
                 gBuffers   : m_GBuffers,
                 isOpaque   : false,
-                profilerTag: "CustomTransparent (1)",
-                shaderTagId: new ShaderTagId("HSRForward1"),
-                layerMask  : -1
-            );
-            m_DrawTransparentForward2Pass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : false,
-                profilerTag: "CustomTransparent (2)",
-                shaderTagId: new ShaderTagId("HSRForward2"),
-                layerMask  : -1
-            );
-            m_DrawTransparentForward3Pass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : false,
-                profilerTag: "CustomTransparent (3)",
-                shaderTagId: new ShaderTagId("HSRForward3"),
+                profilerTag: "DrawStarRailTransparent",
+                shaderTagId: new ShaderTagId("HSRForwardTransparent"),
                 layerMask  : -1
             );
             m_DrawTransparentOutlinePass = new MRTDrawObjectsPass
             (
                 gBuffers   : m_GBuffers,
                 isOpaque   : false,
-                profilerTag: "CustomTransparent (Outline)",
+                profilerTag: "DrawStarRailTransparent (Outline)",
                 shaderTagId: new ShaderTagId("HSROutline"),
                 layerMask  : -1
             );
@@ -129,9 +111,7 @@ namespace HSR.NPRShader
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
             renderer.EnqueuePass(m_DrawOpaqueOutlinePass);
 
-            renderer.EnqueuePass(m_DrawTransparentForward1Pass);
-            renderer.EnqueuePass(m_DrawTransparentForward2Pass);
-            renderer.EnqueuePass(m_DrawTransparentForward3Pass);
+            renderer.EnqueuePass(m_DrawTransparentForwardPass);
             renderer.EnqueuePass(m_DrawTransparentOutlinePass);
 
             renderer.EnqueuePass(m_PostProcessPass);
