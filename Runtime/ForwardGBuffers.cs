@@ -38,7 +38,7 @@ namespace HSR.NPRShader
         public void ReAllocateBuffersIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
         {
             RenderTextureDescriptor bloomBufferDescriptor = cameraTextureDescriptor;
-            bloomBufferDescriptor.colorFormat = RenderTextureFormat.R16;
+            bloomBufferDescriptor.colorFormat = RenderTextureFormat.RHalf;
             bloomBufferDescriptor.depthBufferBits = 0;
 
             for (int i = 0; i < GBuffers.Length; i++)
