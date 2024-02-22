@@ -282,7 +282,7 @@ float3 GetRimLight(
     rimWidth *= 10.0 * rsqrt(depth / rimLightData.modelScale); // 近大远小
 
     float3 normalVS = TransformWorldToViewNormal(normalWS);
-    float2 indexOffset = normalize(normalVS.xy) * rimWidth;
+    float2 indexOffset = float2(sign(normalVS.x), 0) * rimWidth; // 只横向偏移
     uint2 index = clamp(svPosition.xy - 0.5 + indexOffset, 0, _ScaledScreenParams.xy - 1); // 避免出界
     float offsetDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(index));
 

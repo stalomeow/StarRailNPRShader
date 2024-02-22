@@ -63,7 +63,7 @@ Shader "Honkai Star Rail/Character/Hair"
         _BloomIntensity0("Intensity", Range(0, 2)) = 0.5
 
         [HeaderFoldout(Rim Light)]
-        _RimIntensity("Intensity (Front)", Range(0, 1)) = 1
+        _RimIntensity("Intensity (Front)", Range(0, 1)) = 0.5
         _RimIntensityBackFace("Intensity (Back)", Range(0, 1)) = 0
         _RimThresholdMin("Threshold Min", Float) = 0.6
         _RimThresholdMax("Threshold Max", Float) = 0.9
