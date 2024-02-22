@@ -27,6 +27,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Shared/CharCore.hlsl"
 #include "Shared/CharDepthOnly.hlsl"
+#include "Shared/CharDepthNormals.hlsl"
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
 
@@ -252,6 +253,21 @@ float4 FaceDepthOnlyFragment(CharDepthOnlyVaryings i) : SV_Target
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthOnlyFragment(i);
+}
+
+CharDepthNormalsVaryings FaceDepthNormalsVertex(CharDepthNormalsAttributes i)
+{
+    return CharDepthNormalsVertex(i, _Maps_ST);
+}
+
+float4 FaceDepthNormalsFragment(CharDepthNormalsVaryings i) : SV_Target
+{
+    float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
+
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+
+    return CharDepthNormalsFragment(i);
 }
 
 #endif

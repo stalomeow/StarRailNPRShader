@@ -257,12 +257,37 @@ Shader "Honkai Star Rail/Character/Face"
 
             Cull Back
             ZWrite On
-            ColorMask 0
+            ColorMask R
 
             HLSLPROGRAM
 
             #pragma vertex FaceDepthOnlyVertex
             #pragma fragment FaceDepthOnlyFragment
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+
+            #include "CharFaceCore.hlsl"
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "FaceDepthNormals"
+
+            Tags
+            {
+                "LightMode" = "DepthNormals"
+            }
+
+            Cull Back
+            ZWrite On
+
+            HLSLPROGRAM
+
+            #pragma vertex FaceDepthNormalsVertex
+            #pragma fragment FaceDepthNormalsFragment
 
             #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON

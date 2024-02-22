@@ -26,6 +26,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Shared/CharCore.hlsl"
 #include "Shared/CharDepthOnly.hlsl"
+#include "Shared/CharDepthNormals.hlsl"
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
 #include "CharBodyMaterials.hlsl"
@@ -289,6 +290,26 @@ float4 BodyDepthOnlyFragment(
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthOnlyFragment(i);
+}
+
+CharDepthNormalsVaryings BodyDepthNormalsVertex(CharDepthNormalsAttributes i)
+{
+    return CharDepthNormalsVertex(i, _Maps_ST);
+}
+
+float4 BodyDepthNormalsFragment(
+    CharDepthNormalsVaryings i,
+    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
+{
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
+
+    float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
+    texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
+
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+
+    return CharDepthNormalsFragment(i);
 }
 
 #endif

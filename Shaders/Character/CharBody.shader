@@ -304,12 +304,38 @@ Shader "Honkai Star Rail/Character/Body"
 
             Cull [_Cull]
             ZWrite On
-            ColorMask 0
+            ColorMask R
 
             HLSLPROGRAM
 
             #pragma vertex BodyDepthOnlyVertex
             #pragma fragment BodyDepthOnlyFragment
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
+
+            #include "CharBodyCore.hlsl"
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "BodyDepthNormals"
+
+            Tags
+            {
+                "LightMode" = "DepthNormals"
+            }
+
+            Cull [_Cull]
+            ZWrite On
+
+            HLSLPROGRAM
+
+            #pragma vertex BodyDepthNormalsVertex
+            #pragma fragment BodyDepthNormalsFragment
 
             #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
