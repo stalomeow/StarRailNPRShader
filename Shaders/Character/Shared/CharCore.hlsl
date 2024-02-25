@@ -23,9 +23,9 @@
 #define _CHAR_CORE_INCLUDED
 
 // ==========================
-// Stencil 使用低三位，高 -> 低
-// 1      1      1
-// 头发    脸     眼睛
+// Stencil 使用低三位，高 <- 低
+// 1         1         1
+// 透明物体   眼睛       角色
 // ==========================
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -47,18 +47,20 @@ struct CharCoreVaryings
     float4 color          : COLOR;
     float4 uv             : TEXCOORD0;
     float3 positionWS     : TEXCOORD1;
+    float4 shadowCoord    : TEXCOORD2;
 };
 
 CharCoreVaryings CharCoreVertex(CharCoreAttributes i, float4 mapST)
 {
     CharCoreVaryings o;
+    VertexPositionInputs positionInputs = GetVertexPositionInputs(i.positionOS);
 
-    float3 positionWS = TransformObjectToWorld(i.positionOS);
-    o.positionHCS = TransformWorldToHClip(positionWS);
+    o.positionHCS = positionInputs.positionCS;
     o.normalWS = TransformObjectToWorldNormal(i.normalOS, true);
     o.color = i.color;
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
-    o.positionWS = positionWS;
+    o.positionWS = positionInputs.positionWS;
+    o.shadowCoord = GetShadowCoord(positionInputs);
 
     return o;
 }

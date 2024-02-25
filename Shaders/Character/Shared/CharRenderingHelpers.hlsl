@@ -140,7 +140,7 @@ HeadDirections GetWorldSpaceCharHeadDirectionsImpl(
 // NPR
 // ----------------------------------------------------------------------------------
 
-float2 GetRampUV(float NoL, bool singleMaterial, float4 vertexColor, float4 lightMap)
+float2 GetRampUV(float NoL, bool singleMaterial, float4 vertexColor, float4 lightMap, float shadowAttenuation)
 {
     // 头发 Ramp 上一共 2 条颜色，对应一个材质
     // 身体 Ramp 上一共 16 条颜色，每两条对应一个材质，共 8 种材质
@@ -154,17 +154,14 @@ float2 GetRampUV(float NoL, bool singleMaterial, float4 vertexColor, float4 ligh
     #endif
 
     float NoL01 = NoL * 0.5 + 0.5;
-    float threshold = (NoL01 + ao) * 0.5;
-    float shadowStrength = (0.5 - threshold) / 0.5;
-    float shadow = 1 - saturate(shadowStrength / 0.5);
 
-    // Ramp 图从左到右的变化规律：暗 -> 亮 -> 暗 -> 亮
-    // 左边一部分应该是混合 Shadow Map 的
-    shadow = lerp(0.20, 1, shadow); // 这里只用右边一半
+    float shadow = min(1.0f, dot(NoL01.xx, 2 * ao.xx));
+    shadow = max(0.001f, shadow) * 0.75f + 0.25f;
+    shadow = (shadow > 1) ? 0.99f : shadow;
+
+    shadow = lerp(0.20, shadow, shadowAttenuation);
     shadow = lerp(0, shadow, step(0.05, ao)); // AO < 0.05 的区域（自阴影区域）永远不受光
     shadow = lerp(1, shadow, step(ao, 0.95)); // AO > 0.95 的区域永远受最强光
-
-    // TODO: 混合 Shadow Map（需要改管线）
 
     return float2(shadow, material + 0.05);
 }
@@ -183,9 +180,10 @@ float3 GetRampDiffuse(
     float3 lightColor,
     float4 lightMap,
     TEXTURE2D_PARAM(rampMapCool, sampler_rampMapCool),
-    TEXTURE2D_PARAM(rampMapWarm, sampler_rampMapWarm))
+    TEXTURE2D_PARAM(rampMapWarm, sampler_rampMapWarm),
+    float shadowAttenuation)
 {
-    float2 rampUV = GetRampUV(data.NoL, data.singleMaterial, vertexColor, lightMap);
+    float2 rampUV = GetRampUV(data.NoL, data.singleMaterial, vertexColor, lightMap, shadowAttenuation);
     float3 rampCool = SAMPLE_TEXTURE2D(rampMapCool, sampler_rampMapCool, rampUV).rgb;
     float3 rampWarm = SAMPLE_TEXTURE2D(rampMapWarm, sampler_rampMapWarm, rampUV).rgb;
     float3 rampColor = lerp(rampCool, rampWarm, data.rampCoolOrWarm);
@@ -208,7 +206,7 @@ struct SpecularData
     float metallic;
 };
 
-float3 GetSpecular(SpecularData data, float3 baseColor, float3 lightColor, float4 lightMap)
+float3 GetSpecular(SpecularData data, float3 baseColor, float3 lightColor, float4 lightMap, float shadowAttenuation)
 {
     // lightMap.r: specular intensity
     // lightMap.b: specular threshold
@@ -220,7 +218,7 @@ float3 GetSpecular(SpecularData data, float3 baseColor, float3 lightColor, float
     // 用 F_Schlick 的效果不好看，我直接用 f0 了
     float3 fresnel = lerp(0.04, baseColor, data.metallic);
 
-    return data.color * fresnel * lightColor * (blinnPhong * lightMap.r * data.intensity);
+    return data.color * fresnel * lightColor * (blinnPhong * lightMap.r * data.intensity * shadowAttenuation);
 }
 
 struct EmissionData

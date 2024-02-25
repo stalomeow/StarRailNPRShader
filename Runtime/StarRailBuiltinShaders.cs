@@ -29,6 +29,7 @@ namespace HSR.NPRShader
     {
         public const string BloomShader = "Hidden/Honkai Star Rail/Post Processing/Bloom";
         public const string UberPostShader = "Hidden/Honkai Star Rail/Post Processing/UberPost";
+        public const string ScreenSpaceShadowsShader = "Hidden/Honkai Star Rail/Shadow/ScreenSpaceShadows";
 
         public static IEnumerable<Shader> Walk()
         {

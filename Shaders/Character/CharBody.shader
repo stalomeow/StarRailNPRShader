@@ -199,6 +199,16 @@ Shader "Honkai Star Rail/Character/Body"
                 "LightMode" = "HSRForward3"
             }
 
+            // 角色的 Stencil
+            Stencil
+            {
+                Ref 1
+                WriteMask 1
+                Comp Always
+                Pass Replace
+                Fail Keep
+            }
+
             Cull [_Cull]
             ZWrite On
 
@@ -218,6 +228,9 @@ Shader "Honkai Star Rail/Character/Body"
             #pragma shader_feature_local_fragment _ _SINGLEMATERIAL_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
+            #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+
             #include "CharBodyCore.hlsl"
 
             ENDHLSL
@@ -230,6 +243,16 @@ Shader "Honkai Star Rail/Character/Body"
             Tags
             {
                 "LightMode" = "HSROutline"
+            }
+
+            // 角色的 Stencil
+            Stencil
+            {
+                Ref 1
+                WriteMask 1
+                Comp Always
+                Pass Replace
+                Fail Keep
             }
 
             Cull Front
@@ -261,19 +284,18 @@ Shader "Honkai Star Rail/Character/Body"
 
         Pass
         {
-            Name "BodyShadow"
+            Name "PerObjectShadow"
 
             Tags
             {
-                "LightMode" = "ShadowCaster"
+                "LightMode" = "HSRShadowCaster"
             }
 
             Cull [_Cull]
             ZWrite On
             ZTest LEqual
 
-            ColorMask 0 0
-            ColorMask 0 1
+            ColorMask 0
 
             HLSLPROGRAM
 

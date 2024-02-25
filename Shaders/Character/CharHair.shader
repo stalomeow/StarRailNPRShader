@@ -112,11 +112,11 @@ Shader "Honkai Star Rail/Character/Hair"
             // 没有遮住眼睛的部分
             Stencil
             {
-                Ref 7
-                ReadMask 1   // 眼睛位
-                WriteMask 4  // 头发位
+                Ref 3
+                ReadMask 2   // 眼睛位
+                WriteMask 1  // 角色
                 Comp NotEqual
-                Pass Replace // 写入头发位
+                Pass Replace // 写入角色位
                 Fail Keep
             }
 
@@ -138,6 +138,9 @@ Shader "Honkai Star Rail/Character/Hair"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
+            #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+
             #include "CharHairCore.hlsl"
 
             ENDHLSL
@@ -155,11 +158,11 @@ Shader "Honkai Star Rail/Character/Hair"
             // 遮住眼睛的部分
             Stencil
             {
-                Ref 7
-                ReadMask 1   // 眼睛位
-                WriteMask 4  // 头发位
+                Ref 3
+                ReadMask 2   // 眼睛位
+                WriteMask 2  // 眼睛位
                 Comp Equal
-                Pass Replace // 写入头发位
+                Pass Zero    // 清除眼睛位
                 Fail Keep
             }
 
@@ -183,6 +186,9 @@ Shader "Honkai Star Rail/Character/Hair"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
+            #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+
             #include "CharHairCore.hlsl"
 
             ENDHLSL
@@ -195,6 +201,16 @@ Shader "Honkai Star Rail/Character/Hair"
             Tags
             {
                 "LightMode" = "HSROutline"
+            }
+
+            // 角色的 Stencil
+            Stencil
+            {
+                Ref 1
+                WriteMask 1
+                Comp Always
+                Pass Replace
+                Fail Keep
             }
 
             Cull Front
@@ -221,19 +237,18 @@ Shader "Honkai Star Rail/Character/Hair"
 
         Pass
         {
-            Name "HairShadow"
+            Name "PerObjectShadow"
 
             Tags
             {
-                "LightMode" = "ShadowCaster"
+                "LightMode" = "HSRShadowCaster"
             }
 
             Cull [_Cull]
             ZWrite On
             ZTest LEqual
 
-            ColorMask 0 0
-            ColorMask 0 1
+            ColorMask 0
 
             HLSLPROGRAM
 

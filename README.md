@@ -21,6 +21,7 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 - Honkai Star Rail/Character/Body (Transparent)
 - Honkai Star Rail/Character/EyeShadow
 - Honkai Star Rail/Character/Face
+- Honkai Star Rail/Character/FaceMask
 - Honkai Star Rail/Character/Hair
 
 The rendering of character takes advantage of MRT whose pass is always executed after UniversalForward. Transparent objects using normal URP Shader and transparent objects on characters are divided into two groups for rendering, which may cause problems.

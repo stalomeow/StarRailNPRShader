@@ -21,6 +21,7 @@
 
 using System;
 using HSR.NPRShader.Passes;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -29,9 +30,20 @@ namespace HSR.NPRShader
     [DisallowMultipleRendererFeature]
     public class StarRailForward : ScriptableRendererFeature
     {
+        [Header("MainLightPerObjectShadow")]
+
+        [Range(0, 10)] public float DepthBias = 1;
+        [Range(0, 10)] public float NormalBias = 0;
+
+        // -------------------------------------------------------
+
         [NonSerialized] private ForwardGBuffers m_GBuffers;
 
         [NonSerialized] private ClearGBufferPass m_ClearGBufferPass;
+
+        [NonSerialized] private MainLightPerObjectShadowCasterPass m_MainLightPerObjShadowPass;
+        [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
+        [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
 
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueForward1Pass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueForward2Pass;
@@ -48,6 +60,10 @@ namespace HSR.NPRShader
             m_GBuffers = new ForwardGBuffers();
 
             m_ClearGBufferPass = new ClearGBufferPass(m_GBuffers);
+
+            m_MainLightPerObjShadowPass = new MainLightPerObjectShadowCasterPass();
+            m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
+            m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
 
             m_DrawOpaqueForward1Pass = new MRTDrawObjectsPass
             (
@@ -106,6 +122,10 @@ namespace HSR.NPRShader
         {
             renderer.EnqueuePass(m_ClearGBufferPass);
 
+            renderer.EnqueuePass(m_MainLightPerObjShadowPass);
+            renderer.EnqueuePass(m_ScreenSpaceShadowPass);
+            renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
+
             renderer.EnqueuePass(m_DrawOpaqueForward1Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
@@ -117,9 +137,27 @@ namespace HSR.NPRShader
             renderer.EnqueuePass(m_PostProcessPass);
         }
 
+        public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
+        {
+            base.SetupRenderPasses(renderer, in renderingData);
+
+            m_MainLightPerObjShadowPass.Setup(DepthBias, NormalBias);
+
+            m_DrawOpaqueForward1Pass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
+            m_DrawOpaqueForward2Pass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
+            m_DrawOpaqueForward3Pass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
+            m_DrawOpaqueOutlinePass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
+
+            m_DrawTransparentForwardPass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
+            m_DrawTransparentOutlinePass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
+        }
+
         protected override void Dispose(bool disposing)
         {
             m_GBuffers.Dispose();
+
+            m_MainLightPerObjShadowPass.Dispose();
+            m_ScreenSpaceShadowPass.Dispose();
             m_PostProcessPass.Dispose();
 
             base.Dispose(disposing);

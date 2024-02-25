@@ -45,13 +45,10 @@ namespace HSR.NPRShader.Passes
             ConfigureInput(ScriptableRenderPassInput.Depth);
         }
 
-        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
+        public void Setup(RTHandle colorTarget, RTHandle depthTarget)
         {
-            base.OnCameraSetup(cmd, ref renderingData);
-
-            ScriptableRenderer renderer = renderingData.cameraData.renderer;
-            m_ColorAttachments[0] = renderer.cameraColorTargetHandle;
-            m_DepthAttachment = renderer.cameraDepthTargetHandle;
+            m_ColorAttachments[0] = colorTarget;
+            m_DepthAttachment = depthTarget;
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)

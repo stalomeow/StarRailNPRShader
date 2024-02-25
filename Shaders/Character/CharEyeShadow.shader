@@ -51,8 +51,8 @@ Shader "Honkai Star Rail/Character/EyeShadow"
             // 眼睛部分
             Stencil
             {
-                Ref 1
-                ReadMask 1   // 眼睛位
+                Ref 2
+                ReadMask 2   // 眼睛位
                 Comp Equal
                 Pass Keep
                 Fail Keep

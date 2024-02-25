@@ -198,12 +198,13 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
                 "LightMode" = "HSRForwardTransparent"
             }
 
+            // 透明部分和角色的 Stencil
             Stencil
             {
-                Ref 8
-                WriteMask 8  // 透明位
+                Ref 5
+                WriteMask 5  // 透明和角色位
                 Comp Always
-                Pass Replace // 写入透明位
+                Pass Replace // 写入透明和角色位
                 Fail Keep
             }
 
@@ -226,6 +227,9 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             #pragma shader_feature_local_fragment _ _SINGLEMATERIAL_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
+            #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+
             #include "CharBodyCore.hlsl"
 
             ENDHLSL
@@ -242,10 +246,11 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
             Stencil
             {
-                Ref 8
-                ReadMask 8    // 透明位
+                Ref 5
+                ReadMask 4    // 透明位
+                WriteMask 1   // 角色位
                 Comp NotEqual // 不透明部分
-                Pass Keep
+                Pass Replace  // 写入角色位
                 Fail Keep
             }
 
@@ -278,19 +283,18 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
         Pass
         {
-            Name "BodyShadow"
+            Name "PerObjectShadow"
 
             Tags
             {
-                "LightMode" = "ShadowCaster"
+                "LightMode" = "HSRShadowCaster"
             }
 
             Cull [_Cull]
             ZWrite On // 写入 Shadow Map
             ZTest LEqual
 
-            ColorMask 0 0
-            ColorMask 0 1
+            ColorMask 0
 
             HLSLPROGRAM
 

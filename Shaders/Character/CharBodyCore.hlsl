@@ -155,7 +155,7 @@ void BodyColorFragment(
         float , bloomIntensity       = _BloomIntensity
     );
 
-    Light light = GetMainLight();
+    Light light = GetMainLight(i.shadowCoord);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
     ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);
@@ -192,8 +192,9 @@ void BodyColorFragment(
     emissionData.intensity = _EmissionIntensity;
 
     float3 diffuse = GetRampDiffuse(diffuseData, i.color, texColor.rgb, light.color, lightMap,
-        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
-    float3 specular = GetSpecular(specularData, texColor.rgb, light.color, lightMap);
+        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm),
+        light.shadowAttenuation);
+    float3 specular = GetSpecular(specularData, texColor.rgb, light.color, lightMap, light.shadowAttenuation);
     float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
@@ -214,7 +215,7 @@ void BodyColorFragment(
         specularDataAdd.edgeSoftness = specularEdgeSoftness;
         specularDataAdd.intensity = specularIntensity;
         specularDataAdd.metallic = specularMetallic;
-        specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap) * attenuationAdd;
+        specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
     LIGHT_LOOP_END
 
     // Output

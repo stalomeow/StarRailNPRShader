@@ -19,6 +19,7 @@
 - Honkai Star Rail/Character/Body (Transparent)
 - Honkai Star Rail/Character/EyeShadow
 - Honkai Star Rail/Character/Face
+- Honkai Star Rail/Character/FaceMask
 - Honkai Star Rail/Character/Hair
 
 角色渲染用了 MRT，这个 MRT Pass 是在 URP 的 Forward Pass 之后执行的。使用普通 URP Shader 的透明物体和角色身上的透明物体被分成了两批渲染，可能会出问题。
