@@ -51,10 +51,17 @@
 - 目前只能用 Forward 渲染路径。
 - 在 Renderer 上加 Renderer Feature `StarRailForward`。
 - 材质球换 Shader 以后记得先重置一下。
+- 该项目自己实现了屏幕空间阴影，请不要添加 URP 的 `ScreenSpaceShadows` RendererFeature。
 
 ### 推荐的后处理设置
 
 ![后处理设置](Screenshots~/_postprocessing.png)
+
+### 逐物体阴影
+
+在角色根物体上添加 `PerObjectShadowCaster` 组件。支持同屏最多 16 个角色阴影。
+
+![逐物体阴影](Screenshots~/_per_obj_shadow.png)
 
 ### 使用资源预处理器
 

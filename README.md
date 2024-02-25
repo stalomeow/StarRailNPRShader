@@ -53,10 +53,17 @@ The rendering of character takes advantage of MRT whose pass is always executed 
 - Rendering path must be forward currently.
 - Renderer Feature `StarRailForward` must be added to the renderer.
 - Reset the material after changing its shader.
+- This project implements its own screen space shadows. Please do not add the `ScreenSpaceShadows` RendererFeature of URP.
 
 ### Recommended post-processing settings
 
 ![post-processing settings](Screenshots~/_postprocessing.png)
+
+### Per-Object Shadow
+
+Add the `PerObjectShadowCaster` component on the root object of a character. It supports up to 16 shadows on the same screen.
+
+![per-obj-shadow](Screenshots~/_per_obj_shadow.png)
 
 ### Working with asset preprocessor
 
