@@ -142,14 +142,6 @@ namespace HSR.NPRShader
             base.SetupRenderPasses(renderer, in renderingData);
 
             m_MainLightPerObjShadowPass.Setup(DepthBias, NormalBias);
-
-            m_DrawOpaqueForward1Pass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
-            m_DrawOpaqueForward2Pass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
-            m_DrawOpaqueForward3Pass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
-            m_DrawOpaqueOutlinePass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
-
-            m_DrawTransparentForwardPass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
-            m_DrawTransparentOutlinePass.Setup(renderer.cameraColorTargetHandle, renderer.cameraDepthTargetHandle);
         }
 
         protected override void Dispose(bool disposing)

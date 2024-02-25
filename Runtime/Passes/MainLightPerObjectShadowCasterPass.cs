@@ -32,6 +32,7 @@ namespace HSR.NPRShader.Passes
     {
         private const int MaxShadowCount = 16;
         private const int TileResolution = 512;
+        private const int ShadowMapBufferBits = 16;
 
         private readonly List<PerObjectShadowCaster> m_ShadowCasterList;
         private readonly List<Renderer> m_CachedRendererList;
@@ -76,10 +77,15 @@ namespace HSR.NPRShader.Passes
         {
             base.Configure(cmd, cameraTextureDescriptor);
 
+            if (m_ShadowCasterList.Count <= 0)
+            {
+                return;
+            }
+
             // 保证 shadow map 是正方形
             m_ShadowMapSizeInTile = Mathf.CeilToInt(Mathf.Sqrt(m_ShadowCasterList.Count));
             int shadowRTSize = m_ShadowMapSizeInTile * TileResolution;
-            ShadowUtils.ShadowRTReAllocateIfNeeded(ref m_ShadowMap, shadowRTSize, shadowRTSize, 16);
+            ShadowUtils.ShadowRTReAllocateIfNeeded(ref m_ShadowMap, shadowRTSize, shadowRTSize, ShadowMapBufferBits);
 
             ConfigureTarget(m_ShadowMap);
             ConfigureClear(ClearFlag.All, Color.black);
@@ -94,19 +100,29 @@ namespace HSR.NPRShader.Passes
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            int mainLightIndex = renderingData.lightData.mainLightIndex;
-            if (mainLightIndex < 0)
-            {
-                return;
-            }
-
             CommandBuffer cmd = CommandBufferPool.Get();
-            VisibleLight mainLight = renderingData.lightData.visibleLights[mainLightIndex];
+            int mainLightIndex = renderingData.lightData.mainLightIndex;
 
             using (new ProfilingScope(cmd, profilingSampler))
             {
-                ExecuteShadowCasters(cmd, ref mainLight);
-                SetShadowSamplingData(cmd);
+                bool hasShadow = false;
+
+                if (mainLightIndex >= 0 && m_ShadowCasterList.Count > 0)
+                {
+                    VisibleLight mainLight = renderingData.lightData.visibleLights[mainLightIndex];
+
+                    if (mainLight.lightType == LightType.Directional)
+                    {
+                        ExecuteShadowCasters(cmd, ref mainLight);
+                        SetShadowSamplingData(cmd);
+                        hasShadow = true;
+                    }
+                }
+
+                if (!hasShadow)
+                {
+                    cmd.SetGlobalInt(PropertyUtils._PerObjShadowCount, 0);
+                }
             }
 
             context.ExecuteCommandBuffer(cmd);
