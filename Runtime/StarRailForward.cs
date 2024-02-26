@@ -33,7 +33,7 @@ namespace HSR.NPRShader
     {
         private static readonly string[] s_GBufferNames =
         {
-            "_HSRGBuffer0" // R: bloom intensity
+            "_HSRGBuffer0" // rgb: bloom color, a: bloom intensity
         };
 
         private static readonly GraphicsFormat[] s_GBufferFormats =

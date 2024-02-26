@@ -60,7 +60,8 @@ Shader "Honkai Star Rail/Character/Hair"
         _EmissionIntensity("Intensity", Float) = 0
 
         [HeaderFoldout(Bloom)]
-        _BloomIntensity0("Intensity", Range(0, 2)) = 0.5
+        _BloomIntensity0("Intensity", Range(0, 1)) = 0.5
+        _BloomColor0("Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Rim Light)]
         _RimIntensity("Intensity (Front)", Range(0, 1)) = 0.5
@@ -127,7 +128,7 @@ Shader "Honkai Star Rail/Character/Hair"
             Blend 1 One Zero
 
             ColorMask RGBA 0
-            ColorMask R 1
+            ColorMask RGBA 1
 
             HLSLPROGRAM
 
@@ -175,7 +176,7 @@ Shader "Honkai Star Rail/Character/Hair"
             Blend 1 One Zero
 
             ColorMask RGBA 0
-            ColorMask R 1
+            ColorMask RGBA 1
 
             HLSLPROGRAM
 

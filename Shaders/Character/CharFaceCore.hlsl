@@ -50,6 +50,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionIntensity;
 
     float _BloomIntensity0;
+    float4 _BloomColor0;
 
     float _OutlineWidth;
     float _OutlineZOffset;
@@ -169,7 +170,7 @@ void FaceOpaqueAndZFragment(
 
     // Output
     colorTarget = float4(diffuse + emission + diffuseAdd, texColor.a);
-    bloomTarget = float4(_BloomIntensity0, 0, 0, 0);
+    bloomTarget = float4(_BloomColor0.rgb, _BloomIntensity0);
 }
 
 void FaceWriteEyeStencilFragment(CharCoreVaryings i)

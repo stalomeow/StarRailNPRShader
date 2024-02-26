@@ -55,8 +55,8 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
             float4 Frag(Varyings i) : SV_Target
             {
                 float3 color = FragBlit(i, sampler_LinearClamp).rgb;
-                float intensity = HSRSampleGBuffer0(i.texcoord).r;
-                color = max(0, color * intensity - _BloomThreshold.rgb);
+                float4 bloom = HSRSampleGBuffer0(i.texcoord);
+                color = max(0, color * bloom.a - _BloomThreshold.rgb) * bloom.rgb;
                 return float4(color, 1);
             }
             ENDHLSL

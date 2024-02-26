@@ -52,7 +52,8 @@ Shader "Honkai Star Rail/Character/Face"
         _EmissionIntensity("Intensity", Float) = 0.3
 
         [HeaderFoldout(Bloom)]
-        _BloomIntensity0("Intensity", Range(0, 2)) = 0.5
+        _BloomIntensity0("Intensity", Range(0, 1)) = 0.5
+        _BloomColor0("Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Outline)]
         [KeywordEnum(Tangent, Normal)] _OutlineNormal("Normal Source", Float) = 0
@@ -123,7 +124,7 @@ Shader "Honkai Star Rail/Character/Face"
             Blend 1 One Zero
 
             ColorMask RGBA 0
-            ColorMask R 1
+            ColorMask RGBA 1
 
             HLSLPROGRAM
 

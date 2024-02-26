@@ -56,6 +56,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionIntensity;
 
     float _BloomIntensity0;
+    float4 _BloomColor0;
 
     float _RimIntensity;
     float _RimIntensityBackFace;
@@ -171,7 +172,7 @@ void HairOpaqueFragment(
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 
     colorTarget = float4(hairColor.rgb, 1);
-    bloomTarget = float4(_BloomIntensity0, 0, 0, 0);
+    bloomTarget = float4(_BloomColor0.rgb, _BloomIntensity0);
 }
 
 void HairFakeTransparentFragment(
@@ -202,7 +203,7 @@ void HairFakeTransparentFragment(
 
     // Output
     colorTarget = float4(hairColor.rgb, max(max(alpha1, alpha2), _HairBlendAlpha));
-    bloomTarget = float4(_BloomIntensity0, 0, 0, 0);
+    bloomTarget = float4(_BloomColor0.rgb, _BloomIntensity0);
 }
 
 CharOutlineVaryings HairOutlineVertex(CharOutlineAttributes i)

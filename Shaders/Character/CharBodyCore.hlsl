@@ -68,6 +68,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionIntensity;
 
     CHAR_MAT_PROP(float, _BloomIntensity);
+    CHAR_MAT_PROP(float4, _BloomColor);
 
     float _RimIntensity;
     float _RimIntensityBackFace;
@@ -118,7 +119,7 @@ void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget, inout float4 
         if (abs(floor(8 * lightMap.a) - _SingleMaterialID) > 0.01)
         {
             colorTarget.rgb = 0;
-            bloomTarget.r = 0;
+            bloomTarget.a = 0; // intensity
         }
     #endif
 }
@@ -143,7 +144,7 @@ void BodyColorFragment(
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    SELECT_CHAR_MAT_PROPS_9(lightMap,
+    SELECT_CHAR_MAT_PROPS_10(lightMap,
         float4, specularColor        = _SpecularColor,
         float , specularMetallic     = _SpecularMetallic,
         float , specularShininess    = _SpecularShininess,
@@ -152,7 +153,8 @@ void BodyColorFragment(
         float , rimWidth             = _RimWidth,
         float4, rimColor             = _RimColor,
         float , rimDark              = _RimDark,
-        float , bloomIntensity       = _BloomIntensity
+        float , bloomIntensity       = _BloomIntensity,
+        float4, bloomColor           = _BloomColor
     );
 
     Light light = GetMainLight(i.shadowCoord);
@@ -220,7 +222,7 @@ void BodyColorFragment(
 
     // Output
     colorTarget = float4(diffuse + specular + rimLight + emission + diffuseAdd + specularAdd, texColor.a);
-    bloomTarget = float4(bloomIntensity, 0, 0, 0);
+    bloomTarget = float4(bloomColor.rgb, bloomIntensity);
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }
 

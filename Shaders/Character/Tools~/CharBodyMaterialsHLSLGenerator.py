@@ -31,7 +31,7 @@ CONFIG = {
         },
         'propSelect': {
             'baseName': 'SELECT_CHAR_MAT_PROPS',
-            'propCounts': range(1, 10)
+            'propCounts': range(1, 11)
         }
     }
 }
