@@ -21,6 +21,7 @@
 
 using System;
 using HSR.NPRShader.PostProcessing;
+using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -29,7 +30,9 @@ namespace HSR.NPRShader.Passes
 {
     public class PostProcessPass : ScriptableRenderPass, IDisposable
     {
-        private readonly ForwardGBuffers m_GBuffers;
+        private readonly LazyMaterial m_BloomMaterial = new(StarRailBuiltinShaders.BloomShader);
+        private readonly LazyMaterial m_UberMaterial = new(StarRailBuiltinShaders.UberPostShader);
+
         private readonly ProfilingSampler m_BloomSampler;
         private readonly ProfilingSampler m_UberPostSampler;
 
@@ -40,12 +43,11 @@ namespace HSR.NPRShader.Passes
         private CustomBloom m_BloomConfig;
         private CustomTonemapping m_TonemappingConfig;
 
-        public PostProcessPass(ForwardGBuffers gBuffers)
+        public PostProcessPass()
         {
             renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
             profilingSampler = new ProfilingSampler("Render StarRail PostProcessing");
 
-            m_GBuffers = gBuffers;
             m_BloomSampler = new ProfilingSampler("Bloom");
             m_UberPostSampler = new ProfilingSampler("UberPostProcess");
 
@@ -56,8 +58,10 @@ namespace HSR.NPRShader.Passes
 
         public void Dispose()
         {
+            m_BloomMaterial.DestroyCache();
+            m_UberMaterial.DestroyCache();
+
             ReleaseBloomRTHandles();
-            MaterialUtils.Dispose();
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
@@ -102,6 +106,7 @@ namespace HSR.NPRShader.Passes
             EnsureBloomMipDownArraySize();
 
             RenderTextureDescriptor descriptor = cameraTextureDescriptor;
+            descriptor.colorFormat = RenderTextureFormat.RGB111110Float;
             descriptor.depthBufferBits = 0;
             descriptor.msaaSamples = 1;
 
@@ -165,21 +170,19 @@ namespace HSR.NPRShader.Passes
 
             ScriptableRenderer renderer = renderingData.cameraData.renderer;
             RTHandle colorTargetHandle = renderer.cameraColorTargetHandle;
-            Material bloomMaterial = MaterialUtils.GetOrCreateBloomMaterial();
+            Material bloomMaterial = m_BloomMaterial.Value;
             Material blitMaterial = Blitter.GetBlitMaterial(TextureXR.dimension);
 
             using (new ProfilingScope(cmd, m_BloomSampler))
             {
-                m_GBuffers.SetGlobalTextures(cmd);
-
                 // Set threshold
                 float thresholdR = Mathf.GammaToLinearSpace(m_BloomConfig.ThresholdR.value);
                 float thresholdG = Mathf.GammaToLinearSpace(m_BloomConfig.ThresholdG.value);
                 float thresholdB = Mathf.GammaToLinearSpace(m_BloomConfig.ThresholdB.value);
                 Vector4 threshold = new Vector4(thresholdR, thresholdG, thresholdB);
-                bloomMaterial.SetVector(PropertyUtils._BloomThreshold, threshold);
+                bloomMaterial.SetVector(PropertyIds._BloomThreshold, threshold);
 
-                // Get highlight part
+                // Prefilter
                 Blitter.BlitCameraTexture(cmd, colorTargetHandle, m_BloomHighlight,
                     RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 0);
 
@@ -196,7 +199,7 @@ namespace HSR.NPRShader.Passes
                 // Blur vertical
                 for (int i = 0; i < m_BloomMipDown1.Length; i++)
                 {
-                    cmd.SetGlobalFloat(PropertyUtils._BloomScatter, m_BloomConfig.Scatter.value);
+                    cmd.SetGlobalFloat(PropertyIds._BloomScatter, m_BloomConfig.Scatter.value);
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown2[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 1);
                 }
@@ -204,7 +207,7 @@ namespace HSR.NPRShader.Passes
                 // Blur horizontal
                 for (int i = 0; i < m_BloomMipDown1.Length; i++)
                 {
-                    cmd.SetGlobalFloat(PropertyUtils._BloomScatter, m_BloomConfig.Scatter.value);
+                    cmd.SetGlobalFloat(PropertyIds._BloomScatter, m_BloomConfig.Scatter.value);
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown2[i], m_BloomMipDown1[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 2);
                 }
@@ -224,36 +227,36 @@ namespace HSR.NPRShader.Passes
 
         private void ExecuteUber(CommandBuffer cmd, ref RenderingData renderingData)
         {
-            Material material = MaterialUtils.GetOrCreateUberMaterial();
+            Material material = m_UberMaterial.Value;
 
             using (new ProfilingScope(cmd, m_UberPostSampler))
             {
                 if (m_BloomConfig.IsActive())
                 {
-                    material.EnableKeyword(KeywordUtils._BLOOM);
+                    material.EnableKeyword(KeywordNames._BLOOM);
 
-                    material.SetFloat(PropertyUtils._BloomIntensity, m_BloomConfig.Intensity.value);
-                    material.SetColor(PropertyUtils._BloomTint, m_BloomConfig.Tint.value);
-                    material.SetTexture(PropertyUtils._BloomTexture, m_BloomMipDown1[0]);
+                    material.SetFloat(PropertyIds._BloomIntensity, m_BloomConfig.Intensity.value);
+                    material.SetColor(PropertyIds._BloomTint, m_BloomConfig.Tint.value);
+                    material.SetTexture(PropertyIds._BloomTexture, m_BloomMipDown1[0]);
                 }
                 else
                 {
-                    material.DisableKeyword(KeywordUtils._BLOOM);
+                    material.DisableKeyword(KeywordNames._BLOOM);
                 }
 
                 if (m_TonemappingConfig.IsActive())
                 {
-                    material.EnableKeyword(KeywordUtils._TONEMAPPING_ACES);
+                    material.EnableKeyword(KeywordNames._TONEMAPPING_ACES);
 
-                    material.SetFloat(PropertyUtils._ACESParamA, m_TonemappingConfig.ACESParamA.value);
-                    material.SetFloat(PropertyUtils._ACESParamB, m_TonemappingConfig.ACESParamB.value);
-                    material.SetFloat(PropertyUtils._ACESParamC, m_TonemappingConfig.ACESParamC.value);
-                    material.SetFloat(PropertyUtils._ACESParamD, m_TonemappingConfig.ACESParamD.value);
-                    material.SetFloat(PropertyUtils._ACESParamE, m_TonemappingConfig.ACESParamE.value);
+                    material.SetFloat(PropertyIds._ACESParamA, m_TonemappingConfig.ACESParamA.value);
+                    material.SetFloat(PropertyIds._ACESParamB, m_TonemappingConfig.ACESParamB.value);
+                    material.SetFloat(PropertyIds._ACESParamC, m_TonemappingConfig.ACESParamC.value);
+                    material.SetFloat(PropertyIds._ACESParamD, m_TonemappingConfig.ACESParamD.value);
+                    material.SetFloat(PropertyIds._ACESParamE, m_TonemappingConfig.ACESParamE.value);
                 }
                 else
                 {
-                    material.DisableKeyword(KeywordUtils._TONEMAPPING_ACES);
+                    material.DisableKeyword(KeywordNames._TONEMAPPING_ACES);
                 }
 
                 Blit(cmd, ref renderingData, material);
@@ -262,60 +265,26 @@ namespace HSR.NPRShader.Passes
 
         #endregion
 
-        private static class KeywordUtils
+        private static class KeywordNames
         {
-            public const string _BLOOM = "_BLOOM";
-            public const string _TONEMAPPING_ACES = "_TONEMAPPING_ACES";
+            public static readonly string _BLOOM = StringHelpers.MemberName();
+            public static readonly string _TONEMAPPING_ACES = StringHelpers.MemberName();
         }
 
-        private static class PropertyUtils
+        private static class PropertyIds
         {
-            public static readonly int _BloomThreshold = Shader.PropertyToID("_BloomThreshold");
-            public static readonly int _BloomScatter = Shader.PropertyToID("_BloomScatter");
+            public static readonly int _BloomThreshold = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomScatter = StringHelpers.ShaderPropertyIDFromMemberName();
 
-            public static readonly int _BloomIntensity = Shader.PropertyToID("_BloomIntensity");
-            public static readonly int _BloomTint = Shader.PropertyToID("_BloomTint");
-            public static readonly int _BloomTexture = Shader.PropertyToID("_BloomTexture");
+            public static readonly int _BloomIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomTint = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomTexture = StringHelpers.ShaderPropertyIDFromMemberName();
 
-            public static readonly int _ACESParamA = Shader.PropertyToID("_ACESParamA");
-            public static readonly int _ACESParamB = Shader.PropertyToID("_ACESParamB");
-            public static readonly int _ACESParamC = Shader.PropertyToID("_ACESParamC");
-            public static readonly int _ACESParamD = Shader.PropertyToID("_ACESParamD");
-            public static readonly int _ACESParamE = Shader.PropertyToID("_ACESParamE");
-        }
-
-        private static class MaterialUtils
-        {
-            private static Material s_BloomMaterial;
-            private static Material s_UberMaterial;
-
-            public static Material GetOrCreateBloomMaterial()
-            {
-                if (s_BloomMaterial == null)
-                {
-                    var shader = Shader.Find(StarRailBuiltinShaders.BloomShader);
-                    s_BloomMaterial = CoreUtils.CreateEngineMaterial(shader);
-                }
-
-                return s_BloomMaterial;
-            }
-
-            public static Material GetOrCreateUberMaterial()
-            {
-                if (s_UberMaterial == null)
-                {
-                    var shader = Shader.Find(StarRailBuiltinShaders.UberPostShader);
-                    s_UberMaterial = CoreUtils.CreateEngineMaterial(shader);
-                }
-
-                return s_UberMaterial;
-            }
-
-            public static void Dispose()
-            {
-                CoreUtils.Destroy(s_BloomMaterial);
-                CoreUtils.Destroy(s_UberMaterial);
-            }
+            public static readonly int _ACESParamA = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _ACESParamB = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _ACESParamC = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _ACESParamD = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _ACESParamE = StringHelpers.ShaderPropertyIDFromMemberName();
         }
     }
 }

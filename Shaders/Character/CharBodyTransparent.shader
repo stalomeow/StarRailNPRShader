@@ -186,7 +186,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Transparent"
             "UniversalMaterialType" = "Lit"
-            "Queue" = "Transparent+30"  // 身体默认 +30，放在最后渲染
+            "Queue" = "Transparent"
         }
 
         Pass
@@ -195,7 +195,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
             Tags
             {
-                "LightMode" = "HSRForwardTransparent"
+                "LightMode" = "HSRTransparent"
             }
 
             // 透明部分和角色的 Stencil

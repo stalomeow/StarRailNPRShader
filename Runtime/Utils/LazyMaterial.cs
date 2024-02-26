@@ -21,31 +21,37 @@
 
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
-namespace HSR.NPRShader.Passes
+namespace HSR.NPRShader.Utils
 {
-    public class ClearGBufferPass : ScriptableRenderPass
+    public class LazyMaterial
     {
-        private readonly ForwardGBuffers m_GBuffers;
+        private readonly string m_ShaderName;
+        private Material m_Material;
 
-        public ClearGBufferPass(ForwardGBuffers gBuffers)
+        public LazyMaterial(string shaderName)
         {
-            renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
-
-            m_GBuffers = gBuffers;
+            m_ShaderName = shaderName;
         }
 
-        public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
+        public Material Value
         {
-            base.Configure(cmd, cameraTextureDescriptor);
+            get
+            {
+                if (m_Material == null)
+                {
+                    var shader = Shader.Find(m_ShaderName);
+                    m_Material = CoreUtils.CreateEngineMaterial(shader);
+                }
 
-            m_GBuffers.ReAllocateBuffersIfNeeded(in cameraTextureDescriptor);
-
-            ConfigureTarget(m_GBuffers.GBuffers);
-            ConfigureClear(ClearFlag.All, Color.black);
+                return m_Material;
+            }
         }
 
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) { }
+        public void DestroyCache()
+        {
+            CoreUtils.Destroy(m_Material);
+            m_Material = null;
+        }
     }
 }

@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using HSR.NPRShader.Shadow;
+using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -121,7 +122,7 @@ namespace HSR.NPRShader.Passes
 
                 if (!hasShadow)
                 {
-                    cmd.SetGlobalInt(PropertyUtils._PerObjShadowCount, 0);
+                    cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, 0);
                 }
             }
 
@@ -181,10 +182,10 @@ namespace HSR.NPRShader.Passes
 
             cmd.SetGlobalDepthBias(0.0f, 0.0f); // Restore previous depth bias values
 
-            cmd.SetGlobalTexture(PropertyUtils._PerObjShadowMap, m_ShadowMap);
-            cmd.SetGlobalInt(PropertyUtils._PerObjShadowCount, m_ShadowCasterList.Count);
-            cmd.SetGlobalMatrixArray(PropertyUtils._PerObjShadowMatrices, m_ShadowMatrixArray);
-            cmd.SetGlobalVectorArray(PropertyUtils._PerObjShadowMapRects, m_ShadowMapRectArray);
+            cmd.SetGlobalTexture(PropertyIds._PerObjShadowMap, m_ShadowMap);
+            cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, m_ShadowCasterList.Count);
+            cmd.SetGlobalMatrixArray(PropertyIds._PerObjShadowMatrices, m_ShadowMatrixArray);
+            cmd.SetGlobalVectorArray(PropertyIds._PerObjShadowMapRects, m_ShadowMapRectArray);
         }
 
         private Vector4 GetShadowBias(ref VisibleLight shadowLight, Matrix4x4 lightProjectionMatrix, float shadowResolution)
@@ -240,11 +241,11 @@ namespace HSR.NPRShader.Passes
             float invHalfShadowAtlasWidth = 0.5f * invShadowAtlasWidth;
             float invHalfShadowAtlasHeight = 0.5f * invShadowAtlasHeight;
 
-            cmd.SetGlobalVector(PropertyUtils._PerObjShadowOffset0,
+            cmd.SetGlobalVector(PropertyIds._PerObjShadowOffset0,
                 new Vector4(-invHalfShadowAtlasWidth, -invHalfShadowAtlasHeight, invHalfShadowAtlasWidth, -invHalfShadowAtlasHeight));
-            cmd.SetGlobalVector(PropertyUtils._PerObjShadowOffset1,
+            cmd.SetGlobalVector(PropertyIds._PerObjShadowOffset1,
                 new Vector4(-invHalfShadowAtlasWidth, invHalfShadowAtlasHeight, invHalfShadowAtlasWidth, invHalfShadowAtlasHeight));
-            cmd.SetGlobalVector(PropertyUtils._PerObjShadowMapSize,
+            cmd.SetGlobalVector(PropertyIds._PerObjShadowMapSize,
                 new Vector4(invShadowAtlasWidth, invShadowAtlasHeight, renderTargetWidth, renderTargetHeight));
         }
 
@@ -318,16 +319,16 @@ namespace HSR.NPRShader.Passes
             return Matrix4x4.Ortho(left, right, bottom, top, zNear, zFar);
         }
 
-        private static class PropertyUtils
+        private static class PropertyIds
         {
-            public static readonly int _PerObjShadowMap = Shader.PropertyToID("_PerObjShadowMap");
-            public static readonly int _PerObjShadowCount = Shader.PropertyToID("_PerObjShadowCount");
-            public static readonly int _PerObjShadowMatrices = Shader.PropertyToID("_PerObjShadowMatrices");
-            public static readonly int _PerObjShadowMapRects = Shader.PropertyToID("_PerObjShadowMapRects");
+            public static readonly int _PerObjShadowMap = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowCount = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowMatrices = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowMapRects = StringHelpers.ShaderPropertyIDFromMemberName();
 
-            public static readonly int _PerObjShadowOffset0 = Shader.PropertyToID("_PerObjShadowOffset0");
-            public static readonly int _PerObjShadowOffset1 = Shader.PropertyToID("_PerObjShadowOffset1");
-            public static readonly int _PerObjShadowMapSize = Shader.PropertyToID("_PerObjShadowMapSize");
+            public static readonly int _PerObjShadowOffset0 = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowOffset1 = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowMapSize = StringHelpers.ShaderPropertyIDFromMemberName();
         }
     }
 }

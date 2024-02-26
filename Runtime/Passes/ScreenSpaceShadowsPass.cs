@@ -20,6 +20,7 @@
  */
 
 using System;
+using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -29,18 +30,20 @@ namespace HSR.NPRShader.Passes
 {
     public class ScreenSpaceShadowsPass : ScriptableRenderPass, IDisposable
     {
+        private readonly LazyMaterial m_ShadowMaterial = new(StarRailBuiltinShaders.ScreenSpaceShadowsShader);
+
         private RTHandle m_RenderTarget;
 
         public ScreenSpaceShadowsPass()
         {
-            renderPassEvent = RenderPassEvent.AfterRenderingGbuffer;
+            renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
             profilingSampler = new ProfilingSampler("ScreenSpaceShadows");
         }
 
         public void Dispose()
         {
+            m_ShadowMaterial.DestroyCache();
             m_RenderTarget?.Release();
-            MaterialUtils.Dispose();
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
@@ -70,7 +73,7 @@ namespace HSR.NPRShader.Passes
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            Material material = MaterialUtils.GetOrCreateShadowMaterial();
+            Material material = m_ShadowMaterial.Value;
             CommandBuffer cmd = CommandBufferPool.Get();
 
             using (new ProfilingScope(cmd, profilingSampler))
@@ -83,27 +86,6 @@ namespace HSR.NPRShader.Passes
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
-        }
-
-        private static class MaterialUtils
-        {
-            private static Material s_ShadowMaterial;
-
-            public static Material GetOrCreateShadowMaterial()
-            {
-                if (s_ShadowMaterial == null)
-                {
-                    var shader = Shader.Find(StarRailBuiltinShaders.ScreenSpaceShadowsShader);
-                    s_ShadowMaterial = CoreUtils.CreateEngineMaterial(shader);
-                }
-
-                return s_ShadowMaterial;
-            }
-
-            public static void Dispose()
-            {
-                CoreUtils.Destroy(s_ShadowMaterial);
-            }
         }
     }
 }

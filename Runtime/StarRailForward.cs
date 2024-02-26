@@ -22,6 +22,7 @@
 using System;
 using HSR.NPRShader.Passes;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -30,6 +31,18 @@ namespace HSR.NPRShader
     [DisallowMultipleRendererFeature]
     public class StarRailForward : ScriptableRendererFeature
     {
+        private static readonly string[] s_GBufferNames =
+        {
+            "_HSRGBuffer0" // R: bloom intensity
+        };
+
+        private static readonly GraphicsFormat[] s_GBufferFormats =
+        {
+            GraphicsFormat.R8G8B8A8_UNorm
+        };
+
+        // -------------------------------------------------------
+
         [Header("MainLightPerObjectShadow")]
 
         [Range(0, 10)] public float DepthBias = 1;
@@ -37,116 +50,123 @@ namespace HSR.NPRShader
 
         // -------------------------------------------------------
 
-        [NonSerialized] private ForwardGBuffers m_GBuffers;
+        [NonSerialized] private RTHandle[] m_GBuffers;
+        [NonSerialized] private int[] m_GBufferNameIds;
 
-        [NonSerialized] private ClearGBufferPass m_ClearGBufferPass;
+        // -------------------------------------------------------
 
         [NonSerialized] private MainLightPerObjectShadowCasterPass m_MainLightPerObjShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
-
+        [NonSerialized] private ClearRTPass m_ClearGBufferPass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueForward1Pass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueForward2Pass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueForward3Pass;
         [NonSerialized] private MRTDrawObjectsPass m_DrawOpaqueOutlinePass;
-
-        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentForwardPass;
-        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentOutlinePass;
-
+        [NonSerialized] private MRTDrawObjectsPass m_DrawTransparentPass;
+        [NonSerialized] private SetGlobalRTPass m_SetGBufferPass;
         [NonSerialized] private PostProcessPass m_PostProcessPass;
 
         public override void Create()
         {
-            m_GBuffers = new ForwardGBuffers();
+            m_GBuffers = new RTHandle[s_GBufferNames.Length];
+            m_GBufferNameIds = Array.ConvertAll(s_GBufferNames, Shader.PropertyToID);
 
-            m_ClearGBufferPass = new ClearGBufferPass(m_GBuffers);
+            // -------------------------------------------------------
 
             m_MainLightPerObjShadowPass = new MainLightPerObjectShadowCasterPass();
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
-
-            m_DrawOpaqueForward1Pass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : true,
-                profilerTag: "DrawStarRailOpaque (1)",
-                shaderTagId: new ShaderTagId("HSRForward1"),
-                layerMask  : -1
-            );
-            m_DrawOpaqueForward2Pass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : true,
-                profilerTag: "DrawStarRailOpaque (2)",
-                shaderTagId: new ShaderTagId("HSRForward2"),
-                layerMask  : -1
-            );
-            m_DrawOpaqueForward3Pass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : true,
-                profilerTag: "DrawStarRailOpaque (3)",
-                shaderTagId: new ShaderTagId("HSRForward3"),
-                layerMask  : -1
-            );
-            m_DrawOpaqueOutlinePass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : true,
-                profilerTag: "DrawStarRailOpaque (Outline)",
-                shaderTagId: new ShaderTagId("HSROutline"),
-                layerMask  : -1
-            );
-
-            m_DrawTransparentForwardPass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : false,
-                profilerTag: "DrawStarRailTransparent",
-                shaderTagId: new ShaderTagId("HSRForwardTransparent"),
-                layerMask  : -1
-            );
-            m_DrawTransparentOutlinePass = new MRTDrawObjectsPass
-            (
-                gBuffers   : m_GBuffers,
-                isOpaque   : false,
-                profilerTag: "DrawStarRailTransparent (Outline)",
-                shaderTagId: new ShaderTagId("HSROutline"),
-                layerMask  : -1
-            );
-
-            m_PostProcessPass = new PostProcessPass(m_GBuffers);
+            m_ClearGBufferPass = new ClearRTPass(RenderPassEvent.AfterRenderingOpaques);
+            m_DrawOpaqueForward1Pass = new MRTDrawObjectsPass("DrawStarRailOpaque (1)", true,
+                new ShaderTagId("HSRForward1"));
+            m_DrawOpaqueForward2Pass = new MRTDrawObjectsPass("DrawStarRailOpaque (2)", true,
+                new ShaderTagId("HSRForward2"));
+            m_DrawOpaqueForward3Pass = new MRTDrawObjectsPass("DrawStarRailOpaque (3)", true,
+                new ShaderTagId("HSRForward3"));
+            m_DrawOpaqueOutlinePass = new MRTDrawObjectsPass("DrawStarRailOpaque (Outline)", true,
+                new ShaderTagId("HSROutline"));
+            m_DrawTransparentPass = new MRTDrawObjectsPass("DrawStarRailTransparent", false,
+                new ShaderTagId("HSRTransparent"), new ShaderTagId("HSROutline"));
+            m_SetGBufferPass = new SetGlobalRTPass(RenderPassEvent.BeforeRenderingPostProcessing);
+            m_PostProcessPass = new PostProcessPass();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            renderer.EnqueuePass(m_ClearGBufferPass);
+            if (renderingData.cameraData.isPreviewCamera)
+            {
+                // PreviewCamera 没有 SetupRenderPasses，所以不做 MRT
+                renderer.EnqueuePass(m_DrawOpaqueForward1Pass.SetupPreview());
+                renderer.EnqueuePass(m_DrawOpaqueForward2Pass.SetupPreview());
+                renderer.EnqueuePass(m_DrawOpaqueForward3Pass.SetupPreview());
+                renderer.EnqueuePass(m_DrawOpaqueOutlinePass.SetupPreview());
+                renderer.EnqueuePass(m_DrawTransparentPass.SetupPreview());
+                return;
+            }
 
+            // AfterRenderingShadows
             renderer.EnqueuePass(m_MainLightPerObjShadowPass);
-            renderer.EnqueuePass(m_ScreenSpaceShadowPass);
-            renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
 
+            // BeforeRenderingOpaques
+            renderer.EnqueuePass(m_ScreenSpaceShadowPass);
+
+            // AfterRenderingOpaques
+            renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
+            renderer.EnqueuePass(m_ClearGBufferPass);
             renderer.EnqueuePass(m_DrawOpaqueForward1Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
             renderer.EnqueuePass(m_DrawOpaqueOutlinePass);
+            renderer.EnqueuePass(m_DrawTransparentPass);
 
-            renderer.EnqueuePass(m_DrawTransparentForwardPass);
-            renderer.EnqueuePass(m_DrawTransparentOutlinePass);
-
+            // BeforeRenderingPostProcessing
+            renderer.EnqueuePass(m_SetGBufferPass);
             renderer.EnqueuePass(m_PostProcessPass);
         }
 
         public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
         {
+            // PreviewCamera 不会执行这部分代码！！！
+
             base.SetupRenderPasses(renderer, in renderingData);
 
+            RTHandle colorTarget = renderer.cameraColorTargetHandle;
+            RTHandle depthTarget = renderer.cameraDepthTargetHandle;
+
+            ReAllocateGBuffersIfNeeded(in renderingData.cameraData.cameraTargetDescriptor);
+
             m_MainLightPerObjShadowPass.Setup(DepthBias, NormalBias);
+
+            m_ClearGBufferPass.SetupClear(m_GBuffers, ClearFlag.All, Color.black);
+            m_DrawOpaqueForward1Pass.Setup(colorTarget, depthTarget, m_GBuffers);
+            m_DrawOpaqueForward2Pass.Setup(colorTarget, depthTarget, m_GBuffers);
+            m_DrawOpaqueForward3Pass.Setup(colorTarget, depthTarget, m_GBuffers);
+            m_DrawOpaqueOutlinePass.Setup(colorTarget, depthTarget, m_GBuffers);
+            m_DrawTransparentPass.Setup(colorTarget, depthTarget, m_GBuffers);
+
+            m_SetGBufferPass.Setup(m_GBufferNameIds, m_GBuffers);
+        }
+
+        private void ReAllocateGBuffersIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
+        {
+            RenderTextureDescriptor descriptor = cameraTextureDescriptor;
+            descriptor.depthBufferBits = 0;
+
+            for (int i = 0; i < m_GBuffers.Length; i++)
+            {
+                descriptor.graphicsFormat = s_GBufferFormats[i];
+                RenderingUtils.ReAllocateIfNeeded(ref m_GBuffers[i], in descriptor, name: s_GBufferNames[i]);
+            }
         }
 
         protected override void Dispose(bool disposing)
         {
-            m_GBuffers.Dispose();
+            for (int i = 0; i < m_GBuffers.Length; i++)
+            {
+                m_GBuffers[i]?.Release();
+                m_GBuffers[i] = null;
+            }
 
             m_MainLightPerObjShadowPass.Dispose();
             m_ScreenSpaceShadowPass.Dispose();

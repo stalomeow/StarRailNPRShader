@@ -46,7 +46,7 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
 
         Pass
         {
-            Name "Highlight"
+            Name "Prefilter"
 
             HLSLPROGRAM
             #pragma vertex Vert
