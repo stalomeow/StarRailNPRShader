@@ -209,7 +209,7 @@ void BodyColorFragment(
         Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
         float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-        diffuseAdd += GetHalfLambertDiffuse(dirWSAdd.NoL, texColor.rgb, lightAdd.color) * attenuationAdd;
+        diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
 
         SpecularData specularDataAdd;
         specularDataAdd.color = specularColor.rgb;
@@ -222,7 +222,7 @@ void BodyColorFragment(
     LIGHT_LOOP_END
 
     // Output
-    colorTarget = float4(diffuse + specular + rimLight + emission + diffuseAdd + specularAdd, texColor.a);
+    colorTarget = float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + specular + specularAdd + rimLight + emission, texColor.a);
     bloomTarget = EncodeBloomColor(bloomColor.rgb, bloomIntensity);
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }

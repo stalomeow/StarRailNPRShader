@@ -164,13 +164,12 @@ void FaceOpaqueAndZFragment(
     uint pixelLightCount = GetAdditionalLightsCount();
     LIGHT_LOOP_BEGIN(pixelLightCount)
         Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
-        Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
         float attenuationAdd = saturate(lightAdd.distanceAttenuation);
-        diffuseAdd += GetHalfLambertDiffuse(dirWSAdd.NoL, texColor.rgb, lightAdd.color) * attenuationAdd;
+        diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
     LIGHT_LOOP_END
 
     // Output
-    colorTarget = float4(diffuse + emission + diffuseAdd, texColor.a);
+    colorTarget = float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + emission, texColor.a);
     bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
 }
 

@@ -148,7 +148,7 @@ float4 BaseHairOpaqueFragment(
         Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
         float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-        diffuseAdd += GetHalfLambertDiffuse(dirWSAdd.NoL, texColor.rgb, lightAdd.color) * attenuationAdd;
+        diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
 
         SpecularData specularDataAdd;
         specularDataAdd.color = _SpecularColor0.rgb;
@@ -161,7 +161,7 @@ float4 BaseHairOpaqueFragment(
     LIGHT_LOOP_END
 
     // Output
-    return float4(diffuse + specular + rimLight + emission + diffuseAdd + specularAdd, texColor.a);
+    return float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + specular + specularAdd + rimLight + emission, texColor.a);
 }
 
 void HairOpaqueFragment(

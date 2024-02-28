@@ -332,4 +332,11 @@ float3 DecodeBloomColor(float4 bloom)
     return bloom.rgb * intensity;
 }
 
+float3 CombineColorPreserveLuminance(float3 color, float3 colorAdd)
+{
+    float3 hsv = RgbToHsv(color + colorAdd);
+    hsv.z = RgbToHsv(color).z;
+    return HsvToRgb(hsv);
+}
+
 #endif
