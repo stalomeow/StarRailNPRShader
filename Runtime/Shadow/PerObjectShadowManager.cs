@@ -52,7 +52,7 @@ namespace HSR.NPRShader.Shadow
             s_Casters.Remove(caster);
         }
 
-        public static void GetCasterList(Camera camera, List<PerObjectShadowCaster> outCasterList, int maxCount)
+        public static void GetCasterList(Camera camera, List<PerObjectShadowCaster> outCasterList, float maxShadowDistance, int maxCount)
         {
             foreach (PerObjectShadowCaster caster in s_Casters)
             {
@@ -68,6 +68,11 @@ namespace HSR.NPRShader.Shadow
 
             for (int i = 0; i < maxCount && i < s_CachedCasterList.Count; i++)
             {
+                if (Mathf.Abs(s_CachedCasterList[i].Depth) > maxShadowDistance)
+                {
+                    continue;
+                }
+
                 outCasterList.Add(s_CachedCasterList[i].Caster);
             }
 

@@ -60,7 +60,7 @@ Shader "Honkai Star Rail/Character/Hair"
         _EmissionIntensity("Intensity", Float) = 0
 
         [HeaderFoldout(Bloom)]
-        _BloomIntensity0("Intensity", Range(0, 1)) = 0.5
+        _mBloomIntensity0("Intensity", Range(0, 100)) = 1
         _BloomColor0("Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Rim Light)]

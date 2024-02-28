@@ -118,14 +118,14 @@ Shader "Honkai Star Rail/Character/Body"
 
         [HeaderFoldout(Bloom)]
         [HSRMaterialIDFoldout] _BloomIntensity("Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 0)] _BloomIntensity0("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 31)] _BloomIntensity1("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 63)] _BloomIntensity2("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 95)] _BloomIntensity3("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 127)] _BloomIntensity4("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 159)] _BloomIntensity5("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 192)] _BloomIntensity6("Bloom Intensity", Range(0, 1)) = 0.5
-        [HSRMaterialIDProperty(_BloomIntensity, 223)] _BloomIntensity7("Bloom Intensity", Range(0, 1)) = 0.5
+        [HSRMaterialIDProperty(_BloomIntensity, 0)] _mBloomIntensity0("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 31)] _mBloomIntensity1("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 63)] _mBloomIntensity2("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 95)] _mBloomIntensity3("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 127)] _mBloomIntensity4("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 159)] _mBloomIntensity5("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 192)] _mBloomIntensity6("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 223)] _mBloomIntensity7("Bloom Intensity", Range(0, 100)) = 1
         [HSRMaterialIDFoldout] _BloomColor("Color", Float) = 0
         [HSRMaterialIDProperty(_BloomColor, 0)] _BloomColor0("Bloom Color", Color) = (1, 1, 1, 1)
         [HSRMaterialIDProperty(_BloomColor, 31)] _BloomColor1("Bloom Color", Color) = (1, 1, 1, 1)

@@ -67,7 +67,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionThreshold;
     float _EmissionIntensity;
 
-    CHAR_MAT_PROP(float, _BloomIntensity);
+    CHAR_MAT_PROP(float, _mBloomIntensity);
     CHAR_MAT_PROP(float4, _BloomColor);
 
     float _RimIntensity;
@@ -119,7 +119,7 @@ void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget, inout float4 
         if (abs(floor(8 * lightMap.a) - _SingleMaterialID) > 0.01)
         {
             colorTarget.rgb = 0;
-            bloomTarget.a = 0; // intensity
+            bloomTarget = 0; // intensity
         }
     #endif
 }
@@ -153,7 +153,7 @@ void BodyColorFragment(
         float , rimWidth             = _RimWidth,
         float4, rimColor             = _RimColor,
         float , rimDark              = _RimDark,
-        float , bloomIntensity       = _BloomIntensity,
+        float , bloomIntensity       = _mBloomIntensity,
         float4, bloomColor           = _BloomColor
     );
 
@@ -222,7 +222,7 @@ void BodyColorFragment(
 
     // Output
     colorTarget = float4(diffuse + specular + rimLight + emission + diffuseAdd + specularAdd, texColor.a);
-    bloomTarget = float4(bloomColor.rgb, bloomIntensity);
+    bloomTarget = EncodeBloomColor(bloomColor.rgb, bloomIntensity);
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }
 

@@ -20,6 +20,7 @@
  */
 
 using System;
+using HSR.NPRShader.Passes;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -31,15 +32,15 @@ namespace HSR.NPRShader.PostProcessing
     public class CustomBloom : VolumeComponent, IPostProcessComponent
     {
         public MinFloatParameter Intensity = new(0, 0);
-        public ClampedFloatParameter Scatter = new(0.6f, 0.2f, 4.0f);
-        public ClampedIntParameter Iteration = new(4, 4, 8);
+        public MinFloatParameter Threshold = new(0.7f, 0);
         public ColorParameter Tint = new(Color.white, false, false, true);
 
-        [Header("Color Threshold")]
+        [Header("Blur Kernels")]
 
-        [DisplayInfo(name = "Red")] public MinFloatParameter ThresholdR = new(0.6f, 0);
-        [DisplayInfo(name = "Green")] public MinFloatParameter ThresholdG = new(0.6f, 0);
-        [DisplayInfo(name = "Blue")] public MinFloatParameter ThresholdB = new(0.6f, 0);
+        public ClampedIntParameter KernelSize1 = new(4, 4, PostProcessPass.BloomMaxKernelSize);
+        public ClampedIntParameter KernelSize2 = new(4, 4, PostProcessPass.BloomMaxKernelSize);
+        public ClampedIntParameter KernelSize3 = new(6, 4, PostProcessPass.BloomMaxKernelSize);
+        public ClampedIntParameter KernelSize4 = new(14, 4, PostProcessPass.BloomMaxKernelSize);
 
         public CustomBloom()
         {

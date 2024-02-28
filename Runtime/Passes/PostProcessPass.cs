@@ -23,6 +23,7 @@ using System;
 using HSR.NPRShader.PostProcessing;
 using HSR.NPRShader.Utils;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -30,15 +31,25 @@ namespace HSR.NPRShader.Passes
 {
     public class PostProcessPass : ScriptableRenderPass, IDisposable
     {
+        public const int BloomMaxKernelSize = 32;
+        public const int BloomMipDownBlurCount = 4;
+        public const int BloomAtlasPadding = 1;
+
         private readonly LazyMaterial m_BloomMaterial = new(StarRailBuiltinShaders.BloomShader);
         private readonly LazyMaterial m_UberMaterial = new(StarRailBuiltinShaders.UberPostShader);
 
         private readonly ProfilingSampler m_BloomSampler;
         private readonly ProfilingSampler m_UberPostSampler;
 
-        private RTHandle m_BloomHighlight;
-        private RTHandle[] m_BloomMipDown1;
-        private RTHandle[] m_BloomMipDown2;
+        private readonly GraphicsFormat m_DefaultHDRFormat;
+        private readonly bool m_UseRGBM;
+
+        private RTHandle[] m_BloomMipDown;
+        private RTHandle m_BloomAtlas1;
+        private RTHandle m_BloomAtlas2;
+        private readonly Rect[] m_BloomAtlasViewports;
+        private readonly Vector4[] m_BloomAtlasUVMinMax;
+        private readonly float[][] m_BloomKernels;
 
         private CustomBloom m_BloomConfig;
         private CustomTonemapping m_TonemappingConfig;
@@ -51,9 +62,30 @@ namespace HSR.NPRShader.Passes
             m_BloomSampler = new ProfilingSampler("Bloom");
             m_UberPostSampler = new ProfilingSampler("UberPostProcess");
 
-            m_BloomHighlight = null;
-            m_BloomMipDown1 = Array.Empty<RTHandle>();
-            m_BloomMipDown2 = Array.Empty<RTHandle>();
+            m_BloomMipDown = Array.Empty<RTHandle>();
+            m_BloomAtlasViewports = new Rect[BloomMipDownBlurCount];
+            m_BloomAtlasUVMinMax = new Vector4[BloomMipDownBlurCount];
+            m_BloomKernels = new float[BloomMipDownBlurCount][];
+
+            for (int i = 0; i < BloomMipDownBlurCount; i++)
+            {
+                m_BloomKernels[i] = new float[BloomMaxKernelSize];
+            }
+
+            // Texture format pre-lookup
+            const FormatUsage usage = FormatUsage.Linear | FormatUsage.Render;
+            if (SystemInfo.IsFormatSupported(GraphicsFormat.B10G11R11_UFloatPack32, usage))
+            {
+                m_DefaultHDRFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                m_UseRGBM = false;
+            }
+            else
+            {
+                m_DefaultHDRFormat = QualitySettings.activeColorSpace == ColorSpace.Linear
+                    ? GraphicsFormat.R8G8B8A8_SRGB
+                    : GraphicsFormat.R8G8B8A8_UNorm;
+                m_UseRGBM = true;
+            }
         }
 
         public void Dispose()
@@ -103,62 +135,117 @@ namespace HSR.NPRShader.Passes
                 return;
             }
 
-            EnsureBloomMipDownArraySize();
+            ReAllocateMipDownArrayIfNeeded(in cameraTextureDescriptor);
+            ReAllocateBloomAtlasIfNeeded(in cameraTextureDescriptor);
 
-            RenderTextureDescriptor descriptor = cameraTextureDescriptor;
-            descriptor.colorFormat = RenderTextureFormat.RGB111110Float;
-            descriptor.depthBufferBits = 0;
-            descriptor.msaaSamples = 1;
-
-            for (int i = -1; i < m_BloomConfig.Iteration.value; i++)
+            for (int i = 0; i < m_BloomKernels.Length; i++)
             {
-                descriptor.width = Mathf.Max(1, descriptor.width >> 1);
-                descriptor.height = Mathf.Max(1, descriptor.height >> 1);
-
-                if (i == -1)
-                {
-                    RenderingUtils.ReAllocateIfNeeded(ref m_BloomHighlight, in descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp);
-                    continue;
-                }
-
-                RenderingUtils.ReAllocateIfNeeded(ref m_BloomMipDown1[i], in descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp);
-                RenderingUtils.ReAllocateIfNeeded(ref m_BloomMipDown2[i], in descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp);
+                CalculateBloomKernel(m_BloomKernels[i], GetBloomKernelSize(i));
             }
         }
 
-        private void EnsureBloomMipDownArraySize()
+        private void ReAllocateMipDownArrayIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
         {
-            for (int i = m_BloomConfig.Iteration.value; i < m_BloomMipDown1.Length; i++)
-            {
-                m_BloomMipDown1[i]?.Release();
-            }
+            RenderTextureDescriptor mipDesc = cameraTextureDescriptor;
+            mipDesc.graphicsFormat = m_DefaultHDRFormat;
+            mipDesc.depthBufferBits = 0;
+            mipDesc.msaaSamples = 1;
 
-            for (int i = m_BloomConfig.Iteration.value; i < m_BloomMipDown2.Length; i++)
-            {
-                m_BloomMipDown2[i]?.Release();
-            }
+            // 保证不同分辨率下，最后做高斯模糊时，RT 的大小大致相同，这样模糊效果才大致一样
+            // 这里硬编码：做高斯模糊时，最大的 RT 的长和宽都不大于 450
+            int mipDownCountWidth = Mathf.CeilToInt(Mathf.Log(mipDesc.width / 450.0f, 2));
+            int mipDownCountHeight = Mathf.CeilToInt(Mathf.Log(mipDesc.height / 450.0f, 2));
+            int mipDownCountExtra = Mathf.Max(mipDownCountWidth, mipDownCountHeight) - 1; // 需要减一，最后一张算在 BloomMipDownBlurCount 里
+            Array.Resize(ref m_BloomMipDown, mipDownCountExtra + BloomMipDownBlurCount);
 
-            Array.Resize(ref m_BloomMipDown1, m_BloomConfig.Iteration.value);
-            Array.Resize(ref m_BloomMipDown2, m_BloomConfig.Iteration.value);
+            for (int i = 0; i < m_BloomMipDown.Length; i++)
+            {
+                mipDesc.width = Mathf.Max(1, mipDesc.width >> 1);
+                mipDesc.height = Mathf.Max(1, mipDesc.height >> 1);
+                RenderingUtils.ReAllocateIfNeeded(ref m_BloomMipDown[i], in mipDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
+            }
         }
+
+        private void ReAllocateBloomAtlasIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
+        {
+            // TODO 这部分目前是硬编码
+
+            Vector2 baseSize = GetBiggestBlurRTHandle().referenceSize;
+
+            RenderTextureDescriptor atlasDesc = cameraTextureDescriptor;
+            atlasDesc.graphicsFormat = m_DefaultHDRFormat;
+            atlasDesc.depthBufferBits = 0;
+            atlasDesc.msaaSamples = 1;
+
+            // 加几个像素的 padding，防止最后 bilinear combine 时混合到其他部分导致漏光
+            atlasDesc.width = Mathf.CeilToInt(1.5f * baseSize.x) + BloomAtlasPadding;
+            atlasDesc.height = Mathf.CeilToInt(baseSize.y);
+
+            RenderingUtils.ReAllocateIfNeeded(ref m_BloomAtlas1, in atlasDesc, FilterMode.Bilinear, TextureWrapMode.Clamp,
+                name: "BloomAtlas1");
+            RenderingUtils.ReAllocateIfNeeded(ref m_BloomAtlas2, in atlasDesc, FilterMode.Bilinear, TextureWrapMode.Clamp,
+                name: "BloomAtlas2");
+
+            m_BloomAtlasViewports[0] = new Rect(Vector2.zero, baseSize);
+            m_BloomAtlasViewports[1] = new Rect(new Vector2(m_BloomAtlasViewports[0].xMax + BloomAtlasPadding, 0), baseSize * 0.5f);
+            m_BloomAtlasViewports[2] = new Rect(new Vector2(m_BloomAtlasViewports[1].x, m_BloomAtlasViewports[1].yMax + BloomAtlasPadding), baseSize * 0.25f);
+            m_BloomAtlasViewports[3] = new Rect(new Vector2(m_BloomAtlasViewports[2].xMax + BloomAtlasPadding, m_BloomAtlasViewports[2].y), baseSize * 0.125f);
+
+            m_BloomAtlasUVMinMax[0] = ViewportToUVMinMax(m_BloomAtlasViewports[0], atlasDesc.width, atlasDesc.height);
+            m_BloomAtlasUVMinMax[1] = ViewportToUVMinMax(m_BloomAtlasViewports[1], atlasDesc.width, atlasDesc.height);
+            m_BloomAtlasUVMinMax[2] = ViewportToUVMinMax(m_BloomAtlasViewports[2], atlasDesc.width, atlasDesc.height);
+            m_BloomAtlasUVMinMax[3] = ViewportToUVMinMax(m_BloomAtlasViewports[3], atlasDesc.width, atlasDesc.height);
+        }
+
+        private static Vector4 ViewportToUVMinMax(Rect rect, float textureWidth, float textureHeight)
+        {
+            return new Vector4(rect.x / textureWidth, rect.y / textureHeight,
+                rect.xMax / textureWidth, rect.yMax / textureHeight);
+        }
+
+        private static void CalculateBloomKernel(float[] kernel, int size)
+        {
+            // 用杨辉三角近似高斯分布，去掉最左边两个和最右边两个数
+            int n = size + 3;
+            long sum = (1L << n) - 2 * (1 + n);
+            double value = n / (double)sum;
+
+            for (int i = 0; i < size; i++)
+            {
+                int k = i + 1;
+                value *= n - k;
+                value /= k + 1;
+                kernel[i] = (float)value;
+            }
+        }
+
+        private int GetBloomKernelSize(int index) => index switch
+        {
+            0 => m_BloomConfig.KernelSize1.value,
+            1 => m_BloomConfig.KernelSize2.value,
+            2 => m_BloomConfig.KernelSize3.value,
+            3 => m_BloomConfig.KernelSize4.value,
+            _ => throw new ArgumentOutOfRangeException(nameof(index))
+        };
 
         private void ReleaseBloomRTHandles()
         {
-            m_BloomHighlight?.Release();
-            m_BloomHighlight = null;
-
-            foreach (RTHandle rtHandle in m_BloomMipDown1)
+            for (int i = 0; i < m_BloomMipDown.Length; i++)
             {
-                rtHandle?.Release();
+                m_BloomMipDown[i]?.Release();
+                m_BloomMipDown[i] = null;
             }
 
-            foreach (RTHandle rtHandle in m_BloomMipDown2)
-            {
-                rtHandle?.Release();
-            }
+            m_BloomAtlas1?.Release();
+            m_BloomAtlas2?.Release();
+            m_BloomAtlas1 = null;
+            m_BloomAtlas2 = null;
+        }
 
-            m_BloomMipDown1 = Array.Empty<RTHandle>();
-            m_BloomMipDown2 = Array.Empty<RTHandle>();
+        private RTHandle GetBiggestBlurRTHandle()
+        {
+            // 需要做模糊的，最大的 RT
+            return m_BloomMipDown[^BloomMipDownBlurCount];
         }
 
         private void ExecuteBloom(CommandBuffer cmd, ref RenderingData renderingData)
@@ -175,49 +262,58 @@ namespace HSR.NPRShader.Passes
 
             using (new ProfilingScope(cmd, m_BloomSampler))
             {
-                // Set threshold
-                float thresholdR = Mathf.GammaToLinearSpace(m_BloomConfig.ThresholdR.value);
-                float thresholdG = Mathf.GammaToLinearSpace(m_BloomConfig.ThresholdG.value);
-                float thresholdB = Mathf.GammaToLinearSpace(m_BloomConfig.ThresholdB.value);
-                Vector4 threshold = new Vector4(thresholdR, thresholdG, thresholdB);
-                bloomMaterial.SetVector(PropertyIds._BloomThreshold, threshold);
+                CoreUtils.SetKeyword(bloomMaterial, ShaderKeywordStrings.UseRGBM, m_UseRGBM);
+
+                cmd.SetGlobalFloat(PropertyIds._BloomThreshold, m_BloomConfig.Threshold.value);
+                cmd.SetGlobalVectorArray(PropertyIds._BloomUVMinMax, m_BloomAtlasUVMinMax);
 
                 // Prefilter
-                Blitter.BlitCameraTexture(cmd, colorTargetHandle, m_BloomHighlight,
+                Blitter.BlitCameraTexture(cmd, colorTargetHandle, m_BloomMipDown[0],
                     RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 0);
 
                 // Mip down
-                RTHandle lastRTHandle = m_BloomHighlight;
-                for (int i = 0; i < m_BloomMipDown1.Length; i++)
+                for (int i = 1; i < m_BloomMipDown.Length; i++)
                 {
                     // use bilinear (pass 1)
-                    Blitter.BlitCameraTexture(cmd, lastRTHandle, m_BloomMipDown1[i],
+                    Blitter.BlitCameraTexture(cmd, m_BloomMipDown[i - 1], m_BloomMipDown[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, blitMaterial, 1);
-                    lastRTHandle = m_BloomMipDown1[i];
                 }
+
+                int blurStartIndex = m_BloomMipDown.Length - BloomMipDownBlurCount;
+                Vector4 scaleBias = new Vector4(1, 1, 0, 0);
+
+                // Alpha Channel 也要清空为 0，适配 RGBM 编码
+                CoreUtils.SetRenderTarget(cmd, m_BloomAtlas1, ClearFlag.All, new Color(0, 0, 0, 0));
 
                 // Blur vertical
-                for (int i = 0; i < m_BloomMipDown1.Length; i++)
+                for (int i = blurStartIndex; i < m_BloomMipDown.Length; i++)
                 {
-                    cmd.SetGlobalFloat(PropertyIds._BloomScatter, m_BloomConfig.Scatter.value);
-                    Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown2[i],
-                        RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 1);
+                    int atlasIndex = i - blurStartIndex;
+                    cmd.SetGlobalInt(PropertyIds._BloomKernelSize, GetBloomKernelSize(atlasIndex));
+                    cmd.SetGlobalFloatArray(PropertyIds._BloomKernel, m_BloomKernels[atlasIndex]);
+
+                    cmd.SetViewport(m_BloomAtlasViewports[atlasIndex]);
+                    Blitter.BlitTexture(cmd, m_BloomMipDown[i], scaleBias, bloomMaterial, 1);
                 }
+
+                // Alpha Channel 也要清空为 0，适配 RGBM 编码
+                CoreUtils.SetRenderTarget(cmd, m_BloomAtlas2, ClearFlag.All, new Color(0, 0, 0, 0));
 
                 // Blur horizontal
-                for (int i = 0; i < m_BloomMipDown1.Length; i++)
+                for (int i = blurStartIndex; i < m_BloomMipDown.Length; i++)
                 {
-                    cmd.SetGlobalFloat(PropertyIds._BloomScatter, m_BloomConfig.Scatter.value);
-                    Blitter.BlitCameraTexture(cmd, m_BloomMipDown2[i], m_BloomMipDown1[i],
-                        RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 2);
+                    int atlasIndex = i - blurStartIndex;
+                    cmd.SetGlobalInt(PropertyIds._BloomUVIndex, atlasIndex);
+                    cmd.SetGlobalInt(PropertyIds._BloomKernelSize, GetBloomKernelSize(atlasIndex));
+                    cmd.SetGlobalFloatArray(PropertyIds._BloomKernel, m_BloomKernels[atlasIndex]);
+
+                    cmd.SetViewport(m_BloomAtlasViewports[atlasIndex]);
+                    Blitter.BlitTexture(cmd, m_BloomAtlas1, scaleBias, bloomMaterial, 2);
                 }
 
-                // Mip up
-                for (int i = m_BloomMipDown1.Length - 1; i >= 1; i--)
-                {
-                    Blitter.BlitCameraTexture(cmd, m_BloomMipDown1[i], m_BloomMipDown1[i - 1],
-                        RenderBufferLoadAction.Load, RenderBufferStoreAction.Store, bloomMaterial, 3);
-                }
+                // Combine
+                Blitter.BlitCameraTexture(cmd, m_BloomAtlas2, GetBiggestBlurRTHandle(),
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 3);
             }
         }
 
@@ -234,10 +330,11 @@ namespace HSR.NPRShader.Passes
                 if (m_BloomConfig.IsActive())
                 {
                     material.EnableKeyword(KeywordNames._BLOOM);
+                    CoreUtils.SetKeyword(material, KeywordNames._BLOOM_USE_RGBM, m_UseRGBM);
 
                     material.SetFloat(PropertyIds._BloomIntensity, m_BloomConfig.Intensity.value);
                     material.SetColor(PropertyIds._BloomTint, m_BloomConfig.Tint.value);
-                    material.SetTexture(PropertyIds._BloomTexture, m_BloomMipDown1[0]);
+                    material.SetTexture(PropertyIds._BloomTexture, GetBiggestBlurRTHandle());
                 }
                 else
                 {
@@ -268,13 +365,17 @@ namespace HSR.NPRShader.Passes
         private static class KeywordNames
         {
             public static readonly string _BLOOM = StringHelpers.MemberName();
+            public static readonly string _BLOOM_USE_RGBM = StringHelpers.MemberName();
             public static readonly string _TONEMAPPING_ACES = StringHelpers.MemberName();
         }
 
         private static class PropertyIds
         {
             public static readonly int _BloomThreshold = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomScatter = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomUVMinMax = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomUVIndex = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomKernelSize = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomKernel = StringHelpers.ShaderPropertyIDFromMemberName();
 
             public static readonly int _BloomIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
             public static readonly int _BloomTint = StringHelpers.ShaderPropertyIDFromMemberName();

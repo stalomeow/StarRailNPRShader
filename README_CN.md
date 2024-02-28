@@ -33,67 +33,48 @@
 
     其中 $a,b,c,d,e$ 都是参数。
 
-## 从 git URL 安装
+## 安装
 
-**这个包要求 Unity >= 2022.3。**
+### 从 git URL 安装
 
-![安装](Screenshots~/_install.png)
+**按顺序**安装这些包。第二个包要求 Unity >= 2022.3。
 
 1. https://github.com/stalomeow/ShaderUtilsForSRP.git
 2. https://github.com/stalomeow/StarRailNPRShader.git
 
-## 指南
+![安装](Screenshots~/_install.png)
+
+### 渲染管线设置
 
 - 用 linear color space，别用 gamma。
-- 开 HDR。
+- 用 Forward 渲染路径。
 - 关 Depth priming。
-- 开 Depth texture 和 Depth prepass。
-- 目前只能用 Forward 渲染路径。
-- 在 Renderer 上加 Renderer Feature `StarRailForward`。
-- 材质球换 Shader 以后记得先重置一下。
-- 该项目自己实现了屏幕空间阴影，请不要添加 URP 的 `ScreenSpaceShadows` RendererFeature。
+- 在 Renderer 上加 `StarRailForward` RendererFeature。
 
 ### 推荐的后处理设置
 
+后处理很重要，请务必加上它。
+
 ![后处理设置](Screenshots~/_postprocessing.png)
 
-### 逐物体阴影
+### 角色的逐物体阴影
 
 在角色根物体上添加 `PerObjectShadowCaster` 组件。支持同屏最多 16 个角色阴影。
 
 ![逐物体阴影](Screenshots~/_per_obj_shadow.png)
 
-### 使用资源预处理器
+### 其他建议
 
-资源预处理器能
+- 推荐开 HDR。
+- 材质球换 Shader 以后记得先重置一下。
+- 该项目自己实现了屏幕空间阴影，请别再加 URP 的 `ScreenSpaceShadows` RendererFeature。
 
-- 自动平滑角色模型的法线，然后存进切线里。
-- 自动处理贴图。
+## 高级主题
 
-可以在 `Project Settings/Honkai Star Rail/NPR Shader` 中配置需要被预处理的资源的路径模式。默认的路径模式旨在与游戏内资源的命名风格保持一致。
-
-![资源路径模式设置](Screenshots~/_asset_path_patterns.png)
-
-### 使用 HSRMaterialViewer
-
-HSRMaterialViewer 能帮你浏览 `material.json` 文件，以及自动赋值材质的部分属性（不是所有属性）。**这个工具对 Floats 和 Ints 的赋值支持得不好。**
-
-![hsr-mat-viewer](Screenshots~/_hsr_mat_viewer.gif)
-
-### 关于 MMD 模型
-
-需要额外加几个步骤：
-
-- 在材质球上面把 `Model Type` 换成 `MMD`。
-- 在挂有 SkinnedMeshRenderer 的游戏物体上加一个 `SyncMMDHeadBone` 组件。
-
-    ![sync-mmd-head-bone](Screenshots~/_sync_mmd_head_bone.png)
-
-    可以自行设置头骨骼方向的值。另外，组件的菜单里还提供了两个预设。
-
-    ![sync-mmd-head-bone-ex](Screenshots~/_sync_mmd_head_bone_ex.png)
-
-**注意：** MMD 模型缺少一些细节信息，所以最后渲染出来可能没有想象中那么好。
+- [使用资源预处理器](Documentation~/WorkingWithAssetPreprocessor_CN.md)
+- [使用 HSRMaterialViewer](Documentation~/WorkingWithHSRMaterialViewer_CN.md)
+- [关于 MMD 模型](Documentation~/ForMMDModels_CN.md)
+- [常见问题](Documentation~/FAQ_CN.md)
 
 ## 规则
 
@@ -105,9 +86,3 @@ HSRMaterialViewer 能帮你浏览 `material.json` 文件，以及自动赋值材
 - 知乎上相关的文章
 - 哔哩哔哩上相关的视频
 - °Nya°222
-
-## 常见问题
-
-### 为啥没有描边/边缘光？
-
-在材质球上面修改 `Model Scale`。

@@ -23,7 +23,6 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
 {
     Properties
     {
-        _BloomThreshold("Bloom Threshold", Vector) = (0.3, 0.3, 0.3, 0)
     }
 
     SubShader
@@ -34,132 +33,161 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
             "RenderPipeline" = "UniversalPipeline"
         }
 
+        ZTest Always
+        ZWrite Off
+        Cull Off
+
         HLSLINCLUDE
+        #pragma multi_compile_local _ _USE_RGBM
+
+        #define MAX_KERNEL_SIZE 32
+        #define MAX_MIP_DOWN_BLUR_COUNT 4
+
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
         #include "../Includes/HSRGBuffer.hlsl"
+        #include "../Character/Shared/CharRenderingHelpers.hlsl"
 
-        CBUFFER_START(UnityPerMaterial)
-            float4 _BloomThreshold;
-        CBUFFER_END;
+        float4 _BlitTexture_TexelSize;
+
+        float _BloomThreshold;
+        float4 _BloomUVMinMax[MAX_MIP_DOWN_BLUR_COUNT];
+
+        int _BloomUVIndex;
+        int _BloomKernelSize;
+        float _BloomKernel[MAX_KERNEL_SIZE];
+
+        half4 EncodeHDR(half3 color)
+        {
+        #if _USE_RGBM
+            half4 outColor = EncodeRGBM(color);
+        #else
+            half4 outColor = half4(color, 1.0);
+        #endif
+
+        #if UNITY_COLORSPACE_GAMMA
+            return half4(sqrt(outColor.xyz), outColor.w); // linear to γ
+        #else
+            return outColor;
+        #endif
+        }
+
+        half3 DecodeHDR(half4 color)
+        {
+        #if UNITY_COLORSPACE_GAMMA
+            color.xyz *= color.xyz; // γ to linear
+        #endif
+
+        #if _USE_RGBM
+            return DecodeRGBM(color);
+        #else
+            return color.xyz;
+        #endif
+        }
+
+        float4 FragPrefilter(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            float2 uv = UnityStereoTransformScreenSpaceTex(input.texcoord);
+            float3 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv).rgb;
+            float4 bloom = HSRSampleGBuffer0(uv);
+            color = max(0, color - _BloomThreshold.rrr) * DecodeBloomColor(bloom);
+            return EncodeHDR(color);
+        }
+
+        half4 FragBlurV(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            float texelSize = _BlitTexture_TexelSize.y;
+            float halfKernelSize = (_BloomKernelSize - 1) * 0.5;
+            float2 uv = UnityStereoTransformScreenSpaceTex(input.texcoord);
+
+            half3 color = 0;
+            for (int i = 0; i < _BloomKernelSize; i++)
+            {
+                float2 offset = float2(0.0, texelSize * (i - halfKernelSize));
+                half3 c = DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv + offset));
+                color += c * _BloomKernel[i];
+            }
+            return EncodeHDR(color);
+        }
+
+        half4 FragBlurH(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            float texelSize = _BlitTexture_TexelSize.x;
+            float halfKernelSize = (_BloomKernelSize - 1) * 0.5;
+
+            // 从第一个图集中采样的 uv
+            float4 uvMinMax = _BloomUVMinMax[_BloomUVIndex];
+            float2 uv = lerp(uvMinMax.xy, uvMinMax.zw, UnityStereoTransformScreenSpaceTex(input.texcoord));
+
+            half3 color = 0;
+            for (int i = 0; i < _BloomKernelSize; i++)
+            {
+                float2 offset = float2(texelSize * (i - halfKernelSize), 0.0);
+                half3 c = DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, clamp(uv + offset, uvMinMax.xy, uvMinMax.zw)));
+                color += c * _BloomKernel[i];
+            }
+            return EncodeHDR(color);
+        }
+
+        half4 FragCombine(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            float2 uv = UnityStereoTransformScreenSpaceTex(input.texcoord);
+
+            half3 color = 0;
+            UNITY_UNROLL for (int i = 0; i < MAX_MIP_DOWN_BLUR_COUNT; i++)
+            {
+                float2 atlasUV = lerp(_BloomUVMinMax[i].xy, _BloomUVMinMax[i].zw, uv);
+                color += DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, atlasUV));
+            }
+            return EncodeHDR(color);
+        }
         ENDHLSL
 
         Pass
         {
-            Name "Prefilter"
+            Name "Bloom Prefilter"
 
             HLSLPROGRAM
             #pragma vertex Vert
-            #pragma fragment Frag
-
-            float4 Frag(Varyings i) : SV_Target
-            {
-                float3 color = FragBlit(i, sampler_LinearClamp).rgb;
-                float4 bloom = HSRSampleGBuffer0(i.texcoord);
-                color = max(0, color * bloom.a - _BloomThreshold.rgb) * bloom.rgb;
-                return float4(color, 1);
-            }
+            #pragma fragment FragPrefilter
             ENDHLSL
         }
 
         Pass
         {
-            Name "Blur Vertical"
+            Name "Bloom Blur Vertical"
 
             HLSLPROGRAM
             #pragma vertex Vert
-            #pragma fragment Frag
-
-            float _BloomScatter;
-            float2 _BlitTexture_TexelSize;
-
-            float4 Frag(Varyings i) : SV_Target
-            {
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-                static float weight[3] = { 0.4026, 0.2442, 0.0545 };
-                float scatter = _BloomScatter * _ScaledScreenParams.y / 1080.0; // 适应不同分辨率
-
-                float2 uv[5] =
-                {
-                    i.texcoord,
-                    i.texcoord + float2(0, _BlitTexture_TexelSize.y * 1.0) * scatter,
-                    i.texcoord - float2(0, _BlitTexture_TexelSize.y * 1.0) * scatter,
-                    i.texcoord + float2(0, _BlitTexture_TexelSize.y * 2.0) * scatter,
-                    i.texcoord - float2(0, _BlitTexture_TexelSize.y * 2.0) * scatter
-                };
-
-                float4 color = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearClamp, uv[0], _BlitMipLevel) * weight[0];
-
-                UNITY_UNROLL
-                for (int j = 1; j < 3; j++)
-                {
-                    color += SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearClamp, uv[j * 2 - 1], _BlitMipLevel) * weight[j];
-                    color += SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearClamp, uv[j * 2    ], _BlitMipLevel) * weight[j];
-                }
-
-                return float4(color.rgb, 1);
-            }
+            #pragma fragment FragBlurV
             ENDHLSL
         }
 
         Pass
         {
-            Name "Blur Horizontal"
+            Name "Bloom Blur Horizontal"
 
             HLSLPROGRAM
             #pragma vertex Vert
-            #pragma fragment Frag
-
-            float _BloomScatter;
-            float2 _BlitTexture_TexelSize;
-
-            float4 Frag(Varyings i) : SV_Target
-            {
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-                static float weight[3] = { 0.4026, 0.2442, 0.0545 };
-                float scatter = _BloomScatter * _ScaledScreenParams.x / 1920.0; // 适应不同分辨率
-
-                float2 uv[5] =
-                {
-                    i.texcoord,
-                    i.texcoord + float2(_BlitTexture_TexelSize.x * 1.0, 0) * scatter,
-                    i.texcoord - float2(_BlitTexture_TexelSize.x * 1.0, 0) * scatter,
-                    i.texcoord + float2(_BlitTexture_TexelSize.x * 2.0, 0) * scatter,
-                    i.texcoord - float2(_BlitTexture_TexelSize.x * 2.0, 0) * scatter
-                };
-
-                float4 color = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearClamp, uv[0], _BlitMipLevel) * weight[0];
-
-                UNITY_UNROLL
-                for (int j = 1; j < 3; j++)
-                {
-                    color += SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearClamp, uv[j * 2 - 1], _BlitMipLevel) * weight[j];
-                    color += SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearClamp, uv[j * 2    ], _BlitMipLevel) * weight[j];
-                }
-
-                return float4(color.rgb, 1);
-            }
+            #pragma fragment FragBlurH
             ENDHLSL
         }
 
         Pass
         {
-            Name "Add"
-
-            Blend One One
-            BlendOp Add
-            ColorMask RGB
+            Name "Bloom Combine"
 
             HLSLPROGRAM
             #pragma vertex Vert
-            #pragma fragment Frag
-
-            float4 Frag(Varyings i) : SV_Target
-            {
-                return FragBlit(i, sampler_LinearClamp);
-            }
+            #pragma fragment FragCombine
             ENDHLSL
         }
     }

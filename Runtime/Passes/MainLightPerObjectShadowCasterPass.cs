@@ -43,6 +43,7 @@ namespace HSR.NPRShader.Passes
         private RTHandle m_ShadowMap;
         private float m_DepthBias;
         private float m_NormalBias;
+        private float m_MaxShadowDistance;
 
         public MainLightPerObjectShadowCasterPass()
         {
@@ -60,10 +61,11 @@ namespace HSR.NPRShader.Passes
             m_ShadowMap?.Release();
         }
 
-        public void Setup(float depthBias, float normalBias)
+        public void Setup(float depthBias, float normalBias, float maxShadowDistance)
         {
             m_DepthBias = depthBias;
             m_NormalBias = normalBias;
+            m_MaxShadowDistance = maxShadowDistance;
         }
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
@@ -71,7 +73,7 @@ namespace HSR.NPRShader.Passes
             base.OnCameraSetup(cmd, ref renderingData);
 
             Camera camera = renderingData.cameraData.camera;
-            PerObjectShadowManager.GetCasterList(camera, m_ShadowCasterList, MaxShadowCount);
+            PerObjectShadowManager.GetCasterList(camera, m_ShadowCasterList, m_MaxShadowDistance, MaxShadowCount);
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
