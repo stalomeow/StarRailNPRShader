@@ -155,7 +155,7 @@ namespace HSR.NPRShader.Passes
             // 这里硬编码：做高斯模糊时，最大的 RT 的长和宽都不大于 450
             int mipDownCountWidth = Mathf.CeilToInt(Mathf.Log(mipDesc.width / 450.0f, 2));
             int mipDownCountHeight = Mathf.CeilToInt(Mathf.Log(mipDesc.height / 450.0f, 2));
-            int mipDownCountExtra = Mathf.Max(mipDownCountWidth, mipDownCountHeight) - 1; // 需要减一，最后一张算在 BloomMipDownBlurCount 里
+            int mipDownCountExtra = Mathf.Max(0, Mathf.Max(mipDownCountWidth, mipDownCountHeight) - 1); // 需要减一，最后一张算在 BloomMipDownBlurCount 里
             Array.Resize(ref m_BloomMipDown, mipDownCountExtra + BloomMipDownBlurCount);
 
             for (int i = 0; i < m_BloomMipDown.Length; i++)
