@@ -203,23 +203,26 @@ void BodyColorFragment(
 
     float3 diffuseAdd = 0;
     float3 specularAdd = 0;
-    uint pixelLightCount = GetAdditionalLightsCount();
-    LIGHT_LOOP_BEGIN(pixelLightCount)
-        Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
-        Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
-        float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-        diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
+    #if defined(_ADDITIONAL_LIGHTS)
+        uint pixelLightCount = GetAdditionalLightsCount();
+        LIGHT_LOOP_BEGIN(pixelLightCount)
+            Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+            Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
+            float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-        SpecularData specularDataAdd;
-        specularDataAdd.color = specularColor.rgb;
-        specularDataAdd.NoH = dirWSAdd.NoH;
-        specularDataAdd.shininess = specularShininess;
-        specularDataAdd.edgeSoftness = specularEdgeSoftness;
-        specularDataAdd.intensity = specularIntensity;
-        specularDataAdd.metallic = specularMetallic;
-        specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
-    LIGHT_LOOP_END
+            diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
+
+            SpecularData specularDataAdd;
+            specularDataAdd.color = specularColor.rgb;
+            specularDataAdd.NoH = dirWSAdd.NoH;
+            specularDataAdd.shininess = specularShininess;
+            specularDataAdd.edgeSoftness = specularEdgeSoftness;
+            specularDataAdd.intensity = specularIntensity;
+            specularDataAdd.metallic = specularMetallic;
+            specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
+        LIGHT_LOOP_END
+    #endif
 
     // Output
     colorTarget = float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + specular + specularAdd + rimLight + emission, texColor.a);

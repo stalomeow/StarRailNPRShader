@@ -142,23 +142,26 @@ float4 BaseHairOpaqueFragment(
 
     float3 diffuseAdd = 0;
     float3 specularAdd = 0;
-    uint pixelLightCount = GetAdditionalLightsCount();
-    LIGHT_LOOP_BEGIN(pixelLightCount)
-        Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
-        Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
-        float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-        diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
+    #if defined(_ADDITIONAL_LIGHTS)
+        uint pixelLightCount = GetAdditionalLightsCount();
+        LIGHT_LOOP_BEGIN(pixelLightCount)
+            Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+            Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
+            float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-        SpecularData specularDataAdd;
-        specularDataAdd.color = _SpecularColor0.rgb;
-        specularDataAdd.NoH = dirWSAdd.NoH;
-        specularDataAdd.shininess = _SpecularShininess0;
-        specularDataAdd.edgeSoftness = _SpecularEdgeSoftness0;
-        specularDataAdd.intensity = _SpecularIntensity0;
-        specularDataAdd.metallic = 0;
-        specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
-    LIGHT_LOOP_END
+            diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
+
+            SpecularData specularDataAdd;
+            specularDataAdd.color = _SpecularColor0.rgb;
+            specularDataAdd.NoH = dirWSAdd.NoH;
+            specularDataAdd.shininess = _SpecularShininess0;
+            specularDataAdd.edgeSoftness = _SpecularEdgeSoftness0;
+            specularDataAdd.intensity = _SpecularIntensity0;
+            specularDataAdd.metallic = 0;
+            specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
+        LIGHT_LOOP_END
+    #endif
 
     // Output
     return float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + specular + specularAdd + rimLight + emission, texColor.a);
