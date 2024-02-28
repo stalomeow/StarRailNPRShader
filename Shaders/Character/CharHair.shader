@@ -318,6 +318,33 @@ Shader "Honkai Star Rail/Character/Hair"
 
             ENDHLSL
         }
+
+        Pass
+        {
+            Name "HairMotionVectors"
+
+            Tags
+            {
+                "LightMode" = "MotionVectors"
+            }
+
+            Cull [_Cull]
+
+            HLSLPROGRAM
+
+            #pragma vertex HairMotionVectorsVertex
+            #pragma fragment HairMotionVectorsFragment
+
+            #pragma exclude_renderers d3d11_9x
+            #pragma target 3.5
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+
+            #include "CharHairCore.hlsl"
+
+            ENDHLSL
+        }
     }
 
     CustomEditor "StaloSRPShaderGUI"

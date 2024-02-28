@@ -39,6 +39,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
         HLSLINCLUDE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Shared/CharRenderingHelpers.hlsl"
+            #include "Shared/CharMotionVectors.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float _DitherAlpha;
@@ -71,6 +72,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
             ColorMask 0 1
 
             HLSLPROGRAM
+
             #pragma vertex vert
             #pragma fragment frag
 
@@ -189,6 +191,39 @@ Shader "Honkai Star Rail/Character/FaceMask"
             {
                 DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
                 return CharDepthNormalsFragment(i);
+            }
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "FaceMaskMotionVectors"
+
+            Tags
+            {
+                "LightMode" = "MotionVectors"
+            }
+
+            Cull Back
+
+            HLSLPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #pragma exclude_renderers d3d11_9x
+            #pragma target 3.5
+
+            CharMotionVectorsVaryings vert(CharMotionVectorsAttributes i)
+            {
+                return CharMotionVectorsVertex(i, 0);
+            }
+
+            half4 frag(CharMotionVectorsVaryings i) : SV_Target
+            {
+                DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+                return CharMotionVectorsFragment(i);
             }
 
             ENDHLSL

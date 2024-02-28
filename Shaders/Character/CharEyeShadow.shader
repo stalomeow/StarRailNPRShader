@@ -39,6 +39,17 @@ Shader "Honkai Star Rail/Character/EyeShadow"
             "Queue" = "Geometry+10"  // 必须在脸之后绘制
         }
 
+        HLSLINCLUDE
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Shared/CharRenderingHelpers.hlsl"
+            #include "Shared/CharMotionVectors.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _Color;
+                float _DitherAlpha;
+            CBUFFER_END
+        ENDHLSL
+
         Pass
         {
             Name "EyeShadow"
@@ -68,14 +79,6 @@ Shader "Honkai Star Rail/Character/EyeShadow"
 
             HLSLPROGRAM
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Shared/CharRenderingHelpers.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-                float4 _Color;
-                float _DitherAlpha;
-            CBUFFER_END
-
             #pragma vertex vert
             #pragma fragment frag
 
@@ -88,6 +91,40 @@ Shader "Honkai Star Rail/Character/EyeShadow"
             {
                 DoDitherAlphaEffect(positionHCS, _DitherAlpha);
                 return _Color;
+            }
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "EyeShadowMotionVectors"
+
+            Tags
+            {
+                "LightMode" = "MotionVectors"
+            }
+
+            Cull Back
+            ZWrite Off // 不写入深度，仅仅是附加在图像上面
+
+            HLSLPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #pragma exclude_renderers d3d11_9x
+            #pragma target 3.5
+
+            CharMotionVectorsVaryings vert(CharMotionVectorsAttributes i)
+            {
+                return CharMotionVectorsVertex(i, 0);
+            }
+
+            half4 frag(CharMotionVectorsVaryings i) : SV_Target
+            {
+                DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+                return CharMotionVectorsFragment(i);
             }
 
             ENDHLSL

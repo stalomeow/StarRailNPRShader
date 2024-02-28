@@ -30,6 +30,7 @@
 #include "Shared/CharDepthNormals.hlsl"
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
+#include "Shared/CharMotionVectors.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_FaceMap); SAMPLER(sampler_FaceMap);
@@ -271,6 +272,21 @@ float4 FaceDepthNormalsFragment(CharDepthNormalsVaryings i) : SV_Target
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthNormalsFragment(i);
+}
+
+CharMotionVectorsVaryings FaceMotionVectorsVertex(CharMotionVectorsAttributes i)
+{
+    return CharMotionVectorsVertex(i, _Maps_ST);
+}
+
+half4 FaceMotionVectorsFragment(CharMotionVectorsVaryings i) : SV_Target
+{
+    float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
+
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+
+    return CharMotionVectorsFragment(i);
 }
 
 #endif

@@ -309,6 +309,33 @@ Shader "Honkai Star Rail/Character/Face"
 
             ENDHLSL
         }
+
+        Pass
+        {
+            Name "FaceMotionVectors"
+
+            Tags
+            {
+                "LightMode" = "MotionVectors"
+            }
+
+            Cull Back
+
+            HLSLPROGRAM
+
+            #pragma vertex FaceMotionVectorsVertex
+            #pragma fragment FaceMotionVectorsFragment
+
+            #pragma exclude_renderers d3d11_9x
+            #pragma target 3.5
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+
+            #include "CharFaceCore.hlsl"
+
+            ENDHLSL
+        }
     }
 
     CustomEditor "StaloSRPShaderGUI"

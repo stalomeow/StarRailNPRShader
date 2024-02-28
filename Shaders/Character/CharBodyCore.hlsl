@@ -29,6 +29,7 @@
 #include "Shared/CharDepthNormals.hlsl"
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
+#include "Shared/CharMotionVectors.hlsl"
 #include "CharBodyMaterials.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
@@ -313,6 +314,26 @@ float4 BodyDepthNormalsFragment(
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthNormalsFragment(i);
+}
+
+CharMotionVectorsVaryings BodyMotionVectorsVertex(CharMotionVectorsAttributes i)
+{
+    return CharMotionVectorsVertex(i, _Maps_ST);
+}
+
+half4 BodyMotionVectorsFragment(
+    CharMotionVectorsVaryings i,
+    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
+{
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
+
+    float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
+    texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
+
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+
+    return CharMotionVectorsFragment(i);
 }
 
 #endif
