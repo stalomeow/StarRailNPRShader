@@ -65,7 +65,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 Fail Keep
             }
 
-            Cull Back
+            Cull Off
             ZWrite On
 
             ColorMask RGBA 0
@@ -99,7 +99,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 "LightMode" = "HSRShadowCaster"
             }
 
-            Cull Back
+            Cull Off
             ZWrite On
             ZTest LEqual
 
@@ -138,7 +138,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 "LightMode" = "DepthOnly"
             }
 
-            Cull Back
+            Cull Off
             ZWrite On
             ColorMask R
 
@@ -172,7 +172,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 "LightMode" = "DepthNormals"
             }
 
-            Cull Back
+            Cull Off
             ZWrite On
 
             HLSLPROGRAM
@@ -205,7 +205,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 "LightMode" = "MotionVectors"
             }
 
-            Cull Back
+            Cull Off
 
             HLSLPROGRAM
 
