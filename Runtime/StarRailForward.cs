@@ -146,7 +146,7 @@ namespace HSR.NPRShader
 
             m_MainLightPerObjShadowPass.Setup(DepthBias, NormalBias, MaxShadowDistance);
 
-            m_ClearGBufferPass.SetupClear(m_GBuffers, ClearFlag.All, Color.black);
+            m_ClearGBufferPass.SetupClear(m_GBuffers, ClearFlag.All, new Color(0, 0, 0, 0));
             m_DrawOpaqueForward1Pass.Setup(colorTarget, depthTarget, m_GBuffers);
             m_DrawOpaqueForward2Pass.Setup(colorTarget, depthTarget, m_GBuffers);
             m_DrawOpaqueForward3Pass.Setup(colorTarget, depthTarget, m_GBuffers);
