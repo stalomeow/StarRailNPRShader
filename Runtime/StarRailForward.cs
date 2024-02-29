@@ -124,6 +124,8 @@ namespace HSR.NPRShader
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
             renderer.EnqueuePass(m_DrawOpaqueOutlinePass);
+
+            // AfterRenderingTransparents
             renderer.EnqueuePass(m_DrawTransparentPass);
 
             // BeforeRenderingPostProcessing
@@ -149,6 +151,7 @@ namespace HSR.NPRShader
             m_DrawOpaqueForward2Pass.Setup(colorTarget, depthTarget, m_GBuffers);
             m_DrawOpaqueForward3Pass.Setup(colorTarget, depthTarget, m_GBuffers);
             m_DrawOpaqueOutlinePass.Setup(colorTarget, depthTarget, m_GBuffers);
+
             m_DrawTransparentPass.Setup(colorTarget, depthTarget, m_GBuffers);
 
             m_SetGBufferPass.Setup(m_GBufferNameIds, m_GBuffers);
