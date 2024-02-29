@@ -42,6 +42,10 @@ Shader "Hidden/Honkai Star Rail/Post Processing/UberPost"
             "RenderPipeline" = "UniversalPipeline"
         }
 
+        ZTest Always
+        ZWrite Off
+        Cull Off
+
         Pass
         {
             HLSLPROGRAM
