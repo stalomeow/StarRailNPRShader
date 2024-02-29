@@ -31,6 +31,12 @@ namespace HSR.NPRShader
     [DisallowMultipleRendererFeature]
     public class StarRailForward : ScriptableRendererFeature
     {
+#if UNITY_EDITOR
+        [UnityEditor.ShaderKeywordFilter.ApplyRulesIfNotGraphicsAPI(GraphicsDeviceType.OpenGLES2)]
+        [UnityEditor.ShaderKeywordFilter.SelectIf(true, keywordNames: ShaderKeywordStrings.MainLightShadowScreen)]
+        private const bool k_RequiresScreenSpaceShadowsKeyword = true;
+#endif
+
         private static readonly string[] s_GBufferNames =
         {
             "_HSRGBuffer0" // rgb: bloom color, a: bloom intensity
