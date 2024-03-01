@@ -135,6 +135,8 @@ Shader "Honkai Star Rail/Character/Face"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _FACEMAPUV2_ON
 
+            #pragma multi_compile_fog
+
             #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             // #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
@@ -223,6 +225,8 @@ Shader "Honkai Star Rail/Character/Face"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
 
             #pragma shader_feature_local_vertex _OUTLINENORMAL_TANGENT _OUTLINENORMAL_NORMAL
+
+            #pragma multi_compile_fog
 
             #include "CharFaceCore.hlsl"
 

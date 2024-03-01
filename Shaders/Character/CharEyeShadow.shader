@@ -41,6 +41,7 @@ Shader "Honkai Star Rail/Character/EyeShadow"
 
         HLSLINCLUDE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Shared/CharCore.hlsl"
             #include "Shared/CharRenderingHelpers.hlsl"
             #include "Shared/CharMotionVectors.hlsl"
 
@@ -79,18 +80,27 @@ Shader "Honkai Star Rail/Character/EyeShadow"
 
             HLSLPROGRAM
 
+            #pragma multi_compile_fog
+
             #pragma vertex vert
             #pragma fragment frag
 
-            float4 vert(float3 positionOS : POSITION) : SV_POSITION
+            CharCoreVaryings vert(CharCoreAttributes i)
             {
-                return TransformObjectToHClip(positionOS);
+                return CharCoreVertex(i, 0);
             }
 
-            float4 frag(float4 positionHCS : SV_POSITION) : SV_Target0
+            float4 frag(CharCoreVaryings i) : SV_Target0
             {
-                DoDitherAlphaEffect(positionHCS, _DitherAlpha);
-                return _Color;
+                DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+
+                float4 colorTarget = _Color;
+
+                // Fog
+                real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
+                colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
+
+                return colorTarget;
             }
 
             ENDHLSL

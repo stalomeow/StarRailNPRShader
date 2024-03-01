@@ -227,6 +227,12 @@ void BodyColorFragment(
     // Output
     colorTarget = float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + specular + specularAdd + rimLight + emission, texColor.a);
     bloomTarget = EncodeBloomColor(bloomColor.rgb, bloomIntensity);
+
+    // Fog
+    real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
+    colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
+
+    // Debug
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }
 
@@ -258,6 +264,12 @@ void BodyOutlineFragment(
 
     colorTarget = float4(outlineColor.rgb, 1);
     float4 bloomTarget = 0;
+
+    // Fog
+    real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
+    colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
+
+    // Debug
     ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
 }
 

@@ -177,6 +177,10 @@ void HairOpaqueFragment(
 
     colorTarget = float4(hairColor.rgb, 1);
     bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
+
+    // Fog
+    real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
+    colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
 }
 
 void HairFakeTransparentFragment(
@@ -209,6 +213,10 @@ void HairFakeTransparentFragment(
     // Output
     colorTarget = float4(hairColor.rgb, max(max(alpha1, alpha2), _HairBlendAlpha));
     bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
+
+    // Fog
+    real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
+    colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
 }
 
 CharOutlineVaryings HairOutlineVertex(CharOutlineAttributes i)
@@ -230,7 +238,13 @@ float4 HairOutlineFragment(CharOutlineVaryings i) : SV_Target0
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    return float4(_OutlineColor0.rgb, 1);
+    float4 colorTarget = float4(_OutlineColor0.rgb, 1);
+
+    // Fog
+    real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
+    colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
+
+    return colorTarget;
 }
 
 CharShadowVaryings HairShadowVertex(CharShadowAttributes i)

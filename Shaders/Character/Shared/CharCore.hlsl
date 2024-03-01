@@ -48,6 +48,7 @@ struct CharCoreVaryings
     float4 uv             : TEXCOORD0;
     float3 positionWS     : TEXCOORD1;
     float4 shadowCoord    : TEXCOORD2;
+    real   fogFactor      : TEXCOORD3;
 };
 
 CharCoreVaryings CharCoreVertex(CharCoreAttributes i, float4 mapST)
@@ -61,6 +62,12 @@ CharCoreVaryings CharCoreVertex(CharCoreAttributes i, float4 mapST)
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
     o.positionWS = positionInputs.positionWS;
     o.shadowCoord = GetShadowCoord(positionInputs);
+
+    #if defined(_FOG_FRAGMENT)
+        o.fogFactor = 0.0;
+    #else
+        o.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
+    #endif
 
     return o;
 }

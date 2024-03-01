@@ -46,6 +46,8 @@ struct CharOutlineVaryings
 {
     float4 positionHCS    : SV_POSITION;
     float4 uv             : TEXCOORD0;
+    float3 positionWS     : TEXCOORD1;
+    real   fogFactor      : TEXCOORD2;
 };
 
 struct OutlineData
@@ -55,7 +57,7 @@ struct OutlineData
     float zOffset;
 };
 
-float4 GetOutlinePositionHCS(OutlineData data, float3 positionVS, float3 normalVS, float4 vertexColor)
+float3 GetOutlinePositionVS(OutlineData data, float3 positionVS, float3 normalVS, float4 vertexColor)
 {
     float outlineWidth = data.width * data.modelScale * 0.0588;
 
@@ -85,7 +87,7 @@ float4 GetOutlinePositionHCS(OutlineData data, float3 positionVS, float3 normalV
     normalVS.z = -0.1; // 向后拍扁
     positionVS += normalize(normalVS) * outlineWidth;
     positionVS.z += data.zOffset * data.modelScale; // 用于隐藏面片的描边
-    return TransformWViewToHClip(positionVS);
+    return positionVS;
 }
 
 CharOutlineVaryings CharOutlineVertex(
@@ -105,9 +107,18 @@ CharOutlineVaryings CharOutlineVertex(
 
     float3 normalWS = TransformObjectToWorldNormal(normalOS);
     float3 normalVS = TransformWorldToViewNormal(normalWS);
+    float3 positionVS = GetOutlinePositionVS(data, vertexInputs.positionVS, normalVS, i.color);
 
-    o.positionHCS = GetOutlinePositionHCS(data, vertexInputs.positionVS, normalVS, i.color);
+    o.positionHCS = TransformWViewToHClip(positionVS);
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
+    o.positionWS = TransformViewToWorld(positionVS);
+
+    #if defined(_FOG_FRAGMENT)
+        o.fogFactor = 0.0;
+    #else
+        o.fogFactor = ComputeFogFactor(o.positionHCS.z);
+    #endif
+
     return o;
 }
 
