@@ -69,6 +69,55 @@
 - 材质球换 Shader 以后记得先重置一下。
 - 该项目自己实现了屏幕空间阴影，请别再加 URP 的 `ScreenSpaceShadows` RendererFeature。
 
+## 大致流程图
+
+``` mermaid
+flowchart TD
+    URPShadowCaster[URP ShadowCaster] --> StarRail1
+    
+    subgraph StarRail1[StarRailForward]
+        PerObjShadowCaster([MainLight PerObjectShadowCaster])
+    end
+
+    StarRail1 --> URPDepthPrepass[URP DepthPrepass]
+    URPDepthPrepass --> StarRail2
+
+    subgraph StarRail2[StarRailForward]
+        ScreenSpaceShadow([Generate ScreenSpaceShadowMap]) --> ScreenSpaceShadowKeyword
+        ScreenSpaceShadowKeyword([_MAIN_LIGHT_SHADOWS_SCREEN])
+    end
+
+    StarRail2 --> URPOpaque[URP Opaque]
+    URPOpaque --> StarRail3
+
+    subgraph StarRail3[StarRailForward]
+        CascadedShadow(["_MAIN_LIGHT_SHADOWS_CASCADE"])
+        CascadedShadow --> SROpaque
+
+        subgraph SROpaque["Opaque (MRT)"]
+            direction LR
+            SROpaque1([Opaque 1]) --> SROpaque2([Opaque 2])
+            SROpaque2 --> SROpaque3([Opaque 3])
+            SROpaque3 --> SROpaqueOutline([Outline])
+        end
+    end
+
+    StarRail3 --> URPSkybox[URP Skybox]
+    URPSkybox --> URPTransparent[URP Transparent]
+    URPTransparent --> StarRail4
+
+    subgraph StarRail4[StarRailForward]
+        SRTransparent(["Transparent (MRT)"]) --> SRPost
+    
+        subgraph SRPost[PostProcess]
+            direction LR
+            SRBloom([Bloom]) --> SRTonemapping([Tonemapping])
+        end
+    end
+
+    StarRail4 --> URPPost[URP PostProcess]
+```
+
 ## 高级主题
 
 - [使用资源预处理器](Documentation~/WorkingWithAssetPreprocessor_CN.md)
