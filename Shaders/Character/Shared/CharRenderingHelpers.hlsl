@@ -140,7 +140,7 @@ HeadDirections GetWorldSpaceCharHeadDirectionsImpl(
 // NPR
 // ----------------------------------------------------------------------------------
 
-float2 GetRampUV(float NoL, bool singleMaterial, float4 vertexColor, float4 lightMap, float shadowAttenuation)
+float2 GetRampUV(float NoL, bool singleMaterial, float4 vertexColor, float4 lightMap, half shadowAttenuation)
 {
     // 头发 Ramp 上一共 2 条颜色，对应一个材质
     // 身体 Ramp 上一共 16 条颜色，每两条对应一个材质，共 8 种材质
@@ -159,7 +159,7 @@ float2 GetRampUV(float NoL, bool singleMaterial, float4 vertexColor, float4 ligh
     shadow = max(0.001f, shadow) * 0.75f + 0.25f;
     shadow = (shadow > 1) ? 0.99f : shadow;
 
-    shadow = lerp(0.20, shadow, shadowAttenuation);
+    shadow = lerp(0.20, shadow, saturate(shadowAttenuation + HALF_EPS));
     shadow = lerp(0, shadow, step(0.05, ao)); // AO < 0.05 的区域（自阴影区域）永远不受光
     shadow = lerp(1, shadow, step(ao, 0.95)); // AO > 0.95 的区域永远受最强光
 
@@ -181,7 +181,7 @@ float3 GetRampDiffuse(
     float4 lightMap,
     TEXTURE2D_PARAM(rampMapCool, sampler_rampMapCool),
     TEXTURE2D_PARAM(rampMapWarm, sampler_rampMapWarm),
-    float shadowAttenuation)
+    half shadowAttenuation)
 {
     float2 rampUV = GetRampUV(data.NoL, data.singleMaterial, vertexColor, lightMap, shadowAttenuation);
     float3 rampCool = SAMPLE_TEXTURE2D(rampMapCool, sampler_rampMapCool, rampUV).rgb;
@@ -337,6 +337,23 @@ float3 CombineColorPreserveLuminance(float3 color, float3 colorAdd)
     float3 hsv = RgbToHsv(color + colorAdd);
     hsv.z = RgbToHsv(color).z;
     return HsvToRgb(hsv);
+}
+
+Light GetCharacterMainLight(float4 shadowCoord)
+{
+    Light light = GetMainLight();
+
+    #if defined(MAIN_LIGHT_CALCULATE_SHADOWS)
+        ShadowSamplingData shadowSamplingData = GetMainLightShadowSamplingData();
+        half4 shadowParams = GetMainLightShadowParams();
+
+        // 我自己试下来，在角色身上 LowQuality 比 Medium 和 High 好
+        // Medium 和 High 采样数多，过渡的区间大，在角色身上更容易出现 Perspective aliasing
+        shadowSamplingData.softShadowQuality = SOFT_SHADOW_QUALITY_LOW;
+        light.shadowAttenuation = SampleShadowmap(TEXTURE2D_ARGS(_MainLightShadowmapTexture, sampler_LinearClampCompare), shadowCoord, shadowSamplingData, shadowParams, false);
+    #endif
+
+    return light;
 }
 
 #endif

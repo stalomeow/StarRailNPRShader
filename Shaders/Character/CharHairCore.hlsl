@@ -99,7 +99,7 @@ float4 BaseHairOpaqueFragment(
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    Light light = GetMainLight(i.shadowCoord);
+    Light light = GetCharacterMainLight(i.shadowCoord);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
     DiffuseData diffuseData;

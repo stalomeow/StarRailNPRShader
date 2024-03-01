@@ -89,7 +89,7 @@ float3 GetFaceOrEyeDiffuse(
     float3 baseColor,
     float3 lightColor,
     float4 faceMap,
-    float shadowAttenuation)
+    half shadowAttenuation)
 {
     // 游戏模型才有 UV2
     #if defined(_MODEL_GAME) && defined(_FACEMAPUV2_ON)
@@ -128,7 +128,7 @@ void FaceOpaqueAndZFragment(
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    Light light = GetMainLight(i.shadowCoord);
+    Light light = GetCharacterMainLight(i.shadowCoord);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
     HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
 

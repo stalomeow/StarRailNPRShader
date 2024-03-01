@@ -52,7 +52,7 @@ namespace HSR.NPRShader
         [Header("MainLightPerObjectShadow")]
 
         [Range(0, 10)] public float DepthBias = 1;
-        [Range(0, 10)] public float NormalBias = 0;
+        [Range(0, 10)] public float NormalBias = 1;
         [Min(0)] public float MaxShadowDistance = 40;
 
         // -------------------------------------------------------

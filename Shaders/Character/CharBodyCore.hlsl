@@ -158,7 +158,7 @@ void BodyColorFragment(
         float4, bloomColor           = _BloomColor
     );
 
-    Light light = GetMainLight(i.shadowCoord);
+    Light light = GetCharacterMainLight(i.shadowCoord);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
     ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);
