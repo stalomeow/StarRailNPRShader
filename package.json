@@ -6,7 +6,7 @@
   "description": "Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail.",
   "unity": "2022.3",
   "dependencies": {
-    "com.unity.render-pipelines.universal": "14.0.10",
+    "com.unity.render-pipelines.universal": "14.0.9",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.stalomeow.srp-shader-utils": "2.1.2"
   }
