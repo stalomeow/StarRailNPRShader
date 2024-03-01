@@ -23,6 +23,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
 {
     Properties
     {
+        _Color("Color", Color) = (1, 1, 1, 1)
         _DitherAlpha("Dither Alpha", Range(0, 1)) = 1
     }
 
@@ -43,6 +44,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
             #include "Shared/CharMotionVectors.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float4 _Color;
                 float _DitherAlpha;
             CBUFFER_END
         ENDHLSL
@@ -70,7 +72,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
             ZWrite On
 
             ColorMask RGBA 0
-            ColorMask 0 1
+            ColorMask RGBA 1
 
             HLSLPROGRAM
 
@@ -84,17 +86,18 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 return CharCoreVertex(i, 0);
             }
 
-            float4 frag(CharCoreVaryings i) : SV_Target0
+            void frag(CharCoreVaryings i,
+                out float4 colorTarget : SV_Target0,
+                out float4 bloomTarget : SV_Target1)
             {
                 DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-                float4 colorTarget = 1;
+                colorTarget = _Color;
+                bloomTarget = EncodeBloomColor(float3(0, 0, 0), 0);
 
                 // Fog
                 real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
                 colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
-
-                return colorTarget;
             }
 
             ENDHLSL
