@@ -188,7 +188,8 @@ void HairFakeTransparentFragment(
     // 手动做一次深度测试，保证只有最上面一层头发和眼睛做 alpha 混合。这样看上去更加通透
     float sceneDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(i.positionHCS.xy - 0.5));
     float hairDepth = GetLinearEyeDepthAnyProjection(i.positionHCS);
-    clip(sceneDepth - hairDepth); // if (hairDepth > sceneDepth) discard;
+    // 部分安卓设备存在精度问题，加一个 EPSILON，避免 fighting
+    clip(sceneDepth - hairDepth + REAL_EPS); // if (hairDepth > sceneDepth) discard;
 
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 

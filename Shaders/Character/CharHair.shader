@@ -163,9 +163,11 @@ Shader "Honkai Star Rail/Character/Hair"
             {
                 Ref 3
                 ReadMask 2   // 眼睛位
-                WriteMask 2  // 眼睛位
                 Comp Equal
-                Pass Zero    // 清除眼睛位
+                // 不能清除眼睛的 Stencil
+                // 有时候头发存在重叠，如果被盖在下面的头发先画并清除了眼睛的 Stencil，那么上面的头发就画不上了
+                // 上面的头发画不上的话，深度也写不上，后面描边就会出问题
+                Pass Keep
                 Fail Keep
             }
 
