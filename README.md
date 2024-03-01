@@ -37,6 +37,8 @@ The rendering of character takes advantage of MRT whose pass is always executed 
 
 ## Installation
 
+This package is verified on Windows & Android.
+
 ### Install via git URL
 
 Install these packages **in order**. The second one requires Unity >= 2022.3.
