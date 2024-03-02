@@ -70,7 +70,7 @@ namespace HSR.NPRShader.Editor.Tools
 
             EditorGUILayout.TextField("Material Name", m_GameMatInfo.Name);
             EditorGUILayout.TextField("Shader Name", m_GameMatInfo.Shader);
-            EditorGUILayout.HelpBox("It's better to reset the material after changing its shader. Applying Floats and Ints are not well supported by this tool.", MessageType.Info);
+            EditorGUILayout.HelpBox("It's better to reset the material after changing its shader. Applying Floats and Ints is not well supported by this tool.", MessageType.Info);
             DoApplyToMaterialButton();
             EditorGUILayout.Space();
 
