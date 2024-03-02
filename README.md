@@ -51,7 +51,7 @@ Install these packages **in order**. The second one requires Unity >= 2022.3.
 ### RenderPipeline settings
 
 - Use linear color space instead of gamma.
-- Use forward rendering path.
+- Use `Forward` or `Forward+` rendering path.
 - Disable depth priming.
 - Add `StarRailForward` RendererFeature to the renderer.
 

@@ -141,6 +141,7 @@ Shader "Honkai Star Rail/Character/Face"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             // #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _FORWARD_PLUS
 
             #include "CharFaceCore.hlsl"
 

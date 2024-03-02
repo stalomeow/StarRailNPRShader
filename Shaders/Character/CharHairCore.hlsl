@@ -144,8 +144,7 @@ float4 BaseHairOpaqueFragment(
     float3 specularAdd = 0;
 
     #if defined(_ADDITIONAL_LIGHTS)
-        uint pixelLightCount = GetAdditionalLightsCount();
-        LIGHT_LOOP_BEGIN(pixelLightCount)
+        CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
             Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
             Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
             float attenuationAdd = saturate(lightAdd.distanceAttenuation);
@@ -160,7 +159,7 @@ float4 BaseHairOpaqueFragment(
             specularDataAdd.intensity = _SpecularIntensity0;
             specularDataAdd.metallic = 0;
             specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
-        LIGHT_LOOP_END
+        CHAR_LIGHT_LOOP_END
     #endif
 
     // Output

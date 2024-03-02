@@ -49,7 +49,7 @@
 ### 渲染管线设置
 
 - 用 linear color space，别用 gamma。
-- 用 Forward 渲染路径。
+- 用 `Forward` 或 `Forward+` 渲染路径。
 - 关 Depth priming。
 - 在 Renderer 上加 `StarRailForward` RendererFeature。
 

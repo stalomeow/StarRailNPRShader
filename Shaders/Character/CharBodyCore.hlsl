@@ -205,8 +205,7 @@ void BodyColorFragment(
     float3 specularAdd = 0;
 
     #if defined(_ADDITIONAL_LIGHTS)
-        uint pixelLightCount = GetAdditionalLightsCount();
-        LIGHT_LOOP_BEGIN(pixelLightCount)
+        CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
             Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
             Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
             float attenuationAdd = saturate(lightAdd.distanceAttenuation);
@@ -221,7 +220,7 @@ void BodyColorFragment(
             specularDataAdd.intensity = specularIntensity;
             specularDataAdd.metallic = specularMetallic;
             specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
-        LIGHT_LOOP_END
+        CHAR_LIGHT_LOOP_END
     #endif
 
     // Output

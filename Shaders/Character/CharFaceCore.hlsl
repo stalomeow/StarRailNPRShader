@@ -163,12 +163,11 @@ void FaceOpaqueAndZFragment(
     float3 diffuseAdd = 0;
 
     #if defined(_ADDITIONAL_LIGHTS)
-        uint pixelLightCount = GetAdditionalLightsCount();
-        LIGHT_LOOP_BEGIN(pixelLightCount)
+        CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
             Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
             float attenuationAdd = saturate(lightAdd.distanceAttenuation);
             diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
-        LIGHT_LOOP_END
+        CHAR_LIGHT_LOOP_END
     #endif
 
     // Output

@@ -356,4 +356,26 @@ Light GetCharacterMainLight(float4 shadowCoord)
     return light;
 }
 
+#if USE_FORWARD_PLUS
+    // Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl
+    struct ForwardPlusDummyInputData
+    {
+        float3 positionWS;
+        float2 normalizedScreenSpaceUV;
+    };
+
+    #define CHAR_LIGHT_LOOP_BEGIN(posWS, posHCS) { \
+        uint pixelLightCount = GetAdditionalLightsCount(); \
+        ForwardPlusDummyInputData inputData; \
+        inputData.positionWS = posWS; \
+        inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(posHCS); \
+        LIGHT_LOOP_BEGIN(pixelLightCount)
+#else
+    #define CHAR_LIGHT_LOOP_BEGIN(posWS, posHCS) { \
+        uint pixelLightCount = GetAdditionalLightsCount(); \
+        LIGHT_LOOP_BEGIN(pixelLightCount)
+#endif
+
+#define CHAR_LIGHT_LOOP_END } LIGHT_LOOP_END
+
 #endif
