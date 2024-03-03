@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace HSR.NPRShader.Utils
 {
@@ -31,6 +30,7 @@ namespace HSR.NPRShader.Utils
     {
         public enum StoreMode
         {
+            Disabled = -1,
             ObjectSpaceTangent = 0,
             ObjectSpaceNormal = 1,
             ObjectSpaceUV7 = 2,
@@ -40,6 +40,11 @@ namespace HSR.NPRShader.Utils
         public static void SmoothAndStore(GameObject go, StoreMode storeMode, bool upload,
             List<GameObject> outModifiedObjs = null)
         {
+            if (storeMode == StoreMode.Disabled)
+            {
+                return;
+            }
+
             foreach (var renderer in go.GetComponentsInChildren<SkinnedMeshRenderer>(false))
             {
                 SmoothAndStore(renderer.sharedMesh, storeMode, upload);
@@ -55,6 +60,11 @@ namespace HSR.NPRShader.Utils
 
         public static void SmoothAndStore(Mesh mesh, StoreMode storeMode, bool upload)
         {
+            if (storeMode == StoreMode.Disabled)
+            {
+                return;
+            }
+
             CheckMeshTopology(mesh, MeshTopology.Triangles);
 
             Vector3[] vertices = mesh.vertices;
@@ -176,6 +186,11 @@ namespace HSR.NPRShader.Utils
 
         private static void StoreNormals(Vector3[] newNormals, Mesh mesh, StoreMode mode, bool upload)
         {
+            if (mode == StoreMode.Disabled)
+            {
+                return;
+            }
+
             switch (mode)
             {
                 case StoreMode.ObjectSpaceTangent:

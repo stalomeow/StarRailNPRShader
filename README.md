@@ -124,7 +124,7 @@ flowchart TD
 
 ## Advanced topics
 
-- [Working with asset preprocessor](Documentation~/WorkingWithAssetPreprocessor.md)
+- [Working with asset processor](Documentation~/WorkingWithAssetProcessor.md)
 - [Working with HSRMaterialViewer](Documentation~/WorkingWithHSRMaterialViewer.md)
 - [For MMD models](Documentation~/ForMMDModels.md)
 - [FAQ](Documentation~/FAQ.md)

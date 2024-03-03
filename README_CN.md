@@ -122,7 +122,7 @@ flowchart TD
 
 ## 高级主题
 
-- [使用资源预处理器](Documentation~/WorkingWithAssetPreprocessor_CN.md)
+- [使用资产处理器](Documentation~/WorkingWithAssetProcessor_CN.md)
 - [使用 HSRMaterialViewer](Documentation~/WorkingWithHSRMaterialViewer_CN.md)
 - [关于 MMD 模型](Documentation~/ForMMDModels_CN.md)
 - [常见问题](Documentation~/FAQ_CN.md)
