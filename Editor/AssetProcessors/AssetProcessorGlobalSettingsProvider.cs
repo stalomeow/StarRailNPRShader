@@ -85,12 +85,12 @@ namespace HSR.NPRShader.Editor.AssetProcessors
                  GUILayout.Space(15);
 
                  DrawAssetProcessorConfig("Avatar Model", ref m_AvatarModelProcessConfigFoldout, AvatarModelProcessConfig, showSmoothNormalStoreMode: true);
-                 DrawAssetProcessorConfig("Ramp Texture", ref m_RampTextureProcessConfigFoldout, RampTextureProcessConfig);
-                 DrawAssetProcessorConfig("Light Map", ref m_LightMapProcessConfigFoldout, LightMapProcessConfig);
                  DrawAssetProcessorConfig("Color Texture", ref m_ColorTextureProcessConfigFoldout, ColorTextureProcessConfig);
-                 DrawAssetProcessorConfig("Stockings Range Map", ref m_StockingsRangeMapProcessConfigFoldout, StockingsRangeMapProcessConfig);
-                 DrawAssetProcessorConfig("Face Map", ref m_FaceMapProcessConfigFoldout, FaceMapProcessConfig);
                  DrawAssetProcessorConfig("Face Expression Map", ref m_FaceExpressionMapProcessConfigFoldout, FaceExpressionMapProcessConfig);
+                 DrawAssetProcessorConfig("Face Map", ref m_FaceMapProcessConfigFoldout, FaceMapProcessConfig);
+                 DrawAssetProcessorConfig("Light Map", ref m_LightMapProcessConfigFoldout, LightMapProcessConfig);
+                 DrawAssetProcessorConfig("Ramp Texture", ref m_RampTextureProcessConfigFoldout, RampTextureProcessConfig);
+                 DrawAssetProcessorConfig("Stockings Range Map", ref m_StockingsRangeMapProcessConfigFoldout, StockingsRangeMapProcessConfig);
 
                  GUILayout.Space(10);
 
