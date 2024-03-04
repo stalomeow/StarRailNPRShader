@@ -356,6 +356,9 @@ namespace HSR.NPRShader.Passes
                     material.DisableKeyword(KeywordNames._TONEMAPPING_ACES);
                 }
 
+                CoreUtils.SetKeyword(material, KeywordNames._USE_FAST_SRGB_LINEAR_CONVERSION,
+                    renderingData.postProcessingData.useFastSRGBLinearConversion);
+
                 Blit(cmd, ref renderingData, material);
             }
         }
@@ -367,6 +370,7 @@ namespace HSR.NPRShader.Passes
             public static readonly string _BLOOM = StringHelpers.MemberName();
             public static readonly string _BLOOM_USE_RGBM = StringHelpers.MemberName();
             public static readonly string _TONEMAPPING_ACES = StringHelpers.MemberName();
+            public static readonly string _USE_FAST_SRGB_LINEAR_CONVERSION = StringHelpers.MemberName();
         }
 
         private static class PropertyIds

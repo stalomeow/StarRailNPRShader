@@ -55,9 +55,13 @@ Shader "Hidden/Honkai Star Rail/Post Processing/UberPost"
             #pragma multi_compile_local_fragment _ _BLOOM
             #pragma multi_compile_local_fragment _ _BLOOM_USE_RGBM
             #pragma multi_compile_local_fragment _ _TONEMAPPING_ACES
+            #pragma multi_compile_local_fragment _ _USE_FAST_SRGB_LINEAR_CONVERSION
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/PostProcessing/Common.hlsl"
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float _BloomIntensity;
@@ -85,8 +89,26 @@ Shader "Hidden/Honkai Star Rail/Post Processing/UberPost"
             {
                 float4 color = FragBlit(i, sampler_PointClamp);
 
+                // Gamma space... Just do the rest of Uber in linear and convert back to sRGB at the end
+                #if UNITY_COLORSPACE_GAMMA
+                    color = GetSRGBToLinear(color);
+                #endif
+
                 #if defined(_BLOOM)
-                    float4 bloom = SAMPLE_TEXTURE2D(_BloomTexture, sampler_LinearClamp, i.texcoord);
+                    float2 bloomUV = i.texcoord;
+
+                    #if defined(SUPPORTS_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+                        UNITY_BRANCH if (_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+                        {
+                            bloomUV = RemapFoveatedRenderingNonUniformToLinear(bloomUV);
+                        }
+                    #endif
+
+                    float4 bloom = SAMPLE_TEXTURE2D(_BloomTexture, sampler_LinearClamp, bloomUV);
+
+                    #if UNITY_COLORSPACE_GAMMA
+                        bloom.xyz *= bloom.xyz; // γ to linear
+                    #endif
 
                     #if defined(_BLOOM_USE_RGBM)
                         color.rgb += DecodeRGBM(bloom) * _BloomTint.rgb * _BloomIntensity;
@@ -97,6 +119,11 @@ Shader "Hidden/Honkai Star Rail/Post Processing/UberPost"
 
                 #if defined(_TONEMAPPING_ACES)
                     color.rgb = CustomACESTonemapping(color.rgb);
+                #endif
+
+                // Back to sRGB
+                #if UNITY_COLORSPACE_GAMMA
+                    color = GetLinearToSRGB(color);
                 #endif
 
                 return color;

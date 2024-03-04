@@ -45,6 +45,8 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
         #include "../Includes/HSRGBuffer.hlsl"
         #include "../Character/Shared/CharRenderingHelpers.hlsl"
 
@@ -90,6 +92,14 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
             float2 uv = UnityStereoTransformScreenSpaceTex(input.texcoord);
+
+#if defined(SUPPORTS_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+            UNITY_BRANCH if (_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+            {
+                uv = RemapFoveatedRenderingLinearToNonUniform(uv);
+            }
+#endif
+
             float3 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv).rgb;
             float4 bloom = HSRSampleGBuffer0(uv);
             color = max(0, color - _BloomThreshold.rrr) * DecodeBloomColor(bloom);
