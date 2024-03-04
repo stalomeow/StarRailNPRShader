@@ -41,7 +41,7 @@ This package is verified on Windows & Android.
 
 ### Install via git URL
 
-Install these packages **in order**. The second one requires Unity >= 2022.3.
+Install these packages **in order**. The second one requires Unity >= 2022.3, but it is recommended not to use a version that is too high.
 
 1. https://github.com/stalomeow/ShaderUtilsForSRP.git
 2. https://github.com/stalomeow/StarRailNPRShader.git

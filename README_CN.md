@@ -39,7 +39,7 @@
 
 ### 从 git URL 安装
 
-**按顺序**安装这些包。第二个包要求 Unity >= 2022.3。
+**按顺序**安装这些包。第二个包要求 Unity >= 2022.3，但建议别用太高的版本。
 
 1. https://github.com/stalomeow/ShaderUtilsForSRP.git
 2. https://github.com/stalomeow/StarRailNPRShader.git
