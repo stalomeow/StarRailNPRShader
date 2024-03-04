@@ -257,26 +257,25 @@ namespace HSR.NPRShader.Passes
 
             ScriptableRenderer renderer = renderingData.cameraData.renderer;
             RTHandle colorTargetHandle = renderer.cameraColorTargetHandle;
-            Material bloomMaterial = m_BloomMaterial.Value;
-            Material blitMaterial = Blitter.GetBlitMaterial(TextureXR.dimension);
+            Material material = m_BloomMaterial.Value;
 
             using (new ProfilingScope(cmd, m_BloomSampler))
             {
-                CoreUtils.SetKeyword(bloomMaterial, ShaderKeywordStrings.UseRGBM, m_UseRGBM);
+                CoreUtils.SetKeyword(material, ShaderKeywordStrings.UseRGBM, m_UseRGBM);
 
                 cmd.SetGlobalFloat(PropertyIds._BloomThreshold, m_BloomConfig.Threshold.value);
                 cmd.SetGlobalVectorArray(PropertyIds._BloomUVMinMax, m_BloomAtlasUVMinMax);
 
                 // Prefilter
                 Blitter.BlitCameraTexture(cmd, colorTargetHandle, m_BloomMipDown[0],
-                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 0);
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, material, 0);
 
                 // Mip down
                 for (int i = 1; i < m_BloomMipDown.Length; i++)
                 {
                     // use bilinear (pass 1)
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown[i - 1], m_BloomMipDown[i],
-                        RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, blitMaterial, 1);
+                        RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, material, 1);
                 }
 
                 int blurStartIndex = m_BloomMipDown.Length - BloomMipDownBlurCount;
@@ -293,7 +292,7 @@ namespace HSR.NPRShader.Passes
                     cmd.SetGlobalFloatArray(PropertyIds._BloomKernel, m_BloomKernels[atlasIndex]);
 
                     cmd.SetViewport(m_BloomAtlasViewports[atlasIndex]);
-                    Blitter.BlitTexture(cmd, m_BloomMipDown[i], scaleBias, bloomMaterial, 1);
+                    Blitter.BlitTexture(cmd, m_BloomMipDown[i], scaleBias, material, 2);
                 }
 
                 // Alpha Channel 也要清空为 0，适配 RGBM 编码
@@ -308,12 +307,12 @@ namespace HSR.NPRShader.Passes
                     cmd.SetGlobalFloatArray(PropertyIds._BloomKernel, m_BloomKernels[atlasIndex]);
 
                     cmd.SetViewport(m_BloomAtlasViewports[atlasIndex]);
-                    Blitter.BlitTexture(cmd, m_BloomAtlas1, scaleBias, bloomMaterial, 2);
+                    Blitter.BlitTexture(cmd, m_BloomAtlas1, scaleBias, material, 3);
                 }
 
                 // Combine
                 Blitter.BlitCameraTexture(cmd, m_BloomAtlas2, GetBiggestBlurRTHandle(),
-                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, bloomMaterial, 3);
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, material, 4);
             }
         }
 
