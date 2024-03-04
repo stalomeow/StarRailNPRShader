@@ -111,7 +111,7 @@ namespace HSR.NPRShader.Editor.AssetProcessors
             SerializedProperty matchMode = property.FindPropertyRelative(nameof(AssetProcessorConfig.MatchMode));
             SerializedProperty pathPattern = property.FindPropertyRelative(nameof(AssetProcessorConfig.PathPattern));
             SerializedProperty ignoreCase = property.FindPropertyRelative(nameof(AssetProcessorConfig.IgnoreCase));
-            SerializedProperty overridePresetGUIDHex = property.FindPropertyRelative(nameof(AssetProcessorConfig.OverridePresetGUIDHex));
+            SerializedProperty overridePresetAssetPath = property.FindPropertyRelative(nameof(AssetProcessorConfig.OverridePresetAssetPath));
             SerializedProperty smoothNormalStoreMode = property.FindPropertyRelative(nameof(AssetProcessorConfig.SmoothNormalStoreMode));
             SerializedProperty foldout = property.FindPropertyRelative(nameof(AssetProcessorConfig.Foldout));
 
@@ -139,7 +139,7 @@ namespace HSR.NPRShader.Editor.AssetProcessors
                             EditorGUILayout.PropertyField(ignoreCase);
                         }
 
-                        OverridePresetField(overridePresetGUIDHex);
+                        OverridePresetField(overridePresetAssetPath);
 
                         if (showSmoothNormalStoreMode)
                         {
@@ -161,19 +161,16 @@ namespace HSR.NPRShader.Editor.AssetProcessors
             }
         }
 
-        private static void OverridePresetField(SerializedProperty overridePresetGUIDHex)
+        private static void OverridePresetField(SerializedProperty overridePresetAssetPath)
         {
-            string guidHex = overridePresetGUIDHex.stringValue;
-            string path = AssetDatabase.GUIDToAssetPath(guidHex);
+            string path = overridePresetAssetPath.stringValue;
             Preset preset = AssetDatabase.LoadAssetAtPath<Preset>(path);
             Preset newPreset = EditorGUILayout.ObjectField("Custom Preset", preset,
                 typeof(Preset), false) as Preset;
 
             if (newPreset != preset)
             {
-                string newPath = AssetDatabase.GetAssetPath(newPreset);
-                string newGUID = AssetDatabase.AssetPathToGUID(newPath);
-                overridePresetGUIDHex.stringValue = newGUID;
+                overridePresetAssetPath.stringValue = AssetDatabase.GetAssetPath(newPreset);
                 GUI.changed = true;
             }
         }

@@ -39,7 +39,7 @@ namespace HSR.NPRShader.Editor.AssetProcessors
         public AssetPathMatchMode MatchMode;
         [Delayed] public string PathPattern;
         public bool IgnoreCase = true;
-        public string OverridePresetGUIDHex;
+        public string OverridePresetAssetPath;
         public NormalUtility.StoreMode SmoothNormalStoreMode = NormalUtility.StoreMode.ObjectSpaceTangent;
 
         // Default Setting
@@ -115,42 +115,21 @@ namespace HSR.NPRShader.Editor.AssetProcessors
         {
             // https://docs.unity3d.com/Manual/DefaultPresetsByFolder.html
 
-            GUID overridePresetGUID = new(OverridePresetGUIDHex);
+            string presetPath = string.IsNullOrEmpty(OverridePresetAssetPath)
+                ? DefaultPresetPath
+                : OverridePresetAssetPath;
+            Preset preset = AssetDatabase.LoadAssetAtPath<Preset>(presetPath);
 
-            if (overridePresetGUID.Empty())
+            // The script adds a Presets dependency to an Asset in two cases:
+            // 1. If the Asset is imported before the Preset, the Preset will not load because it is not yet imported.
+            // Adding a dependency between the Asset and the Preset allows the Asset to be re-imported so that Unity loads
+            // the assigned Preset and can try to apply its values.
+            // 2. If the Preset loads successfully, the ApplyTo method returns true if the Preset applies to this Asset's import settings.
+            // Adding the Preset as a dependency to the Asset ensures that any change in the Preset values will re-import the Asset using the new values.
+            if (preset == null || preset.ApplyTo(importer))
             {
-                Preset preset = AssetDatabase.LoadAssetAtPath<Preset>(DefaultPresetPath);
-
-                // The script adds a Presets dependency to an Asset in two cases:
-                // 1. If the Asset is imported before the Preset, the Preset will not load because it is not yet imported.
-                // Adding a dependency between the Asset and the Preset allows the Asset to be re-imported so that Unity loads
-                // the assigned Preset and can try to apply its values.
-                // 2. If the Preset loads successfully, the ApplyTo method returns true if the Preset applies to this Asset's import settings.
-                // Adding the Preset as a dependency to the Asset ensures that any change in the Preset values will re-import the Asset using the new values.
-                if (preset == null || preset.ApplyTo(importer))
-                {
-                    // Using DependsOnArtifact here because Presets are native assets and using DependsOnSourceAsset would not work.
-                    context.DependsOnArtifact(DefaultPresetPath);
-                }
-            }
-            else
-            {
-                // overridePreset 必须自己手动从 AssetDatabase 里加载，避免出现下面的警告
-                // dependency isn't used and therefore not registered in the asset database.
-                string path = AssetDatabase.GUIDToAssetPath(overridePresetGUID);
-                Preset preset = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<Preset>(path);
-
-                // The script adds a Presets dependency to an Asset in two cases:
-                // 1. If the Asset is imported before the Preset, the Preset will not load because it is not yet imported.
-                // Adding a dependency between the Asset and the Preset allows the Asset to be re-imported so that Unity loads
-                // the assigned Preset and can try to apply its values.
-                // 2. If the Preset loads successfully, the ApplyTo method returns true if the Preset applies to this Asset's import settings.
-                // Adding the Preset as a dependency to the Asset ensures that any change in the Preset values will re-import the Asset using the new values.
-                if (preset == null || preset.ApplyTo(importer))
-                {
-                    // Using DependsOnArtifact here because Presets are native assets and using DependsOnSourceAsset would not work.
-                    context.DependsOnArtifact(overridePresetGUID);
-                }
+                // Using DependsOnArtifact here because Presets are native assets and using DependsOnSourceAsset would not work.
+                context.DependsOnArtifact(presetPath);
             }
         }
 
@@ -160,7 +139,7 @@ namespace HSR.NPRShader.Editor.AssetProcessors
             hash.Append(ref MatchMode);
             hash.Append(PathPattern);
             hash.Append(ref IgnoreCase);
-            hash.Append(OverridePresetGUIDHex);
+            hash.Append(OverridePresetAssetPath);
 
             if (includeSmoothNormalStoreMode)
             {

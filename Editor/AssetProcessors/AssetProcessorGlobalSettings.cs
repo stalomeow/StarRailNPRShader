@@ -20,6 +20,7 @@
  */
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -89,6 +90,8 @@ namespace HSR.NPRShader.Editor.AssetProcessors
                 yield return FaceExpressionMapProcessConfig;
             }
         }
+
+        public IEnumerable<AssetProcessorConfig> AllConfigs => TextureProcessConfigs.Prepend(AvatarModelProcessConfig);
 
         public void Save()
         {
