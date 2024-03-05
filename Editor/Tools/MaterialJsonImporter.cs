@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace HSR.NPRShader.Editor.Tools
 {
-    [ScriptedImporter(4, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
+    [ScriptedImporter(5, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
     public class MaterialJsonImporter : ScriptedImporter
     {
         [SerializeField] private string m_OverrideShaderName;
@@ -42,10 +42,10 @@ namespace HSR.NPRShader.Editor.Tools
             var matInfo = ScriptableObject.CreateInstance<MaterialInfo>();
             matInfo.Name = GetMaterialName(json);
             matInfo.Shader = GetShaderName(json);
-            matInfo.Textures = DictToEntries(ReadTextures(json));
-            matInfo.Ints = DictToEntries(ReadValues<int>(json, "m_Ints"));
-            matInfo.Floats = DictToEntries(ReadValues<float>(json, "m_Floats"));
-            matInfo.Colors = DictToEntries(ReadValues<Color>(json, "m_Colors"));
+            matInfo.Textures = DictToEntries(ReadTextures(json, out matInfo.TexturesSkipCount));
+            matInfo.Ints = DictToEntries(ReadValues<int>(json, "m_Ints", out matInfo.IntsSkipCount));
+            matInfo.Floats = DictToEntries(ReadValues<float>(json, "m_Floats", out matInfo.FloatsSkipCount));
+            matInfo.Colors = DictToEntries(ReadValues<Color>(json, "m_Colors", out matInfo.ColorsSkipCount));
 
             ctx.AddObjectToAsset("MaterialInfo", matInfo);
             ctx.SetMainObject(matInfo);
@@ -89,44 +89,42 @@ namespace HSR.NPRShader.Editor.Tools
             }).OrderBy(entry => entry.Key).ToList();
         }
 
-        private static Dictionary<string, MaterialInfo.TextureInfo> ReadTextures(JObject json)
+        private static Dictionary<string, MaterialInfo.TextureInfo> ReadTextures(JObject json, out int skipCount)
         {
-            Dictionary<string, MaterialInfo.TextureInfo> results = new();
-
-            foreach (var prop in json["m_SavedProperties"]["m_TexEnvs"].Children())
-            {
-                (string key, MaterialInfo.TextureInfo tex) entry;
-                if (!TryExecuteReaders(prop, out entry, ReadTextureV1, ReadTextureV2))
-                {
-                    continue;
-                }
-                results.Add(entry.key, entry.tex);
-            }
-
-            return results;
+            return ReadValues(json, "m_TexEnvs", out skipCount,
+                new Func<JToken, KeyValuePair<string, MaterialInfo.TextureInfo>>[] { ReadTextureV1, ReadTextureV2 });
         }
 
-        private static Dictionary<string, T> ReadValues<T>(JObject json, string propsName)
+        private static Dictionary<string, T> ReadValues<T>(JObject json, string propsName, out int skipCount)
+        {
+            return ReadValues(json, propsName, out skipCount,
+                new Func<JToken, KeyValuePair<string, T>>[] { ReadValueV1<T>, ReadValueV2<T> });
+        }
+
+        private static Dictionary<string, T> ReadValues<T>(JObject json, string propsName, out int skipCount, Func<JToken, KeyValuePair<string, T>>[] readers)
         {
             Dictionary<string, T> results = new();
+            skipCount = 0;
 
             foreach (var prop in json["m_SavedProperties"][propsName].Children())
             {
-                (string key, T value) entry;
-                if (!TryExecuteReaders(prop, out entry, ReadValueV1<T>, ReadValueV2<T>))
+                if (TryExecuteReaders(prop, out KeyValuePair<string, T> entry, readers))
                 {
-                    continue;
+                    results.Add(entry.Key, entry.Value);
                 }
-                results.Add(entry.key, entry.value);
+                else
+                {
+                    skipCount++;
+                }
             }
 
             return results;
         }
 
-        private static (string, MaterialInfo.TextureInfo) ReadTextureV1(JToken prop)
+        private static KeyValuePair<string, MaterialInfo.TextureInfo> ReadTextureV1(JToken prop)
         {
             string label = prop.Path.Split('.')[^1];
-            return (label, new MaterialInfo.TextureInfo
+            return new KeyValuePair<string, MaterialInfo.TextureInfo>(label, new MaterialInfo.TextureInfo
             {
                 Name = prop.First["m_Texture"]["Name"]?.ToObject<string>() ?? string.Empty,
                 IsNull = prop.First["m_Texture"]["IsNull"].ToObject<bool>(),
@@ -135,10 +133,10 @@ namespace HSR.NPRShader.Editor.Tools
             });
         }
 
-        private static (string, MaterialInfo.TextureInfo) ReadTextureV2(JToken prop)
+        private static KeyValuePair<string, MaterialInfo.TextureInfo> ReadTextureV2(JToken prop)
         {
             string label = prop["Key"].ToObject<string>();
-            return (label, new MaterialInfo.TextureInfo
+            return new KeyValuePair<string, MaterialInfo.TextureInfo>(label, new MaterialInfo.TextureInfo
             {
                 Name = prop["Value"]["m_Texture"]["Name"]?.ToObject<string>() ?? string.Empty,
                 IsNull = prop["Value"]["m_Texture"]["IsNull"].ToObject<bool>(),
@@ -147,21 +145,21 @@ namespace HSR.NPRShader.Editor.Tools
             });
         }
 
-        private static (string, T) ReadValueV1<T>(JToken prop)
+        private static KeyValuePair<string, T> ReadValueV1<T>(JToken prop)
         {
             string label = prop.Path.Split('.')[^1];
             T value = prop.First.ToObject<T>();
-            return (label, value);
+            return new KeyValuePair<string, T>(label, value);
         }
 
-        private static (string, T) ReadValueV2<T>(JToken prop)
+        private static KeyValuePair<string, T> ReadValueV2<T>(JToken prop)
         {
             string label = prop["Key"].ToObject<string>();
             T value = prop["Value"].ToObject<T>();
-            return (label, value);
+            return new KeyValuePair<string, T>(label, value);
         }
 
-        private static bool TryExecuteReaders<T>(JToken prop, out T result, params Func<JToken, T>[] readers)
+        private static bool TryExecuteReaders<T>(JToken prop, out T result, Func<JToken, T>[] readers)
         {
             foreach (Func<JToken, T> read in readers)
             {
