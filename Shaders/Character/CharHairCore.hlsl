@@ -192,7 +192,8 @@ void HairFakeTransparentFragment(
     float sceneDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(i.positionHCS.xy - 0.5));
     float hairDepth = GetLinearEyeDepthAnyProjection(i.positionHCS);
     // 部分安卓设备存在精度问题，加一个 EPSILON，避免 fighting
-    clip(sceneDepth - hairDepth + REAL_EPS); // if (hairDepth > sceneDepth) discard;
+    // EPSILON 取稍大的 HALF_EPS 而不是 FLT_EPS，解决 MSAA 导致的 fighting（画面上表现为黑点）
+    clip(sceneDepth - hairDepth + HALF_EPS); // if (hairDepth > sceneDepth) discard;
 
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 
