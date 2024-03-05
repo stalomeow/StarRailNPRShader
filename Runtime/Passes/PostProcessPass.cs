@@ -273,7 +273,6 @@ namespace HSR.NPRShader.Passes
                 // Mip down
                 for (int i = 1; i < m_BloomMipDown.Length; i++)
                 {
-                    // use bilinear (pass 1)
                     Blitter.BlitCameraTexture(cmd, m_BloomMipDown[i - 1], m_BloomMipDown[i],
                         RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, material, 1);
                 }
