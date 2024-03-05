@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -30,16 +31,36 @@ namespace HSR.NPRShader.Editor.Tools
     {
         public bool TrySet(MaterialInfo srcMatInfo, Material dstMaterial)
         {
-            if (!CanSet(srcMatInfo, dstMaterial))
+            if (!SupportedShaderMap.TryGetValue(srcMatInfo.Shader, out string shader))
             {
                 return false;
             }
 
-            foreach (var (key, value) in ApplyTextures(EntriesToDict(srcMatInfo.Textures)))
+            MaterialUtility.SetShaderAndResetProperties(dstMaterial, shader);
+            SetProperties(srcMatInfo, dstMaterial);
+            return true;
+        }
+
+        public bool TryCreate(MaterialInfo matInfo, out Material material)
+        {
+            if (!SupportedShaderMap.TryGetValue(matInfo.Shader, out string shader))
+            {
+                material = null;
+                return false;
+            }
+
+            material = new Material(Shader.Find(shader));
+            SetProperties(matInfo, material);
+            return true;
+        }
+
+        private void SetProperties(MaterialInfo matInfo, Material material)
+        {
+            foreach (var (key, value) in ApplyTextures(EntriesToDict(matInfo.Textures)))
             {
                 if (value.IsNull)
                 {
-                    dstMaterial.SetTexture(key, null);
+                    material.SetTexture(key, null);
                 }
                 else if (!string.IsNullOrWhiteSpace(value.Name))
                 {
@@ -49,7 +70,7 @@ namespace HSR.NPRShader.Editor.Tools
                     {
                         string path = AssetDatabase.GUIDToAssetPath(textures[0]);
                         Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(path);
-                        dstMaterial.SetTexture(key, texture);
+                        material.SetTexture(key, texture);
                     }
                     else
                     {
@@ -57,36 +78,24 @@ namespace HSR.NPRShader.Editor.Tools
                     }
                 }
 
-                dstMaterial.SetTextureScale(key, value.Scale);
-                dstMaterial.SetTextureOffset(key, value.Offset);
+                material.SetTextureScale(key, value.Scale);
+                material.SetTextureOffset(key, value.Offset);
             }
 
-            foreach (var (key, value) in ApplyInts(EntriesToDict(srcMatInfo.Ints)))
+            foreach (var (key, value) in ApplyInts(EntriesToDict(matInfo.Ints)))
             {
-                dstMaterial.SetInt(key, value);
+                material.SetInt(key, value);
             }
 
-            foreach (var (key, value) in ApplyFloats(EntriesToDict(srcMatInfo.Floats)))
+            foreach (var (key, value) in ApplyFloats(EntriesToDict(matInfo.Floats)))
             {
-                dstMaterial.SetFloat(key, value);
+                material.SetFloat(key, value);
             }
 
-            foreach (var (key, value) in ApplyColors(EntriesToDict(srcMatInfo.Colors)))
+            foreach (var (key, value) in ApplyColors(EntriesToDict(matInfo.Colors)))
             {
-                dstMaterial.SetColor(key, value);
+                material.SetColor(key, value);
             }
-
-            return true;
-        }
-
-        private bool CanSet(MaterialInfo srcMatInfo, Material dstMaterial)
-        {
-            if (!SupportedShaderMap.TryGetValue(srcMatInfo.Shader, out string shader))
-            {
-                return false;
-            }
-
-            return dstMaterial.shader.name == shader;
         }
 
         private static Dictionary<string, T> EntriesToDict<T>(List<MaterialInfo.Entry<T>> entries)
@@ -94,6 +103,32 @@ namespace HSR.NPRShader.Editor.Tools
             return entries.ToDictionary(e => e.Key, e => e.Value);
         }
 
+        public static Dictionary<string, BaseMaterialSetter> AllShaderMap
+        {
+            get
+            {
+                Dictionary<string, BaseMaterialSetter> map = new();
+
+                foreach (var setterType in TypeCache.GetTypesDerivedFrom<BaseMaterialSetter>())
+                {
+                    var setter = (BaseMaterialSetter)Activator.CreateInstance(setterType);
+
+                    foreach (string key in setter.SupportedShaderMap.Keys)
+                    {
+                        if (!map.TryGetValue(key, out BaseMaterialSetter oldSetter) || setter.Order < oldSetter.Order)
+                        {
+                            map[key] = setter;
+                        }
+                    }
+                }
+
+                return map;
+            }
+        }
+
+        /// <summary>
+        /// 越小优先级越高
+        /// </summary>
         public virtual int Order => 9999;
 
         public abstract Dictionary<string, string> SupportedShaderMap { get; }

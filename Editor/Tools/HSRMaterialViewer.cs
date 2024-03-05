@@ -21,13 +21,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Stalo.ShaderUtils.Editor;
 using UnityEditor.Callbacks;
 using UnityEditor.IMGUI.Controls;
-using Object = UnityEngine.Object;
 
 namespace HSR.NPRShader.Editor.Tools
 {
@@ -70,8 +68,6 @@ namespace HSR.NPRShader.Editor.Tools
 
             EditorGUILayout.TextField("Material Name", m_GameMatInfo.Name);
             EditorGUILayout.TextField("Shader Name", m_GameMatInfo.Shader);
-            EditorGUILayout.HelpBox("It's better to reset the material after changing its shader. Applying Floats and Ints is not well supported by this tool.", MessageType.Info);
-            DoApplyToMaterialButton();
             EditorGUILayout.Space();
 
             m_ToolbarIndex = GUILayout.Toolbar(m_ToolbarIndex, m_ToolbarLabels);
@@ -100,45 +96,6 @@ namespace HSR.NPRShader.Editor.Tools
                     }
 
                     EditorGUILayout.Space();
-                }
-            }
-        }
-
-        private void DoApplyToMaterialButton()
-        {
-            List<Object> materials = Selection.objects.Where(o => o is Material).ToList();
-
-            using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(m_GameMatInfo.Shader) || materials.Count <= 0))
-            {
-                if (!GUILayout.Button("Apply to selected Material(s)"))
-                {
-                    return;
-                }
-            }
-
-            List<BaseMaterialSetter> setters = new();
-            foreach (var setterType in TypeCache.GetTypesDerivedFrom<BaseMaterialSetter>())
-            {
-                setters.Add((BaseMaterialSetter)Activator.CreateInstance(setterType));
-            }
-            setters.Sort((x, y) => x.Order - y.Order);
-
-            foreach (var material in materials)
-            {
-                bool ok = false;
-
-                foreach (var setter in setters)
-                {
-                    if (setter.TrySet(m_GameMatInfo, (Material)material))
-                    {
-                        ok = true;
-                        break;
-                    }
-                }
-
-                if (!ok)
-                {
-                    Debug.LogError($"The shader of Material '{material.name}' is not compatible with '{m_GameMatInfo.Shader}'!", material);
                 }
             }
         }
