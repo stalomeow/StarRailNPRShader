@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace HSR.NPRShader.Editor.Tools
 {
-    [ScriptedImporter(5, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
+    [ScriptedImporter(7, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
     public class MaterialJsonImporter : ScriptedImporter
     {
         [SerializeField] private string m_OverrideShaderName;
@@ -70,14 +70,12 @@ namespace HSR.NPRShader.Editor.Tools
                 return m_OverrideShaderName;
             }
 
-            try
+            if (TryExecuteReaders(json["m_Shader"], out string shaderName, ReadShaderNameV1, ReadShaderNameV2))
             {
-                return json["m_Shader"]["Name"].ToObject<string>();
+                return shaderName;
             }
-            catch
-            {
-                return string.Empty;
-            }
+
+            return string.Empty;
         }
 
         private static List<MaterialInfo.Entry<T>> DictToEntries<T>(Dictionary<string, T> dict)
@@ -121,6 +119,25 @@ namespace HSR.NPRShader.Editor.Tools
             return results;
         }
 
+        private static string ReadShaderNameV1(JToken prop)
+        {
+            return prop["Name"].ToObject<string>();
+        }
+
+        private static string ReadShaderNameV2(JToken prop)
+        {
+            return prop["m_PathID"].ToObject<long>() switch
+            {
+                -6550255339530601893 => "miHoYo/CRP_Character/Character Stencil Clear",
+                -7016092255023927970 => "miHoYo/CRP_Character/CharacterBase",
+                -5659630117084023487 => "miHoYo/CRP_Character/CharacterEyeShadow",
+                -7682587881522096242 => "miHoYo/CRP_Character/CharacterFace",
+                -8335713502764873453 => "miHoYo/CRP_Character/CharacterHair",
+                -569915600545274916 => "miHoYo/CRP_Character/CharacterTransparent",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
         private static KeyValuePair<string, MaterialInfo.TextureInfo> ReadTextureV1(JToken prop)
         {
             string label = prop.Path.Split('.')[^1];
@@ -159,7 +176,7 @@ namespace HSR.NPRShader.Editor.Tools
             return new KeyValuePair<string, T>(label, value);
         }
 
-        private static bool TryExecuteReaders<T>(JToken prop, out T result, Func<JToken, T>[] readers)
+        private static bool TryExecuteReaders<T>(JToken prop, out T result, params Func<JToken, T>[] readers)
         {
             foreach (Func<JToken, T> read in readers)
             {
