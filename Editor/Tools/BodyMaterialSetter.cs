@@ -75,7 +75,11 @@ namespace HSR.NPRShader.Editor.Tools
                 yield return ($"_SpecularColor{i}", colors[$"_SpecularColor{i}"]);
                 yield return ($"_RimColor{i}", colors[$"_RimColor{i}"]);
                 yield return ($"_OutlineColor{i}", colors[$"_OutlineColor{i}"]);
-                yield return ($"_BloomColor{i}", colors[$"_mBloomColor{i}"]);
+
+                if (colors.TryGetValue($"_mBloomColor{i}", out Color bloomColor))
+                {
+                    yield return ($"_BloomColor{i}", bloomColor);
+                }
             }
 
             // Texture Scale Offset
