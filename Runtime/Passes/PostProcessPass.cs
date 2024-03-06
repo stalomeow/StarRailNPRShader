@@ -151,17 +151,23 @@ namespace HSR.NPRShader.Passes
             mipDesc.depthBufferBits = 0;
             mipDesc.msaaSamples = 1;
 
-            // 保证不同分辨率下，最后做高斯模糊时，RT 的大小大致相同，这样模糊效果才大致一样
-            // 这里硬编码：做高斯模糊时，最大的 RT 的长和宽都不大于 450
-            int mipDownCountWidth = Mathf.CeilToInt(Mathf.Log(mipDesc.width / 450.0f, 2));
-            int mipDownCountHeight = Mathf.CeilToInt(Mathf.Log(mipDesc.height / 450.0f, 2));
-            int mipDownCountExtra = Mathf.Max(0, Mathf.Max(mipDownCountWidth, mipDownCountHeight) - 1); // 需要减一，最后一张算在 BloomMipDownBlurCount 里
+            int mipDownCountExtra = m_BloomConfig.MipDownCount.value;
             Array.Resize(ref m_BloomMipDown, mipDownCountExtra + BloomMipDownBlurCount);
 
             for (int i = 0; i < m_BloomMipDown.Length; i++)
             {
-                mipDesc.width = Mathf.Max(1, mipDesc.width >> 1);
-                mipDesc.height = Mathf.Max(1, mipDesc.height >> 1);
+                if (i == mipDownCountExtra)
+                {
+                    // 不同屏幕分辨率下，保证做高斯模糊的 RT 的分辨率一致，这样模糊效果才一样
+                    mipDesc.width = m_BloomConfig.BlurFirstRTWidth.value;
+                    mipDesc.height = m_BloomConfig.BlurFirstRTHeight.value;
+                }
+                else
+                {
+                    mipDesc.width = Mathf.Max(1, mipDesc.width >> 1);
+                    mipDesc.height = Mathf.Max(1, mipDesc.height >> 1);
+                }
+
                 RenderingUtils.ReAllocateIfNeeded(ref m_BloomMipDown[i], in mipDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             }
         }

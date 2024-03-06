@@ -34,6 +34,12 @@ namespace HSR.NPRShader.PostProcessing
         public MinFloatParameter Intensity = new(0, 0);
         public MinFloatParameter Threshold = new(0.7f, 0);
         public ColorParameter Tint = new(Color.white, false, false, true);
+        public ClampedIntParameter MipDownCount = new(2, 2, 4);
+
+        [Header("Blur First RT Size")]
+
+        [DisplayInfo(name = "Width")] public ClampedIntParameter BlurFirstRTWidth = new(310, 100, 500);
+        [DisplayInfo(name = "Height")] public ClampedIntParameter BlurFirstRTHeight = new(174, 100, 500);
 
         [Header("Blur Kernels")]
 
