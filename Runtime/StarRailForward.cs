@@ -84,7 +84,7 @@ namespace HSR.NPRShader
 
             m_ForceDepthPrepassPass = new RequestResourcePass(RenderPassEvent.BeforeRenderingOpaques,
                 ScriptableRenderPassInput.Depth); // 在 Opaque 前要求 DepthTexture，强行 DepthPrepass
-            m_MainLightPerObjShadowPass = new MainLightPerObjectShadowCasterPass();
+            m_MainLightPerObjShadowPass = new MainLightPerObjectShadowCasterPass(new ShaderTagId("HSRPerObjectShadowCaster"));
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
             m_ClearGBufferPass = new ClearRTPass(RenderPassEvent.AfterRenderingOpaques);

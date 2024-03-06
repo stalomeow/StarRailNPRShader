@@ -28,7 +28,9 @@ namespace HSR.NPRShader.Shadow
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
-    public class PerObjectShadowCaster : MonoBehaviour
+    // [AddComponentMenu("StarRail NPR Shader/Per Object Shadow Caster")]
+    [Obsolete("Use " + nameof(StarRailCharacterRenderingController) + " instead.")]
+    public class PerObjectShadowCaster : MonoBehaviour, IPerObjectShadowCaster
     {
         [NonSerialized] private readonly List<Renderer> m_Renderers = new();
 
@@ -49,7 +51,7 @@ namespace HSR.NPRShader.Shadow
             Color color = Gizmos.color;
             Gizmos.color = Color.green;
 
-            Bounds bounds = GetActiveRenderersAndBounds();
+            Bounds bounds = GetActiveRenderersAndBounds(null);
             Gizmos.DrawWireCube(bounds.center, bounds.size);
 
             Gizmos.color = color;
@@ -61,7 +63,9 @@ namespace HSR.NPRShader.Shadow
             GetComponentsInChildren(true, m_Renderers);
         }
 
-        public Bounds GetActiveRenderersAndBounds(List<Renderer> outRendererList = null)
+        public bool IsActiveAndCastingShadow => isActiveAndEnabled;
+
+        public Bounds GetActiveRenderersAndBounds(List<Renderer> outRendererListOrNull)
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -87,7 +91,7 @@ namespace HSR.NPRShader.Shadow
                         bounds.Encapsulate(r.bounds);
                     }
 
-                    outRendererList?.Add(r);
+                    outRendererListOrNull?.Add(r);
                 }
             }
 

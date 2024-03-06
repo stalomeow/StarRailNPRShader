@@ -28,10 +28,10 @@ namespace HSR.NPRShader.Shadow
     {
         private readonly struct CasterInfo
         {
-            public readonly PerObjectShadowCaster Caster;
+            public readonly IPerObjectShadowCaster Caster;
             public readonly float Depth;
 
-            public CasterInfo(PerObjectShadowCaster caster, Camera camera)
+            public CasterInfo(IPerObjectShadowCaster caster, Camera camera)
             {
                 Vector3 posVS = camera.worldToCameraMatrix.MultiplyPoint(caster.transform.position);
                 Caster = caster;
@@ -39,24 +39,24 @@ namespace HSR.NPRShader.Shadow
             }
         }
 
-        private static readonly HashSet<PerObjectShadowCaster> s_Casters = new();
+        private static readonly HashSet<IPerObjectShadowCaster> s_Casters = new();
         private static readonly List<CasterInfo> s_CachedCasterList = new();
 
-        public static void Register(PerObjectShadowCaster caster)
+        public static void Register(IPerObjectShadowCaster caster)
         {
             s_Casters.Add(caster);
         }
 
-        public static void Unregister(PerObjectShadowCaster caster)
+        public static void Unregister(IPerObjectShadowCaster caster)
         {
             s_Casters.Remove(caster);
         }
 
-        public static void GetCasterList(Camera camera, List<PerObjectShadowCaster> outCasterList, float maxShadowDistance, int maxCount)
+        public static void GetCasterList(Camera camera, List<IPerObjectShadowCaster> outCasterList, float maxShadowDistance, int maxCount)
         {
-            foreach (PerObjectShadowCaster caster in s_Casters)
+            foreach (IPerObjectShadowCaster caster in s_Casters)
             {
-                if (!caster.isActiveAndEnabled)
+                if (!caster.IsActiveAndCastingShadow)
                 {
                     continue;
                 }

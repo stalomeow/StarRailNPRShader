@@ -236,11 +236,11 @@ Shader "Honkai Star Rail/Character/Face"
 
         Pass
         {
-            Name "PerObjectShadow"
+            Name "FaceShadow"
 
             Tags
             {
-                "LightMode" = "HSRShadowCaster"
+                "LightMode" = "HSRPerObjectShadowCaster"
             }
 
             Cull Back

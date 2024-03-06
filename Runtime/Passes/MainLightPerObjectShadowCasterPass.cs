@@ -35,8 +35,8 @@ namespace HSR.NPRShader.Passes
         private const int TileResolution = 512;
         private const int ShadowMapBufferBits = 16;
 
-        private readonly List<PerObjectShadowCaster> m_ShadowCasterList;
-        private readonly List<Renderer> m_CachedRendererList;
+        private readonly ShaderTagId m_ShadowCasterTagId;
+        private readonly List<IPerObjectShadowCaster> m_ShadowCasterList;
         private readonly Matrix4x4[] m_ShadowMatrixArray;
         private readonly Vector4[] m_ShadowMapRectArray;
         private int m_ShadowMapSizeInTile; // 一行/一列有多少个 tile
@@ -45,13 +45,13 @@ namespace HSR.NPRShader.Passes
         private float m_NormalBias;
         private float m_MaxShadowDistance;
 
-        public MainLightPerObjectShadowCasterPass()
+        public MainLightPerObjectShadowCasterPass(ShaderTagId shadowCasterTagId)
         {
             renderPassEvent = RenderPassEvent.AfterRenderingShadows;
             profilingSampler = new ProfilingSampler("MainLightPerObjectShadow");
 
-            m_ShadowCasterList = new List<PerObjectShadowCaster>();
-            m_CachedRendererList = new List<Renderer>();
+            m_ShadowCasterTagId = shadowCasterTagId;
+            m_ShadowCasterList = new List<IPerObjectShadowCaster>();
             m_ShadowMatrixArray = new Matrix4x4[MaxShadowCount];
             m_ShadowMapRectArray = new Vector4[MaxShadowCount];
         }
@@ -142,7 +142,9 @@ namespace HSR.NPRShader.Passes
 
             for (int i = 0; i < m_ShadowCasterList.Count; i++)
             {
-                Bounds boundsWS = m_ShadowCasterList[i].GetActiveRenderersAndBounds(m_CachedRendererList);
+                List<Renderer> rendererList = ListPool<Renderer>.Get();
+
+                Bounds boundsWS = m_ShadowCasterList[i].GetActiveRenderersAndBounds(rendererList);
                 var viewMatrix = Matrix4x4.TRS(boundsWS.center, mainLightRotation, Vector3.one).inverse;
                 viewMatrix.SetRow(2, -viewMatrix.GetRow(2)); // flip z
 
@@ -155,8 +157,9 @@ namespace HSR.NPRShader.Passes
 
                 Vector2Int offset = new(i % m_ShadowMapSizeInTile, i / m_ShadowMapSizeInTile);
                 Rect viewport = new(offset * TileResolution, tileSize);
-                DrawRenderers(cmd, viewport, in viewMatrix, in projectionMatrix, m_CachedRendererList);
-                m_CachedRendererList.Clear();
+                DrawRenderers(cmd, rendererList, in viewport, in viewMatrix, in projectionMatrix);
+
+                ListPool<Renderer>.Release(rendererList);
 
                 Matrix4x4 coordMatrix = new Matrix4x4();
                 coordMatrix.SetRow(0, new Vector4(0.5f * scale, 0, 0, (0.5f + offset.x) * scale));
@@ -251,35 +254,59 @@ namespace HSR.NPRShader.Passes
                 new Vector4(invShadowAtlasWidth, invShadowAtlasHeight, renderTargetWidth, renderTargetHeight));
         }
 
-        private static void DrawRenderers(CommandBuffer cmd, Rect viewport, in Matrix4x4 viewMatrix, in Matrix4x4 projectionMatrix, List<Renderer> renderers)
+        private void DrawRenderers(CommandBuffer cmd, List<Renderer> renderers, in Rect viewport, in Matrix4x4 viewMatrix, in Matrix4x4 projectionMatrix)
         {
             cmd.SetViewProjectionMatrices(viewMatrix, projectionMatrix);
             cmd.SetViewport(viewport);
             cmd.EnableScissorRect(new Rect(viewport.x + 4, viewport.y + 4, viewport.width - 8, viewport.height - 8));
 
+            List<Material> materialList = ListPool<Material>.Get();
+            Dictionary<Shader, int> shaderTagCache = DictionaryPool<Shader, int>.Get();
+
             foreach (var renderer in renderers)
             {
-#if UNITY_EDITOR
-                Material[] materials = Application.isPlaying ? renderer.materials : renderer.sharedMaterials;
-#else
-                Material[] materials = renderer.materials;
-#endif
+                materialList.Clear();
+                renderer.GetSharedMaterials(materialList);
 
-                for (int i = 0; i < materials.Length; i++)
+                for (int i = 0; i < materialList.Count; i++)
                 {
-                    Material material = materials[i];
-                    int passId = material.FindPass("PerObjectShadow");
+                    Material material = materialList[i];
 
-                    if (passId == -1)
+                    if (TryGetShadowCasterPass(shaderTagCache, material, out int passIndex))
                     {
-                        continue;
+                        cmd.DrawRenderer(renderer, material, i, passIndex);
                     }
-
-                    cmd.DrawRenderer(renderer, material, i, passId);
                 }
             }
 
+            DictionaryPool<Shader, int>.Release(shaderTagCache);
+            ListPool<Material>.Release(materialList);
+
             cmd.DisableScissorRect();
+        }
+
+        private static readonly ShaderTagId s_LightModeTagName = new("LightMode");
+
+        private bool TryGetShadowCasterPass(Dictionary<Shader, int> cache, Material material, out int passIndex)
+        {
+            Shader shader = material.shader;
+
+            if (cache.TryGetValue(shader, out passIndex))
+            {
+                return true;
+            }
+
+            for (int i = 0; i < shader.passCount; i++)
+            {
+                if (shader.FindPassTagValue(i, s_LightModeTagName) == m_ShadowCasterTagId)
+                {
+                    passIndex = i;
+                    cache[shader] = i;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static readonly Vector3[] s_BoundsCornerBuffer = new Vector3[8];

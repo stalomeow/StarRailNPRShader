@@ -28,7 +28,8 @@ namespace HSR.NPRShader.Utils
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SkinnedMeshRenderer))]
-    [AddComponentMenu("Honkai Star Rail/NPR Shader/Sync MMD Head Bone")]
+    // [AddComponentMenu("StarRail NPR Shader/Sync MMD Head Bone")]
+    [Obsolete("Use " + nameof(StarRailCharacterRenderingController) + " instead.", true)]
     public class SyncMMDHeadBone : MonoBehaviour
     {
         private enum TransformDirection
