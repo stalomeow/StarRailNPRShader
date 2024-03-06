@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace HSR.NPRShader.Editor.Tools
 {
-    [ScriptedImporter(7, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
+    [ScriptedImporter(8, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
     public class MaterialJsonImporter : ScriptedImporter
     {
         [SerializeField] private string m_OverrideShaderName;
@@ -121,7 +121,14 @@ namespace HSR.NPRShader.Editor.Tools
 
         private static string ReadShaderNameV1(JToken prop)
         {
-            return prop["Name"].ToObject<string>();
+            string name = prop["Name"].ToObject<string>();
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException();
+            }
+
+            return name;
         }
 
         private static string ReadShaderNameV2(JToken prop)
