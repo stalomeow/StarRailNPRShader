@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,6 +33,11 @@ namespace HSR.NPRShader.Editor.Tools
     [CustomEditor(typeof(MaterialJsonImporter))]
     internal class MaterialJsonImporterEditor : ScriptedImporterEditor
     {
+        private static readonly Lazy<GUIStyle> s_WrapMiniLabelStyle = new(() =>
+        {
+            return new GUIStyle(EditorStyles.miniLabel) { wordWrap = true };
+        });
+
         private SerializedProperty m_OverrideShaderName;
 
         public override void OnEnable()
@@ -46,11 +52,15 @@ namespace HSR.NPRShader.Editor.Tools
             serializedObject.UpdateIfRequiredOrScript();
 
             ShaderOverrideDropdown();
+
             EditorGUILayout.Space();
 
-            using (new EditorGUI.DisabledScope(hasUnsavedChanges))
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                using (new EditorGUILayout.HorizontalScope())
+                EditorGUILayout.LabelField("Tools", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("The results are for reference only. It is recommended that you further adjust the detailed properties yourself.", s_WrapMiniLabelStyle.Value);
+
+                using (new EditorGUI.DisabledScope(hasUnsavedChanges))
                 {
                     GenerateMaterialButton();
                     OverwriteMaterialButton();
@@ -125,8 +135,9 @@ namespace HSR.NPRShader.Editor.Tools
                 return;
             }
 
-            string matFilePath = EditorUtility.OpenFilePanel("Select Materials",
-                Application.dataPath, "mat");
+            string assetPath = AssetDatabase.GetAssetPath(assetTargets[0]);
+            string matFilePath = EditorUtility.OpenFilePanelWithFilters("Select Material",
+                Path.GetDirectoryName(assetPath), new[] { "Material files", "mat" });
 
             if (string.IsNullOrEmpty(matFilePath) || !matFilePath.StartsWith(Application.dataPath + "/"))
             {
