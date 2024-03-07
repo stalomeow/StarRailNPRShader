@@ -31,6 +31,7 @@ namespace HSR.NPRShader.Editor.Tools
         public class TextureInfo
         {
             public string Name;
+            public long PathId;
             public bool IsNull;
             public Vector2 Scale;
             public Vector2 Offset;
