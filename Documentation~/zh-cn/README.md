@@ -1,10 +1,6 @@
 # StarRail NPR Shader
 
-<div align="center">
-
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub Release Date" src="https://img.shields.io/github/release-date/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub License" src="https://img.shields.io/github/license/stalomeow/StarRailNPRShader?style=for-the-badge">
-
-</div>
 
 [English](../../README.md) | [简体中文](README.md)
 
