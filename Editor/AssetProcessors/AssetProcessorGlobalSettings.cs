@@ -32,7 +32,7 @@ namespace HSR.NPRShader.Editor.AssetProcessors
         public AssetProcessorConfig AvatarModelProcessConfig = new()
         {
             MatchMode = AssetPathMatchMode.NameGlob,
-            PathPattern = @"Avatar_*_00*.fbx | Art_*_00*.fbx",
+            PathPattern = @"Avatar_*_*.fbx | Art_*_*.fbx",
             DefaultPresetPath = @"Packages/com.stalomeow.star-rail-npr-shader/Presets/AvatarModel.preset",
         };
 
