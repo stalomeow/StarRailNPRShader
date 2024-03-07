@@ -26,19 +26,19 @@ namespace HSR.NPRShader.Editor.Tools
 {
     public class FaceMaterialSetter : BaseMaterialSetter
     {
-        public override Dictionary<string, string> SupportedShaderMap => new()
+        protected override IReadOnlyDictionary<string, string> SupportedShaderMap => new Dictionary<string, string>()
         {
             ["miHoYo/CRP_Character/CharacterFace"] = "Honkai Star Rail/Character/Face"
         };
 
-        protected override IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(Dictionary<string, MaterialInfo.TextureInfo> textures)
+        protected override IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(IReadOnlyDictionary<string, MaterialInfo.TextureInfo> textures)
         {
             yield return ("_MainTex", textures["_MainTex"]);
             yield return ("_FaceMap", textures["_FaceMap"]);
             yield return ("_ExpressionMap", textures["_FaceExpression"]);
         }
 
-        protected override IEnumerable<(string, float)> ApplyFloats(Dictionary<string, float> floats)
+        protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
             if (floats.TryGetValue("_UseUVChannel2", out float useUV2))
             {
@@ -51,7 +51,7 @@ namespace HSR.NPRShader.Editor.Tools
             yield return ("_NoseLinePower", floats["_NoseLinePower"]);
         }
 
-        protected override IEnumerable<(string, Color)> ApplyColors(Dictionary<string, Color> colors)
+        protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
             yield return ("_Color", colors["_Color"]);
             yield return ("_ShadowColor", colors["_ShadowColor"]);

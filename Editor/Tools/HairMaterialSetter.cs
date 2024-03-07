@@ -26,12 +26,12 @@ namespace HSR.NPRShader.Editor.Tools
 {
     public class HairMaterialSetter : BaseMaterialSetter
     {
-        public override Dictionary<string, string> SupportedShaderMap => new()
+        protected override IReadOnlyDictionary<string, string> SupportedShaderMap => new Dictionary<string, string>()
         {
             ["miHoYo/CRP_Character/CharacterHair"] = "Honkai Star Rail/Character/Hair"
         };
 
-        protected override IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(Dictionary<string, MaterialInfo.TextureInfo> textures)
+        protected override IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(IReadOnlyDictionary<string, MaterialInfo.TextureInfo> textures)
         {
             yield return ("_MainTex", textures["_MainTex"]);
             yield return ("_LightMap", textures["_LightMap"]);
@@ -39,7 +39,7 @@ namespace HSR.NPRShader.Editor.Tools
             yield return ("_RampMapCool", textures["_DiffuseCoolRampMultiTex"]);
         }
 
-        protected override IEnumerable<(string, float)> ApplyFloats(Dictionary<string, float> floats)
+        protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
             yield return ("_Cull", floats["_CullMode"]);
 
@@ -50,7 +50,7 @@ namespace HSR.NPRShader.Editor.Tools
             yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
         }
 
-        protected override IEnumerable<(string, Color)> ApplyColors(Dictionary<string, Color> colors)
+        protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
             yield return ("_Color", colors["_Color"]);
             yield return ("_BackColor", colors["_BackColor"]);

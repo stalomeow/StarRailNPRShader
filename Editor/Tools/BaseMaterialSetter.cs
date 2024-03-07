@@ -129,26 +129,26 @@ namespace HSR.NPRShader.Editor.Tools
         /// <summary>
         /// 越小优先级越高
         /// </summary>
-        public virtual int Order => 9999;
+        protected virtual int Order => 9999;
 
-        public abstract Dictionary<string, string> SupportedShaderMap { get; }
+        protected abstract IReadOnlyDictionary<string, string> SupportedShaderMap { get; }
 
-        protected virtual IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(Dictionary<string, MaterialInfo.TextureInfo> textures)
+        protected virtual IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(IReadOnlyDictionary<string, MaterialInfo.TextureInfo> textures)
         {
             yield break;
         }
 
-        protected virtual IEnumerable<(string, int)> ApplyInts(Dictionary<string, int> ints)
+        protected virtual IEnumerable<(string, int)> ApplyInts(IReadOnlyDictionary<string, int> ints)
         {
             yield break;
         }
 
-        protected virtual IEnumerable<(string, float)> ApplyFloats(Dictionary<string, float> floats)
+        protected virtual IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
             yield break;
         }
 
-        protected virtual IEnumerable<(string, Color)> ApplyColors(Dictionary<string, Color> colors)
+        protected virtual IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
             yield break;
         }

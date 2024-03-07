@@ -4,7 +4,7 @@ After importing an asset, if its path meets certain requirements, the asset proc
 
 You can configure the asset processor in `Project Settings/StarRail NPR Shader/HSR Asset Processors`.
 
-![asset-processor](../Screenshots~/_asset_processor.png)
+![Asset processor](../_img/asset-processor.png)
 
 - `Match Mode`: The matching mode for assets.
 
