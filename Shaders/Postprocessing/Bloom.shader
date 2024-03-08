@@ -87,6 +87,25 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
         #endif
         }
 
+        half4 FragPrefilter(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            float2 uv = UnityStereoTransformScreenSpaceTex(input.texcoord);
+
+#if defined(SUPPORTS_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+            UNITY_BRANCH if (_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+            {
+                uv = RemapFoveatedRenderingLinearToNonUniform(uv);
+            }
+#endif
+
+            float3 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv).rgb;
+            float4 bloom = HSRSampleGBuffer0(uv);
+            color = max(0, color - _BloomThreshold.rrr) * DecodeBloomColor(bloom);
+            return EncodeHDR(color);
+        }
+
         void VertMipDown(
             Attributes input,
             out Varyings output,
@@ -110,30 +129,11 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-            half4 c1 = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv1.xy);
-            half4 c2 = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv1.zw);
-            half4 c3 = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv2.xy);
-            half4 c4 = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv2.zw);
-            return 0.25 * (c1 + c2 + c3 + c4);
-        }
-
-        half4 FragPrefilter(Varyings input) : SV_Target
-        {
-            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-
-            float2 uv = UnityStereoTransformScreenSpaceTex(input.texcoord);
-
-#if defined(SUPPORTS_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
-            UNITY_BRANCH if (_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
-            {
-                uv = RemapFoveatedRenderingLinearToNonUniform(uv);
-            }
-#endif
-
-            float3 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv).rgb;
-            float4 bloom = HSRSampleGBuffer0(uv);
-            color = max(0, color - _BloomThreshold.rrr) * DecodeBloomColor(bloom);
-            return EncodeHDR(color);
+            half3 c1 = DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv1.xy));
+            half3 c2 = DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv1.zw));
+            half3 c3 = DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv2.xy));
+            half3 c4 = DecodeHDR(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv2.zw));
+            return EncodeHDR(0.25 * (c1 + c2 + c3 + c4));
         }
 
         half4 FragBlurV(Varyings input) : SV_Target
