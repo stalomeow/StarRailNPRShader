@@ -1,6 +1,6 @@
 {
   "name": "com.stalomeow.star-rail-npr-shader",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "author": "Stalo",
   "displayName": "StarRail NPR Shader",
   "description": "Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail.",
