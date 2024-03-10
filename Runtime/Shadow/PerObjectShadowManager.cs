@@ -42,12 +42,12 @@ namespace HSR.NPRShader.Shadow
         private static readonly HashSet<IPerObjectShadowCaster> s_Casters = new();
         private static readonly List<CasterInfo> s_CachedCasterList = new();
 
-        public static void Register(IPerObjectShadowCaster caster)
+        public static void RegisterIfNot(IPerObjectShadowCaster caster)
         {
             s_Casters.Add(caster);
         }
 
-        public static void Unregister(IPerObjectShadowCaster caster)
+        public static void UnregisterIfNot(IPerObjectShadowCaster caster)
         {
             s_Casters.Remove(caster);
         }

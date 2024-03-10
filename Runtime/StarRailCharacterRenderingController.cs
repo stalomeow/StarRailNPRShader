@@ -100,12 +100,20 @@ namespace HSR.NPRShader
         private void OnEnable()
         {
             UpdateRendererList();
-            PerObjectShadowManager.Register(this);
+            PerObjectShadowManager.RegisterIfNot(this);
+
+#if UNITY_EDITOR
+            UnityEditor.SceneVisibilityManager.visibilityChanged += OnCharacterVisibilityChanged;
+#endif
         }
 
         private void OnDisable()
         {
-            PerObjectShadowManager.Unregister(this);
+            PerObjectShadowManager.UnregisterIfNot(this);
+
+#if UNITY_EDITOR
+            UnityEditor.SceneVisibilityManager.visibilityChanged -= OnCharacterVisibilityChanged;
+#endif
 
             // 这里就不要更新 RendererList 了，只清除之前的
             foreach (Renderer renderer in m_Renderers)
@@ -116,6 +124,20 @@ namespace HSR.NPRShader
             m_Renderers.Clear();
             m_PropertyBlock.Value.Clear();
         }
+
+#if UNITY_EDITOR
+        private void OnCharacterVisibilityChanged()
+        {
+            if (UnityEditor.SceneVisibilityManager.instance.IsHidden(gameObject))
+            {
+                PerObjectShadowManager.UnregisterIfNot(this);
+            }
+            else
+            {
+                PerObjectShadowManager.RegisterIfNot(this);
+            }
+        }
+#endif
 
         private void Update()
         {
@@ -184,6 +206,13 @@ namespace HSR.NPRShader
 
             foreach (var r in m_Renderers)
             {
+#if UNITY_EDITOR
+                if (UnityEditor.SceneVisibilityManager.instance.IsHidden(r.gameObject))
+                {
+                    continue;
+                }
+#endif
+
                 if (r.gameObject.activeInHierarchy && r.enabled && r.shadowCastingMode != ShadowCastingMode.Off)
                 {
                     if (first)

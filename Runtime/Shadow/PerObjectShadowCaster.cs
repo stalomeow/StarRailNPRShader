@@ -37,12 +37,12 @@ namespace HSR.NPRShader.Shadow
         private void OnEnable()
         {
             UpdateRendererList();
-            PerObjectShadowManager.Register(this);
+            PerObjectShadowManager.RegisterIfNot(this);
         }
 
         private void OnDisable()
         {
-            PerObjectShadowManager.Unregister(this);
+            PerObjectShadowManager.UnregisterIfNot(this);
             m_Renderers.Clear();
         }
 
