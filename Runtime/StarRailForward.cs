@@ -53,7 +53,7 @@ namespace HSR.NPRShader
 
         [Range(0, 10)] public float DepthBias = 1;
         [Range(0, 10)] public float NormalBias = 1;
-        [Min(0)] public float MaxShadowDistance = 40;
+        [Min(0)] public float MaxShadowDistance = 150;
 
         // -------------------------------------------------------
 

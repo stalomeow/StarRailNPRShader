@@ -19,17 +19,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace HSR.NPRShader.Shadow
 {
-    public interface IPerObjectShadowCaster
+    public readonly struct PerObjectShadowCasterHandle
     {
-        Transform transform { get; }
+        internal readonly int Index;
+        internal readonly int Version;
 
-        bool IsActiveAndCastingShadow { get; }
-
-        Bounds GetActiveRenderersAndBounds(List<Renderer> outRendererListOrNull);
+        internal PerObjectShadowCasterHandle(int index, int version)
+        {
+            Index = index;
+            Version = version;
+        }
     }
 }

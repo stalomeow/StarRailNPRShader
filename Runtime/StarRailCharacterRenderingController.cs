@@ -21,18 +21,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using HSR.NPRShader.Shadow;
 using HSR.NPRShader.Utils;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace HSR.NPRShader
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [AddComponentMenu("StarRail NPR Shader/StarRail Character Rendering Controller")]
-    public sealed class StarRailCharacterRenderingController : MonoBehaviour, IPerObjectShadowCaster
+    public sealed class StarRailCharacterRenderingController : MonoBehaviour
     {
         private enum TransformDirection
         {
@@ -58,6 +56,7 @@ namespace HSR.NPRShader
 
         [NonSerialized] private readonly List<Renderer> m_Renderers = new();
         [NonSerialized] private readonly Lazy<MaterialPropertyBlock> m_PropertyBlock = new();
+        [NonSerialized] private PerObjectShadowCasterHandle m_ShadowCasterHandle;
 
         public float RampCoolWarmMix
         {
@@ -99,8 +98,8 @@ namespace HSR.NPRShader
 
         private void OnEnable()
         {
+            UpdateShadowCasterHandle(true);
             UpdateRendererList();
-            PerObjectShadowManager.RegisterIfNot(this);
 
 #if UNITY_EDITOR
             UnityEditor.SceneVisibilityManager.visibilityChanged += OnCharacterVisibilityChanged;
@@ -109,7 +108,7 @@ namespace HSR.NPRShader
 
         private void OnDisable()
         {
-            PerObjectShadowManager.UnregisterIfNot(this);
+            UpdateShadowCasterHandle(false);
 
 #if UNITY_EDITOR
             UnityEditor.SceneVisibilityManager.visibilityChanged -= OnCharacterVisibilityChanged;
@@ -128,16 +127,25 @@ namespace HSR.NPRShader
 #if UNITY_EDITOR
         private void OnCharacterVisibilityChanged()
         {
-            if (UnityEditor.SceneVisibilityManager.instance.IsHidden(gameObject))
+            UpdateShadowCasterHandle(true);
+        }
+#endif
+
+        private void UpdateShadowCasterHandle(bool enable)
+        {
+#if UNITY_EDITOR
+            enable &= !UnityEditor.SceneVisibilityManager.instance.IsHidden(gameObject);
+#endif
+
+            if (!enable || !m_IsCastingShadow)
             {
-                PerObjectShadowManager.UnregisterIfNot(this);
+                PerObjectShadowManager.FreeIfNot(in m_ShadowCasterHandle);
             }
             else
             {
-                PerObjectShadowManager.RegisterIfNot(this);
+                PerObjectShadowManager.AllocateIfNot(ref m_ShadowCasterHandle);
             }
         }
-#endif
 
         private void Update()
         {
@@ -160,23 +168,35 @@ namespace HSR.NPRShader
                 properties.SetVector(PropertyIds._MMDHeadBoneRight, right);
             }
 
-            ForceUpdateRendererListInEditor();
-
             foreach (Renderer renderer in m_Renderers)
             {
                 renderer.SetPropertyBlock(properties);
             }
+
+#if UNITY_EDITOR
+            if (Application.isPlaying)
+            {
+                m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
+            }
+            else
+            {
+                UpdateRendererList();
+            }
+#else
+            m_ShadowCasterHandle.TryUpdateBounds();
+#endif
         }
 
         private void OnDrawGizmosSelected()
         {
+            if (!m_ShadowCasterHandle.TryGetBounds(out Bounds bounds))
+            {
+                return;
+            }
+
             Color color = Gizmos.color;
             Gizmos.color = Color.green;
-
-            IPerObjectShadowCaster caster = this;
-            Bounds bounds = caster.GetActiveRenderersAndBounds(null);
             Gizmos.DrawWireCube(bounds.center, bounds.size);
-
             Gizmos.color = color;
         }
 
@@ -184,52 +204,7 @@ namespace HSR.NPRShader
         {
             m_Renderers.Clear();
             GetComponentsInChildren(true, m_Renderers);
-        }
-
-        [Conditional("UNITY_EDITOR")]
-        private void ForceUpdateRendererListInEditor()
-        {
-            if (!Application.isPlaying)
-            {
-                UpdateRendererList();
-            }
-        }
-
-        bool IPerObjectShadowCaster.IsActiveAndCastingShadow => isActiveAndEnabled && m_IsCastingShadow;
-
-        Bounds IPerObjectShadowCaster.GetActiveRenderersAndBounds(List<Renderer> outRendererListOrNull)
-        {
-            ForceUpdateRendererListInEditor();
-
-            Bounds bounds = default;
-            bool first = true;
-
-            foreach (var r in m_Renderers)
-            {
-#if UNITY_EDITOR
-                if (UnityEditor.SceneVisibilityManager.instance.IsHidden(r.gameObject))
-                {
-                    continue;
-                }
-#endif
-
-                if (r.gameObject.activeInHierarchy && r.enabled && r.shadowCastingMode != ShadowCastingMode.Off)
-                {
-                    if (first)
-                    {
-                        bounds = r.bounds;
-                        first = false;
-                    }
-                    else
-                    {
-                        bounds.Encapsulate(r.bounds);
-                    }
-
-                    outRendererListOrNull?.Add(r);
-                }
-            }
-
-            return bounds;
+            m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
         }
 
         private static Vector3 GetTransformDirection(Transform transform, TransformDirection direction)
