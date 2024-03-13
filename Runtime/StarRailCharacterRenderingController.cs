@@ -153,21 +153,7 @@ namespace HSR.NPRShader
 
         private void Update()
         {
-            UpdateMaterialProperties();
-
-#if UNITY_EDITOR
-            // Editor 中 Shader 可以任意修改，所以每次都要更新 Renderer
-            if (Application.isPlaying)
-            {
-                m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
-            }
-            else
-            {
-                UpdateRendererList();
-            }
-#else
-            m_ShadowCasterHandle.TryUpdateBounds();
-#endif
+            UpdateMaterialsAndShadowBounds(refreshRenderers: !Application.isPlaying);
         }
 
         private void UpdateMaterialProperties()
@@ -218,9 +204,33 @@ namespace HSR.NPRShader
 
         public void UpdateRendererList()
         {
-            m_Renderers.Clear();
-            GetComponentsInChildren(true, m_Renderers);
-            m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
+            UpdateMaterialsAndShadowBounds(refreshRenderers: true);
+        }
+
+        private void UpdateMaterialsAndShadowBounds(bool refreshRenderers)
+        {
+            if (refreshRenderers)
+            {
+                m_Renderers.Clear();
+                GetComponentsInChildren(true, m_Renderers);
+            }
+
+            // 因为 Build 之后需要实例化 Material，所以必须要先设置 MaterialProperties
+            // 这样后面访问 SharedMaterial 时才能拿到正确的材质
+            UpdateMaterialProperties();
+
+#if UNITY_EDITOR
+            // Editor 中 Shader 可以任意修改，所以每次都要更新 Renderer
+            refreshRenderers = true;
+#endif
+            if (refreshRenderers)
+            {
+                m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
+            }
+            else
+            {
+                m_ShadowCasterHandle.TryUpdateBounds();
+            }
         }
 
         private static Vector3 GetTransformDirection(Transform transform, TransformDirection direction)
