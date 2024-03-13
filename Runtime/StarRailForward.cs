@@ -49,14 +49,6 @@ namespace HSR.NPRShader
 
         // -------------------------------------------------------
 
-        [Header("MainLightPerObjectShadow")]
-
-        [Range(0, 10)] public float DepthBias = 1;
-        [Range(0, 10)] public float NormalBias = 1;
-        [Min(0)] public float MaxShadowDistance = 150;
-
-        // -------------------------------------------------------
-
         [NonSerialized] private RTHandle[] m_GBuffers;
         [NonSerialized] private int[] m_GBufferNameIds;
 
@@ -149,8 +141,6 @@ namespace HSR.NPRShader
             RTHandle depthTarget = renderer.cameraDepthTargetHandle;
 
             ReAllocateGBuffersIfNeeded(in renderingData.cameraData.cameraTargetDescriptor);
-
-            m_MainLightPerObjShadowPass.Setup(DepthBias, NormalBias, MaxShadowDistance);
 
             m_ClearGBufferPass.SetupClear(m_GBuffers, ClearFlag.All, new Color(0, 0, 0, 0));
             m_DrawOpaqueForward1Pass.Setup(colorTarget, depthTarget, m_GBuffers);

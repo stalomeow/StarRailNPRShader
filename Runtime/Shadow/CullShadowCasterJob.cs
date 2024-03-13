@@ -44,7 +44,7 @@ namespace HSR.NPRShader.Shadow
 
         public quaternion MainLightRotationInv;
         public float3 CameraPosition;
-        public float MaxShadowSquareDistance;
+        public float3 CameraNormalizedForward;
 
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
@@ -61,7 +61,7 @@ namespace HSR.NPRShader.Shadow
 
         [WriteOnly, NoAlias]
         [NativeDisableParallelForRestriction]
-        public NativeArray<float> SquareDistances;
+        public NativeArray<float> Priorities;
 
         [WriteOnly, NoAlias]
         [NativeDisableParallelForRestriction]
@@ -75,26 +75,25 @@ namespace HSR.NPRShader.Shadow
         {
             float3 aabbMin = WorldBounds[2 * index];
             float3 aabbMax = WorldBounds[2 * index + 1];
+
             if (distancesq(aabbMin, aabbMax) <= 0.00001f)
             {
                 return;
             }
 
             float3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
-            float squareDistance = distancesq(aabbCenter, CameraPosition);
-            if (squareDistance > MaxShadowSquareDistance)
-            {
-                return;
-            }
-
             float4x4 viewMatrix = mul(s_FlipZMatrix, float4x4.TRS(-aabbCenter, MainLightRotationInv, 1));
 
             if (GetProjectionMatrix(in aabbMin, in aabbMax, in viewMatrix, out float4x4 projectionMatrix))
             {
+                float distSq = distancesq(aabbCenter, CameraPosition);
+                float cosAngle = dot(CameraNormalizedForward, normalizesafe(aabbCenter - CameraPosition));
+                float priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f);
+
                 int slot = Interlocked.Increment(ref *VisibleCount) - 1;
                 ViewProjectionMatrices[2 * slot] = viewMatrix;
                 ViewProjectionMatrices[2 * slot + 1] = projectionMatrix;
-                SquareDistances[slot] = squareDistance;
+                Priorities[slot] = priority; // 越小越优先
                 VisibleIndices[slot] = index;
             }
         }

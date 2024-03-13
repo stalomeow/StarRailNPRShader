@@ -40,9 +40,6 @@ namespace HSR.NPRShader.Passes
         private readonly Vector4[] m_ShadowMapRectArray;
         private int m_ShadowMapSizeInTile; // 一行/一列有多少个 tile
         private RTHandle m_ShadowMap;
-        private float m_DepthBias;
-        private float m_NormalBias;
-        private float m_MaxShadowDistance;
 
         public MainLightPerObjectShadowCasterPass()
         {
@@ -60,13 +57,6 @@ namespace HSR.NPRShader.Passes
             m_ShadowMap?.Release();
         }
 
-        public void Setup(float depthBias, float normalBias, float maxShadowDistance)
-        {
-            m_DepthBias = depthBias;
-            m_NormalBias = normalBias;
-            m_MaxShadowDistance = maxShadowDistance;
-        }
-
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             base.OnCameraSetup(cmd, ref renderingData);
@@ -77,7 +67,7 @@ namespace HSR.NPRShader.Passes
             {
                 Camera camera = renderingData.cameraData.camera;
                 Quaternion mainLightRotation = mainLight.localToWorldMatrix.rotation;
-                PerObjectShadowManager.GetCasterList(camera, mainLightRotation, m_MaxShadowDistance, m_ShadowCasterList, MaxShadowCount);
+                PerObjectShadowManager.GetCasterList(camera, mainLightRotation, m_ShadowCasterList, MaxShadowCount);
             }
         }
 
@@ -121,7 +111,7 @@ namespace HSR.NPRShader.Passes
                 {
                     int mainLightIndex = renderingData.lightData.mainLightIndex;
                     VisibleLight mainLight = renderingData.lightData.visibleLights[mainLightIndex];
-                    ExecuteShadowCasters(cmd, ref mainLight);
+                    RenderMainLightShadowMap(cmd, ref mainLight, mainLightIndex, ref renderingData.shadowData);
                     SetShadowSamplingData(cmd);
                 }
                 else
@@ -134,24 +124,20 @@ namespace HSR.NPRShader.Passes
             CommandBufferPool.Release(cmd);
         }
 
-        private void ExecuteShadowCasters(CommandBuffer cmd, ref VisibleLight mainLight)
+        private void RenderMainLightShadowMap(CommandBuffer cmd, ref VisibleLight mainLight, int mainLightIndex, ref ShadowData shadowData)
         {
             cmd.SetGlobalDepthBias(1.0f, 2.5f); // these values match HDRP defaults (see https://github.com/Unity-Technologies/Graphics/blob/9544b8ed2f98c62803d285096c91b44e9d8cbc47/com.unity.render-pipelines.high-definition/Runtime/Lighting/Shadow/HDShadowAtlas.cs#L197 )
-
-            Vector2 tileSize = new Vector2(TileResolution, TileResolution);
 
             for (int i = 0; i < m_ShadowCasterList.Count; i++)
             {
                 ShadowCasterData casterData = m_ShadowCasterList[i];
 
-                Vector4 shadowBias = GetShadowBias(ref mainLight, casterData.ProjectionMatrix, m_ShadowMap.rt.width);
+                Vector4 shadowBias = ShadowUtils.GetShadowBias(ref mainLight, mainLightIndex, ref shadowData, casterData.ProjectionMatrix, m_ShadowMap.rt.width);
                 ShadowUtils.SetupShadowCasterConstantBuffer(cmd, ref mainLight, shadowBias);
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.CastingPunctualLightShadow, false);
 
                 Vector2Int tilePos = new(i % m_ShadowMapSizeInTile, i / m_ShadowMapSizeInTile);
-                Rect viewport = new(tilePos * TileResolution, tileSize);
-                DrawShadow(cmd, in viewport, in casterData);
-
+                DrawShadow(cmd, tilePos, in casterData);
                 m_ShadowMatrixArray[i] = GetShadowMatrix(tilePos, in casterData);
                 m_ShadowMapRectArray[i] = GetShadowMapRect(tilePos);
             }
@@ -162,50 +148,6 @@ namespace HSR.NPRShader.Passes
             cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, m_ShadowCasterList.Count);
             cmd.SetGlobalMatrixArray(PropertyIds._PerObjShadowMatrices, m_ShadowMatrixArray);
             cmd.SetGlobalVectorArray(PropertyIds._PerObjShadowMapRects, m_ShadowMapRectArray);
-        }
-
-        private Vector4 GetShadowBias(ref VisibleLight shadowLight, Matrix4x4 lightProjectionMatrix, float shadowResolution)
-        {
-            // Frustum size is guaranteed to be a cube as we wrap shadow frustum around a sphere
-            float frustumSize = 2.0f / lightProjectionMatrix.m00;
-
-            // depth and normal bias scale is in shadowmap texel size in world space
-            float texelSize = frustumSize / shadowResolution;
-            float depthBias = -m_DepthBias * texelSize;
-            float normalBias = -m_NormalBias * texelSize;
-
-            // The current implementation of NormalBias in Universal RP is the same as in Unity Built-In RP (i.e moving shadow caster vertices along normals when projecting them to the shadow map).
-            // This does not work well with Point Lights, which is why NormalBias value is hard-coded to 0.0 in Built-In RP (see value of unity_LightShadowBias.z in FrameDebugger, and native code that sets it: https://github.cds.internal.unity3d.com/unity/unity/blob/a9c916ba27984da43724ba18e70f51469e0c34f5/Runtime/Camera/Shadows.cpp#L1686 )
-            // We follow the same convention in Universal RP:
-            if (shadowLight.lightType == LightType.Point)
-                normalBias = 0.0f;
-
-            if (shadowLight.light.shadows == LightShadows.Soft)
-            {
-                SoftShadowQuality softShadowQuality = SoftShadowQuality.Medium;
-                if (shadowLight.light.TryGetComponent(out UniversalAdditionalLightData additionalLightData))
-                    softShadowQuality = additionalLightData.softShadowQuality;
-
-                // TODO: depth and normal bias assume sample is no more than 1 texel away from shadowmap
-                // This is not true with PCF. Ideally we need to do either
-                // cone base bias (based on distance to center sample)
-                // or receiver place bias based on derivatives.
-                // For now we scale it by the PCF kernel size of non-mobile platforms (5x5)
-                float kernelRadius = 2.5f;
-
-                switch (softShadowQuality)
-                {
-                    case SoftShadowQuality.High: kernelRadius = 3.5f; break; // 7x7
-                    case SoftShadowQuality.Medium: kernelRadius = 2.5f; break; // 5x5
-                    case SoftShadowQuality.Low: kernelRadius = 1.5f; break; // 3x3
-                    default: break;
-                }
-
-                depthBias *= kernelRadius;
-                normalBias *= kernelRadius;
-            }
-
-            return new Vector4(depthBias, normalBias, 0.0f, 0.0f);
         }
 
         private void SetShadowSamplingData(CommandBuffer cmd)
@@ -225,8 +167,10 @@ namespace HSR.NPRShader.Passes
                 new Vector4(invShadowAtlasWidth, invShadowAtlasHeight, renderTargetWidth, renderTargetHeight));
         }
 
-        private static void DrawShadow(CommandBuffer cmd, in Rect viewport, in ShadowCasterData casterData)
+        private static void DrawShadow(CommandBuffer cmd, Vector2Int tilePos, in ShadowCasterData casterData)
         {
+            Rect viewport = new(tilePos * TileResolution, new Vector2(TileResolution, TileResolution));
+
             cmd.SetViewProjectionMatrices(casterData.ViewMatrix, casterData.ProjectionMatrix);
             cmd.SetViewport(viewport);
             cmd.EnableScissorRect(new Rect(viewport.x + 4, viewport.y + 4, viewport.width - 8, viewport.height - 8));

@@ -239,12 +239,7 @@ namespace HSR.NPRShader.Shadow
             return false;
         }
 
-        public static unsafe void GetCasterList(
-            Camera camera,
-            Quaternion mainLightRotation,
-            float maxShadowDistance,
-            List<ShadowCasterData> outCasterList,
-            int maxCount)
+        public static unsafe void GetCasterList(Camera camera, Quaternion mainLightRotation, List<ShadowCasterData> outCasterList, int maxCount)
         {
             int casterCount = NextIndex;
             int casterCountTwice = casterCount * 2;
@@ -259,7 +254,7 @@ namespace HSR.NPRShader.Shadow
             CalculateFrustumEightCorners(camera, frustumCorners);
 
             using NativeArray<float4x4> viewProjectionMatrices = new(casterCountTwice, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            using NativeArray<float> squareDistances = new(casterCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            using NativeArray<float> priorities = new(casterCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             using NativeArray<int> visibleIndices = new(casterCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             int visibleCount = 0;
 
@@ -275,12 +270,12 @@ namespace HSR.NPRShader.Shadow
                 {
                     MainLightRotationInv = Quaternion.Inverse(mainLightRotation),
                     CameraPosition = camera.transform.position,
-                    MaxShadowSquareDistance = maxShadowDistance * maxShadowDistance,
+                    CameraNormalizedForward = camera.transform.forward,
                     FrustumCorners = frustumCorners,
                     FrustumCornerCount = FrustumCornerCount,
                     WorldBounds = worldBounds,
                     ViewProjectionMatrices = viewProjectionMatrices,
-                    SquareDistances = squareDistances,
+                    Priorities = priorities,
                     VisibleIndices = visibleIndices,
                     VisibleCount = &visibleCount,
                 };
@@ -293,16 +288,16 @@ namespace HSR.NPRShader.Shadow
             {
                 outCasterList.Add(new ShadowCasterData
                 {
+                    Priority = priorities[i],
                     ViewMatrix = viewProjectionMatrices.ReinterpretLoad<Matrix4x4>(2 * i),
                     ProjectionMatrix = viewProjectionMatrices.ReinterpretLoad<Matrix4x4>(2 * i + 1),
-                    SquareDistance = squareDistances[i],
                     ShadowRenderers = s_ManagedDataArray[visibleIndices[i]].Renderers,
                 });
             }
 
             if (outCasterList.Count > maxCount)
             {
-                outCasterList.Sort((x, y) => x.SquareDistance.CompareTo(y.SquareDistance));
+                outCasterList.Sort();
                 outCasterList.RemoveRange(maxCount, outCasterList.Count - maxCount);
             }
         }
