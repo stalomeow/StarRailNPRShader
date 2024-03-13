@@ -45,9 +45,10 @@ namespace HSR.NPRShader.Editor.AssetProcessors
             if (config.IsEnableAndAssetPathMatch(assetPath))
             {
                 NormalUtility.SmoothAndStore(go, config.SmoothNormalStoreMode, false);
+                go.AddComponent<StarRailCharacterRenderingController>();
             }
         }
 
-        public override uint GetVersion() => 29u;
+        public override uint GetVersion() => 31u;
     }
 }

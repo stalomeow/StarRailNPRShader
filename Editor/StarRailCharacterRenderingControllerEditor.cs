@@ -26,6 +26,7 @@ using UnityEditor.Rendering;
 
 namespace HSR.NPRShader.Editor
 {
+    [CanEditMultipleObjects]
     [CustomEditor(typeof(StarRailCharacterRenderingController))]
     internal class StarRailCharacterRenderingControllerEditor : UnityEditor.Editor
     {
