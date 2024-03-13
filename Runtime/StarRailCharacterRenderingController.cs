@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using HSR.NPRShader.Shadow;
 using HSR.NPRShader.Utils;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HSR.NPRShader
 {
@@ -94,11 +95,9 @@ namespace HSR.NPRShader
             set
             {
                 m_IsCastingShadow = value;
-                UpdateShadowCasterHandle(true);
+                UpdateShadowCasterHandle();
             }
         }
-
-        public MaterialPropertyBlock PropertyBlock => m_PropertyBlock.Value;
 
         private void OnEnable()
         {
@@ -118,12 +117,6 @@ namespace HSR.NPRShader
             UnityEditor.SceneVisibilityManager.visibilityChanged -= OnCharacterVisibilityChanged;
 #endif
 
-            // 这里就不要更新 RendererList 了，只清除之前的
-            foreach (Renderer renderer in m_Renderers)
-            {
-                renderer.SetPropertyBlock(null);
-            }
-
             m_Renderers.Clear();
             m_PropertyBlock.Value.Clear();
         }
@@ -131,17 +124,19 @@ namespace HSR.NPRShader
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            UpdateShadowCasterHandle(true);
+            UpdateShadowCasterHandle();
         }
 
         private void OnCharacterVisibilityChanged()
         {
-            UpdateShadowCasterHandle(true);
+            UpdateShadowCasterHandle();
         }
 #endif
 
-        private void UpdateShadowCasterHandle(bool enable)
+        private void UpdateShadowCasterHandle(bool? scriptEnabled = null)
         {
+            bool enable = scriptEnabled ?? enabled;
+
 #if UNITY_EDITOR
             enable &= !UnityEditor.SceneVisibilityManager.instance.IsHidden(gameObject);
 #endif
@@ -158,7 +153,7 @@ namespace HSR.NPRShader
 
         private void Update()
         {
-            SetMaterialProperties();
+            UpdateMaterialProperties();
 
 #if UNITY_EDITOR
             // Editor 中 Shader 可以任意修改，所以每次都要更新 Renderer
@@ -175,30 +170,36 @@ namespace HSR.NPRShader
 #endif
         }
 
-        private void SetMaterialProperties()
+        private void UpdateMaterialProperties()
         {
-            MaterialPropertyBlock properties = m_PropertyBlock.Value;
+            List<(int, float)> floats = ListPool<(int, float)>.Get();
+            List<(int, Vector4)> vectors = ListPool<(int, Vector4)>.Get();
 
-            properties.SetFloat(PropertyIds._RampCoolWarmLerpFactor, m_RampCoolWarmMix);
-            properties.SetFloat(PropertyIds._DitherAlpha, m_DitherAlpha);
-            properties.SetFloat(PropertyIds._ExCheekIntensity, m_ExCheekIntensity);
-            properties.SetFloat(PropertyIds._ExShyIntensity, m_ExShyIntensity);
-            properties.SetFloat(PropertyIds._ExShadowIntensity, m_ExShadowIntensity);
-
-            if (m_MMDHeadBone != null)
+            try
             {
-                Vector4 forward = GetTransformDirection(m_MMDHeadBone, m_MMDHeadBoneForward);
-                Vector4 up = GetTransformDirection(m_MMDHeadBone, m_MMDHeadBoneUp);
-                Vector4 right = GetTransformDirection(m_MMDHeadBone, m_MMDHeadBoneRight);
+                floats.Add((PropertyIds._RampCoolWarmLerpFactor, m_RampCoolWarmMix));
+                floats.Add((PropertyIds._DitherAlpha, m_DitherAlpha));
+                floats.Add((PropertyIds._ExCheekIntensity, m_ExCheekIntensity));
+                floats.Add((PropertyIds._ExShyIntensity, m_ExShyIntensity));
+                floats.Add((PropertyIds._ExShadowIntensity, m_ExShadowIntensity));
 
-                properties.SetVector(PropertyIds._MMDHeadBoneForward, forward);
-                properties.SetVector(PropertyIds._MMDHeadBoneUp, up);
-                properties.SetVector(PropertyIds._MMDHeadBoneRight, right);
+                if (m_MMDHeadBone != null)
+                {
+                    Vector4 forward = GetTransformDirection(m_MMDHeadBone, m_MMDHeadBoneForward);
+                    Vector4 up = GetTransformDirection(m_MMDHeadBone, m_MMDHeadBoneUp);
+                    Vector4 right = GetTransformDirection(m_MMDHeadBone, m_MMDHeadBoneRight);
+
+                    vectors.Add((PropertyIds._MMDHeadBoneForward, forward));
+                    vectors.Add((PropertyIds._MMDHeadBoneUp, up));
+                    vectors.Add((PropertyIds._MMDHeadBoneRight, right));
+                }
+
+                RendererUtility.SetMaterialPropertiesPerRenderer(m_Renderers, m_PropertyBlock.Value, floats, vectors);
             }
-
-            foreach (Renderer renderer in m_Renderers)
+            finally
             {
-                renderer.SetPropertyBlock(properties);
+                ListPool<(int, float)>.Release(floats);
+                ListPool<(int, Vector4)>.Release(vectors);
             }
         }
 
