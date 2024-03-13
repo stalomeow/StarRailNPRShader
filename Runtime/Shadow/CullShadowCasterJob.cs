@@ -44,7 +44,7 @@ namespace HSR.NPRShader.Shadow
 
         public quaternion MainLightRotationInv;
         public float3 CameraPosition;
-        public float MaxShadowDistanceSquare;
+        public float MaxShadowSquareDistance;
 
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
@@ -82,7 +82,7 @@ namespace HSR.NPRShader.Shadow
 
             float3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
             float squareDistance = distancesq(aabbCenter, CameraPosition);
-            if (squareDistance > MaxShadowDistanceSquare)
+            if (squareDistance > MaxShadowSquareDistance)
             {
                 return;
             }

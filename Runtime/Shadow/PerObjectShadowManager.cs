@@ -275,7 +275,7 @@ namespace HSR.NPRShader.Shadow
                 {
                     MainLightRotationInv = Quaternion.Inverse(mainLightRotation),
                     CameraPosition = camera.transform.position,
-                    MaxShadowDistanceSquare = maxShadowDistance * maxShadowDistance,
+                    MaxShadowSquareDistance = maxShadowDistance * maxShadowDistance,
                     FrustumCorners = frustumCorners,
                     FrustumCornerCount = FrustumCornerCount,
                     WorldBounds = worldBounds,

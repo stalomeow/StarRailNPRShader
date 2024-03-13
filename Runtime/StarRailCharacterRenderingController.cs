@@ -91,7 +91,11 @@ namespace HSR.NPRShader
         public bool IsCastingShadow
         {
             get => m_IsCastingShadow;
-            set => m_IsCastingShadow = value;
+            set
+            {
+                m_IsCastingShadow = value;
+                UpdateShadowCasterHandle(true);
+            }
         }
 
         public MaterialPropertyBlock PropertyBlock => m_PropertyBlock.Value;
@@ -125,6 +129,11 @@ namespace HSR.NPRShader
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            UpdateShadowCasterHandle(true);
+        }
+
         private void OnCharacterVisibilityChanged()
         {
             UpdateShadowCasterHandle(true);
@@ -149,6 +158,25 @@ namespace HSR.NPRShader
 
         private void Update()
         {
+            SetMaterialProperties();
+
+#if UNITY_EDITOR
+            // Editor 中 Shader 可以任意修改，所以每次都要更新 Renderer
+            if (Application.isPlaying)
+            {
+                m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
+            }
+            else
+            {
+                UpdateRendererList();
+            }
+#else
+            m_ShadowCasterHandle.TryUpdateBounds();
+#endif
+        }
+
+        private void SetMaterialProperties()
+        {
             MaterialPropertyBlock properties = m_PropertyBlock.Value;
 
             properties.SetFloat(PropertyIds._RampCoolWarmLerpFactor, m_RampCoolWarmMix);
@@ -172,19 +200,6 @@ namespace HSR.NPRShader
             {
                 renderer.SetPropertyBlock(properties);
             }
-
-#if UNITY_EDITOR
-            if (Application.isPlaying)
-            {
-                m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
-            }
-            else
-            {
-                UpdateRendererList();
-            }
-#else
-            m_ShadowCasterHandle.TryUpdateBounds();
-#endif
         }
 
         private void OnDrawGizmosSelected()
