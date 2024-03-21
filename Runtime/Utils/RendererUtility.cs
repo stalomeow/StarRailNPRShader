@@ -23,6 +23,7 @@
 #define NOT_UNITY_EDITOR
 #endif
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
@@ -32,7 +33,7 @@ namespace HSR.NPRShader.Utils
 {
     public static class RendererUtility
     {
-        public static void SetMaterialPropertiesPerRenderer(List<Renderer> renderers, MaterialPropertyBlock propertyBlock, List<(int, float)> floats, List<(int, Vector4)> vectors)
+        public static void SetMaterialPropertiesPerRenderer(List<Renderer> renderers, Lazy<MaterialPropertyBlock> propertyBlock, List<(int, float)> floats, List<(int, Vector4)> vectors)
         {
             // SRPBatcher 不支持 MaterialPropertyBlock
             // 但是在 Editor 里不用 MaterialPropertyBlock 的话不好搞
@@ -43,23 +44,25 @@ namespace HSR.NPRShader.Utils
         }
 
         [Conditional("UNITY_EDITOR")]
-        private static void SetPropertiesViaPropertyBlock(List<Renderer> renderers, MaterialPropertyBlock propertyBlock, List<(int, float)> floats, List<(int, Vector4)> vectors)
+        private static void SetPropertiesViaPropertyBlock(List<Renderer> renderers, Lazy<MaterialPropertyBlock> propertyBlock, List<(int, float)> floats, List<(int, Vector4)> vectors)
         {
+            MaterialPropertyBlock properties = propertyBlock.Value;
+
             foreach (Renderer renderer in renderers)
             {
-                renderer.GetPropertyBlock(propertyBlock);
+                renderer.GetPropertyBlock(properties);
 
                 for (int i = 0; i < floats.Count; i++)
                 {
-                    propertyBlock.SetFloat(floats[i].Item1, floats[i].Item2);
+                    properties.SetFloat(floats[i].Item1, floats[i].Item2);
                 }
 
                 for (int i = 0; i < vectors.Count; i++)
                 {
-                    propertyBlock.SetVector(vectors[i].Item1, vectors[i].Item2);
+                    properties.SetVector(vectors[i].Item1, vectors[i].Item2);
                 }
 
-                renderer.SetPropertyBlock(propertyBlock);
+                renderer.SetPropertyBlock(properties);
             }
         }
 

@@ -180,7 +180,7 @@ namespace HSR.NPRShader
                     vectors.Add((PropertyIds._MMDHeadBoneRight, right));
                 }
 
-                RendererUtility.SetMaterialPropertiesPerRenderer(m_Renderers, m_PropertyBlock.Value, floats, vectors);
+                RendererUtility.SetMaterialPropertiesPerRenderer(m_Renderers, m_PropertyBlock, floats, vectors);
             }
             finally
             {
