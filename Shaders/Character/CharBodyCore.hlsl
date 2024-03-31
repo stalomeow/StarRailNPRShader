@@ -75,10 +75,10 @@ CBUFFER_START(UnityPerMaterial)
     float _RimIntensityBackFace;
     float _RimThresholdMin;
     float _RimThresholdMax;
-    float _RimEdgeSoftness;
     CHAR_MAT_PROP(float, _RimWidth);
     CHAR_MAT_PROP(float4, _RimColor);
     CHAR_MAT_PROP(float, _RimDark);
+    CHAR_MAT_PROP(float, _RimEdgeSoftness);
 
     float _OutlineWidth;
     float _OutlineZOffset;
@@ -145,7 +145,7 @@ void BodyColorFragment(
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    SELECT_CHAR_MAT_PROPS_10(lightMap,
+    SELECT_CHAR_MAT_PROPS_11(lightMap,
         float4, specularColor        = _SpecularColor,
         float , specularMetallic     = _SpecularMetallic,
         float , specularShininess    = _SpecularShininess,
@@ -154,11 +154,12 @@ void BodyColorFragment(
         float , rimWidth             = _RimWidth,
         float4, rimColor             = _RimColor,
         float , rimDark              = _RimDark,
+        float , rimEdgeSoftness      = _RimEdgeSoftness,
         float , bloomIntensity       = _mBloomIntensity,
         float4, bloomColor           = _BloomColor
     );
 
-    Light light = GetCharacterMainLight(i.shadowCoord);
+    Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
     ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);
@@ -176,17 +177,17 @@ void BodyColorFragment(
     specularData.intensity = specularIntensity;
     specularData.metallic = specularMetallic;
 
-    RimLightData rimLightData;
-    rimLightData.color = rimColor.rgb;
-    rimLightData.width = rimWidth;
-    rimLightData.edgeSoftness = _RimEdgeSoftness;
-    rimLightData.thresholdMin = _RimThresholdMin;
-    rimLightData.thresholdMax = _RimThresholdMax;
-    rimLightData.darkenValue = rimDark;
-    rimLightData.intensityFrontFace = _RimIntensity;
-    rimLightData.intensityBackFace = _RimIntensityBackFace;
-    rimLightData.modelScale = _ModelScale;
-    rimLightData.ditherAlpha = _DitherAlpha;
+    RimLightMaskData rimLightMaskData;
+    rimLightMaskData.color = rimColor.rgb;
+    rimLightMaskData.width = rimWidth;
+    rimLightMaskData.edgeSoftness = rimEdgeSoftness;
+    rimLightMaskData.thresholdMin = _RimThresholdMin;
+    rimLightMaskData.thresholdMax = _RimThresholdMax;
+    rimLightMaskData.intensityFrontFace = _RimIntensity;
+    rimLightMaskData.intensityBackFace = _RimIntensityBackFace;
+    rimLightMaskData.modelScale = _ModelScale;
+    rimLightMaskData.ditherAlpha = _DitherAlpha;
+    rimLightMaskData.NoV = dirWS.NoV;
 
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
@@ -194,20 +195,19 @@ void BodyColorFragment(
     emissionData.threshold = _EmissionThreshold;
     emissionData.intensity = _EmissionIntensity;
 
-    float3 diffuse = GetRampDiffuse(diffuseData, i.color, texColor.rgb, light.color, lightMap,
-        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm),
-        light.shadowAttenuation);
-    float3 specular = GetSpecular(specularData, texColor.rgb, light.color, lightMap, light.shadowAttenuation);
-    float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
+    float3 diffuse = GetRampDiffuse(diffuseData, light, i.color, texColor.rgb, lightMap,
+        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
+    float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
+    float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
+    float3 rimLight = GetRimLight(rimLightMask, rimDark, dirWS.NoL, light);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
     #if defined(_ADDITIONAL_LIGHTS)
         CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
-            Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+            Light lightAdd = GetCharacterAdditionalLight(lightIndex, i.positionWS);
             Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
-            float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-            diffuse = CombineColorPreserveLuminance(diffuse, texColor.rgb * lightAdd.color * attenuationAdd);
+            diffuse = CombineColorPreserveLuminance(diffuse, GetAdditionalLightDiffuse(texColor.rgb, lightAdd));
 
             SpecularData specularDataAdd;
             specularDataAdd.color = specularColor.rgb;
@@ -216,7 +216,9 @@ void BodyColorFragment(
             specularDataAdd.edgeSoftness = specularEdgeSoftness;
             specularDataAdd.intensity = specularIntensity;
             specularDataAdd.metallic = specularMetallic;
-            specular += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
+            specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
+
+            rimLight += GetRimLight(rimLightMask, 0, dirWSAdd.NoL, lightAdd);
         CHAR_LIGHT_LOOP_END
     #endif
 

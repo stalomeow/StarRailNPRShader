@@ -85,11 +85,10 @@ CharCoreVaryings FaceVertex(CharCoreAttributes i)
 float3 GetFaceOrEyeDiffuse(
     Directions dirWS,
     HeadDirections headDirWS,
+    Light light,
     float4 uv,
     float3 baseColor,
-    float3 lightColor,
-    float4 faceMap,
-    half shadowAttenuation)
+    float4 faceMap)
 {
     // 游戏模型才有 UV2
     #if defined(_MODEL_GAME) && defined(_FACEMAPUV2_ON)
@@ -104,9 +103,9 @@ float3 GetFaceOrEyeDiffuse(
 
     float FoL01 = (dot(headDirWS.forward, lightDirProj) * 0.5 + 0.5);
     // 被阴影挡住时没有伦勃朗光
-    float3 faceShadow = lerp(_ShadowColor.rgb, 1, step(1 - threshold, FoL01) * shadowAttenuation); // SDF Shadow
-    float3 eyeShadow = lerp(_EyeShadowColor.rgb, 1, smoothstep(0.3, 0.5, FoL01) * shadowAttenuation);
-    return baseColor * lightColor * lerp(faceShadow, eyeShadow, faceMap.r);
+    float3 faceShadow = lerp(_ShadowColor.rgb, 1, step(1 - threshold, FoL01) * light.shadowAttenuation); // SDF Shadow
+    float3 eyeShadow = lerp(_EyeShadowColor.rgb, 1, smoothstep(0.3, 0.5, FoL01) * light.shadowAttenuation);
+    return baseColor * light.color * (lerp(faceShadow, eyeShadow, faceMap.r) * light.distanceAttenuation);
 }
 
 void FaceOpaqueAndZFragment(
@@ -128,7 +127,7 @@ void FaceOpaqueAndZFragment(
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    Light light = GetCharacterMainLight(i.shadowCoord);
+    Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
     HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
 
@@ -147,7 +146,7 @@ void FaceOpaqueAndZFragment(
     texColor.rgb = lerp(texColor.rgb, exEyeShadow, _ExShadowIntensity);
 
     // Diffuse
-    float3 diffuse = GetFaceOrEyeDiffuse(dirWS, headDirWS, i.uv, texColor.rgb, light.color, faceMap, light.shadowAttenuation);
+    float3 diffuse = GetFaceOrEyeDiffuse(dirWS, headDirWS, light, i.uv, texColor.rgb, faceMap);
 
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
@@ -162,9 +161,8 @@ void FaceOpaqueAndZFragment(
 
     #if defined(_ADDITIONAL_LIGHTS)
         CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
-            Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
-            float attenuationAdd = saturate(lightAdd.distanceAttenuation);
-            diffuse = CombineColorPreserveLuminance(diffuse, texColor.rgb * lightAdd.color * attenuationAdd);
+            Light lightAdd = GetCharacterAdditionalLight(lightIndex, i.positionWS);
+            diffuse = CombineColorPreserveLuminance(diffuse, GetAdditionalLightDiffuse(texColor.rgb, lightAdd));
         CHAR_LIGHT_LOOP_END
     #endif
 

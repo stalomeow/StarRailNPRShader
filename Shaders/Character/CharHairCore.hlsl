@@ -99,7 +99,7 @@ float4 BaseHairOpaqueFragment(
     DoAlphaClip(texColor.a, _AlphaTestThreshold);
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    Light light = GetCharacterMainLight(i.shadowCoord);
+    Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
     DiffuseData diffuseData;
@@ -115,17 +115,17 @@ float4 BaseHairOpaqueFragment(
     specularData.intensity = _SpecularIntensity0;
     specularData.metallic = 0;
 
-    RimLightData rimLightData;
-    rimLightData.color = _RimColor0.rgb;
-    rimLightData.width = _RimWidth0;
-    rimLightData.edgeSoftness = _RimEdgeSoftness;
-    rimLightData.thresholdMin = _RimThresholdMin;
-    rimLightData.thresholdMax = _RimThresholdMax;
-    rimLightData.darkenValue = _RimDark0;
-    rimLightData.intensityFrontFace = _RimIntensity;
-    rimLightData.intensityBackFace = _RimIntensityBackFace;
-    rimLightData.modelScale = _ModelScale;
-    rimLightData.ditherAlpha = _DitherAlpha;
+    RimLightMaskData rimLightMaskData;
+    rimLightMaskData.color = _RimColor0.rgb;
+    rimLightMaskData.width = _RimWidth0;
+    rimLightMaskData.edgeSoftness = _RimEdgeSoftness;
+    rimLightMaskData.thresholdMin = _RimThresholdMin;
+    rimLightMaskData.thresholdMax = _RimThresholdMax;
+    rimLightMaskData.intensityFrontFace = _RimIntensity;
+    rimLightMaskData.intensityBackFace = _RimIntensityBackFace;
+    rimLightMaskData.modelScale = _ModelScale;
+    rimLightMaskData.ditherAlpha = _DitherAlpha;
+    rimLightMaskData.NoV = dirWS.NoV;
 
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
@@ -133,20 +133,19 @@ float4 BaseHairOpaqueFragment(
     emissionData.threshold = _EmissionThreshold;
     emissionData.intensity = _EmissionIntensity;
 
-    float3 diffuse = GetRampDiffuse(diffuseData, i.color, texColor.rgb, light.color, lightMap,
-        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm),
-        light.shadowAttenuation);
-    float3 specular = GetSpecular(specularData, texColor.rgb, light.color, lightMap, light.shadowAttenuation);
-    float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
+    float3 diffuse = GetRampDiffuse(diffuseData, light, i.color, texColor.rgb, lightMap,
+        TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
+    float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
+    float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
+    float3 rimLight = GetRimLight(rimLightMask, _RimDark0, dirWS.NoL, light);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
     #if defined(_ADDITIONAL_LIGHTS)
         CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
-            Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
+            Light lightAdd = GetCharacterAdditionalLight(lightIndex, i.positionWS);
             Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
-            float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-            diffuse = CombineColorPreserveLuminance(diffuse, texColor.rgb * lightAdd.color * attenuationAdd);
+            diffuse = CombineColorPreserveLuminance(diffuse, GetAdditionalLightDiffuse(texColor.rgb, lightAdd));
 
             SpecularData specularDataAdd;
             specularDataAdd.color = _SpecularColor0.rgb;
@@ -155,7 +154,9 @@ float4 BaseHairOpaqueFragment(
             specularDataAdd.edgeSoftness = _SpecularEdgeSoftness0;
             specularDataAdd.intensity = _SpecularIntensity0;
             specularDataAdd.metallic = 0;
-            specular += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
+            specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
+
+            rimLight += GetRimLight(rimLightMask, 0, dirWSAdd.NoL, lightAdd);
         CHAR_LIGHT_LOOP_END
     #endif
 

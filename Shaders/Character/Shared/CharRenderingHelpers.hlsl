@@ -175,25 +175,24 @@ struct DiffuseData
 
 float3 GetRampDiffuse(
     DiffuseData data,
+    Light light,
     float4 vertexColor,
     float3 baseColor,
-    float3 lightColor,
     float4 lightMap,
     TEXTURE2D_PARAM(rampMapCool, sampler_rampMapCool),
-    TEXTURE2D_PARAM(rampMapWarm, sampler_rampMapWarm),
-    half shadowAttenuation)
+    TEXTURE2D_PARAM(rampMapWarm, sampler_rampMapWarm))
 {
-    float2 rampUV = GetRampUV(data.NoL, data.singleMaterial, vertexColor, lightMap, shadowAttenuation);
+    float2 rampUV = GetRampUV(data.NoL, data.singleMaterial, vertexColor, lightMap, light.shadowAttenuation);
     float3 rampCool = SAMPLE_TEXTURE2D(rampMapCool, sampler_rampMapCool, rampUV).rgb;
     float3 rampWarm = SAMPLE_TEXTURE2D(rampMapWarm, sampler_rampMapWarm, rampUV).rgb;
     float3 rampColor = lerp(rampCool, rampWarm, data.rampCoolOrWarm);
-    return rampColor * baseColor * lightColor;
+    return rampColor * baseColor * light.color * light.distanceAttenuation;
 }
 
-float3 GetHalfLambertDiffuse(float NoL, float3 baseColor, float3 lightColor)
+float3 GetAdditionalLightDiffuse(float3 baseColor, Light light)
 {
-    float halfLambert = pow(NoL * 0.5 + 0.5, 2);
-    return baseColor * lightColor * halfLambert;
+    float attenuation = light.shadowAttenuation * saturate(light.distanceAttenuation);
+    return baseColor * light.color * attenuation;
 }
 
 struct SpecularData
@@ -206,7 +205,7 @@ struct SpecularData
     float metallic;
 };
 
-float3 GetSpecular(SpecularData data, float3 baseColor, float3 lightColor, float4 lightMap, float shadowAttenuation)
+float3 GetSpecular(SpecularData data, Light light, float3 baseColor, float4 lightMap)
 {
     // lightMap.r: specular intensity
     // lightMap.b: specular threshold
@@ -218,7 +217,8 @@ float3 GetSpecular(SpecularData data, float3 baseColor, float3 lightColor, float
     // 用 F_Schlick 的效果不好看，我直接用 f0 了
     float3 fresnel = lerp(0.04, baseColor, data.metallic);
 
-    return data.color * fresnel * lightColor * (blinnPhong * lightMap.r * data.intensity * shadowAttenuation);
+    float attenuation = light.shadowAttenuation * saturate(light.distanceAttenuation);
+    return data.color * fresnel * light.color * (blinnPhong * lightMap.r * data.intensity * attenuation);
 }
 
 struct EmissionData
@@ -235,30 +235,30 @@ float3 GetEmission(EmissionData data, float3 baseColor)
     return data.color * baseColor * (emissionMask * data.intensity);
 }
 
-struct RimLightData
+struct RimLightMaskData
 {
     float3 color;
     float width;
     float edgeSoftness;
     float thresholdMin;
     float thresholdMax;
-    float darkenValue;
     float intensityFrontFace;
     float intensityBackFace;
     float modelScale;
     float ditherAlpha;
+    float NoV;
 };
 
-float3 GetRimLight(
-    RimLightData rimLightData,
+float3 GetRimLightMask(
+    RimLightMaskData rlmData,
     float4 svPosition,
     float3 normalWS,
     FRONT_FACE_TYPE isFrontFace,
     float4 lightMap)
 {
-    float rimWidth = rimLightData.width / 2000.0; // rimWidth 表示的是屏幕上像素的偏移量，和 modelScale 无关
-    float rimThresholdMin = rimLightData.thresholdMin * rimLightData.modelScale * 10.0;
-    float rimThresholdMax = rimLightData.thresholdMax * rimLightData.modelScale * 10.0;
+    float rimWidth = rlmData.width / 2000.0; // rimWidth 表示的是屏幕上像素的偏移量，和 modelScale 无关
+    float rimThresholdMin = rlmData.thresholdMin * rlmData.modelScale * 10.0;
+    float rimThresholdMax = rlmData.thresholdMax * rlmData.modelScale * 10.0;
 
     rimWidth *= lightMap.r; // 有些地方不要边缘光
     rimWidth *= _ScaledScreenParams.y; // 在不同分辨率下看起来等宽
@@ -277,7 +277,7 @@ float3 GetRimLight(
     }
 
     float depth = GetLinearEyeDepthAnyProjection(svPosition);
-    rimWidth *= 10.0 * rsqrt(depth / rimLightData.modelScale); // 近大远小
+    rimWidth *= 10.0 * rsqrt(depth / rlmData.modelScale); // 近大远小
 
     float3 normalVS = TransformWorldToViewNormal(normalWS);
     float2 indexOffset = float2(sign(normalVS.x), 0) * rimWidth; // 只横向偏移
@@ -285,15 +285,23 @@ float3 GetRimLight(
     float offsetDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(index));
 
     float depthDelta = (offsetDepth - depth) * 50; // 只有 depth 小于 offsetDepth 的时候再画
-    float intensity = rimLightData.darkenValue * smoothstep(-rimLightData.edgeSoftness, 0, depthDelta - rimThresholdMin);
-    intensity = lerp(intensity, 1, smoothstep(0, rimLightData.edgeSoftness, depthDelta - rimThresholdMax));
-    intensity *= IS_FRONT_VFACE(isFrontFace, rimLightData.intensityFrontFace, rimLightData.intensityBackFace);
+    float intensity = smoothstep(rimThresholdMin, rimThresholdMax, depthDelta);
+    intensity *= IS_FRONT_VFACE(isFrontFace, rlmData.intensityFrontFace, rlmData.intensityBackFace);
+
+    // 用于柔化边缘光，edgeSoftness 越大，越柔和
+    float fresnel = pow(clamp(1 - rlmData.NoV, 0.01, 1), max(rlmData.edgeSoftness, 0.01));
 
     // Dither Alpha 效果会扣掉角色的一部分像素，导致角色身上出现不该有的边缘光
     // 所以这里在 ditherAlpha 较强时隐去边缘光
-    float ditherAlphaFadeOut = smoothstep(0.8, 1, rimLightData.ditherAlpha);
+    float ditherAlphaFadeOut = smoothstep(0.9, 1, rlmData.ditherAlpha);
 
-    return rimLightData.color * (intensity * ditherAlphaFadeOut);
+    return rlmData.color * (intensity * fresnel * ditherAlphaFadeOut);
+}
+
+float3 GetRimLight(float3 rimMask, float rimDarkenValue, float NoL, Light light)
+{
+    float intensity = saturate(NoL * light.shadowAttenuation * light.distanceAttenuation);
+    return rimMask * light.color * lerp(rimDarkenValue, 1, intensity);
 }
 
 void DoDitherAlphaEffect(float4 svPosition, float ditherAlpha)
@@ -339,7 +347,7 @@ float3 CombineColorPreserveLuminance(float3 color, float3 colorAdd)
     return HsvToRgb(hsv);
 }
 
-Light GetCharacterMainLight(float4 shadowCoord)
+Light GetCharacterMainLight(float4 shadowCoord, float3 positionWS)
 {
     Light light = GetMainLight();
 
@@ -351,6 +359,20 @@ Light GetCharacterMainLight(float4 shadowCoord)
         // Medium 和 High 采样数多，过渡的区间大，在角色身上更容易出现 Perspective aliasing
         shadowSamplingData.softShadowQuality = SOFT_SHADOW_QUALITY_LOW;
         light.shadowAttenuation = SampleShadowmap(TEXTURE2D_ARGS(_MainLightShadowmapTexture, sampler_LinearClampCompare), shadowCoord, shadowSamplingData, shadowParams, false);
+        light.shadowAttenuation = lerp(light.shadowAttenuation, 1, GetMainLightShadowFade(positionWS));
+    #endif
+
+    return light;
+}
+
+Light GetCharacterAdditionalLight(uint lightIndex, float3 positionWS)
+{
+    Light light = GetAdditionalLight(lightIndex, positionWS);
+    // light.distanceAttenuation = saturate(light.distanceAttenuation);
+
+    #if defined(ADDITIONAL_LIGHT_CALCULATE_SHADOWS)
+        light.shadowAttenuation = AdditionalLightRealtimeShadow(lightIndex, positionWS, light.direction);
+        light.shadowAttenuation = lerp(light.shadowAttenuation, 1, GetAdditionalLightShadowFade(positionWS));
     #endif
 
     return light;

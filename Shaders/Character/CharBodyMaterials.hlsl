@@ -130,4 +130,14 @@
     else if (lightMap.a < 0.75) { expr0##5; expr1##5; expr2##5; expr3##5; expr4##5; expr5##5; expr6##5; expr7##5; expr8##5; expr9##5; } \
     else if (lightMap.a < 0.87) { expr0##6; expr1##6; expr2##6; expr3##6; expr4##6; expr5##6; expr6##6; expr7##6; expr8##6; expr9##6; } 
 
+#define SELECT_CHAR_MAT_PROPS_11(lightMap, type0, expr0, type1, expr1, type2, expr2, type3, expr3, type4, expr4, type5, expr5, type6, expr6, type7, expr7, type8, expr8, type9, expr9, type10, expr10) \
+    type0 expr0##7; type1 expr1##7; type2 expr2##7; type3 expr3##7; type4 expr4##7; type5 expr5##7; type6 expr6##7; type7 expr7##7; type8 expr8##7; type9 expr9##7; type10 expr10##7; \
+    if      (lightMap.a < 0.12) { expr0##0; expr1##0; expr2##0; expr3##0; expr4##0; expr5##0; expr6##0; expr7##0; expr8##0; expr9##0; expr10##0; } \
+    else if (lightMap.a < 0.25) { expr0##1; expr1##1; expr2##1; expr3##1; expr4##1; expr5##1; expr6##1; expr7##1; expr8##1; expr9##1; expr10##1; } \
+    else if (lightMap.a < 0.37) { expr0##2; expr1##2; expr2##2; expr3##2; expr4##2; expr5##2; expr6##2; expr7##2; expr8##2; expr9##2; expr10##2; } \
+    else if (lightMap.a < 0.50) { expr0##3; expr1##3; expr2##3; expr3##3; expr4##3; expr5##3; expr6##3; expr7##3; expr8##3; expr9##3; expr10##3; } \
+    else if (lightMap.a < 0.62) { expr0##4; expr1##4; expr2##4; expr3##4; expr4##4; expr5##4; expr6##4; expr7##4; expr8##4; expr9##4; expr10##4; } \
+    else if (lightMap.a < 0.75) { expr0##5; expr1##5; expr2##5; expr3##5; expr4##5; expr5##5; expr6##5; expr7##5; expr8##5; expr9##5; expr10##5; } \
+    else if (lightMap.a < 0.87) { expr0##6; expr1##6; expr2##6; expr3##6; expr4##6; expr5##6; expr6##6; expr7##6; expr8##6; expr9##6; expr10##6; } 
+
 #endif
