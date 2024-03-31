@@ -1,4 +1,4 @@
-# A rough flow chart of this pipeline
+# A Rough Flow Chart of This Pipeline
 
 The rendering of character takes advantage of MRT whose pass is always executed after UniversalForward. Transparent objects using normal URP Shader and transparent objects on characters are divided into two groups for rendering, which may cause problems.
 

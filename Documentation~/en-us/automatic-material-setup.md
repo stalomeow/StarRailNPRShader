@@ -1,4 +1,4 @@
-# Automatic material setup
+# Automatic Material Setup
 
 This package provides a tool for automatically generating or overwriting a Material based on the `material.json` file.
 
@@ -10,7 +10,7 @@ Double-clicking on the converted `material.json` file opens the `HSR Material Vi
 
 ![HSR Material Viewer](../_img/hsr-mat-viewer.gif)
 
-## Tool extension
+## Tool Extension
 
 After importing the `HSR.NPRShader.Editor.Tools` namespace, declare a class with a parameterless constructor derived from `BaseMaterialSetter`. The following members can be overridden:
 

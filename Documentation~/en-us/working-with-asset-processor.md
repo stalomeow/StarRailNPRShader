@@ -1,4 +1,4 @@
-# Working with asset processor
+# Working with Asset Processor
 
 After importing an asset, if its path meets certain requirements, the asset processor will automatically apply presets to it without the need for manual modification of the asset settings. For models, it can also automatically smooth their normals.
 

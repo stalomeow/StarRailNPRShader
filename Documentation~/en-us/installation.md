@@ -11,20 +11,20 @@ Install these packages **in order**. The second one requires Unity >= 2022.3, bu
 
 ![Install](../_img/install.png)
 
-## RenderPipeline settings
+## RenderPipeline Settings
 
 - Use linear color space instead of gamma.
 - Use `Forward` or `Forward+` rendering path.
 - Disable depth priming.
 - Add `StarRailForward` RendererFeature to the renderer.
 
-## Recommended post-processing settings
+## Recommended Post-processing Settings
 
 Post-processing is important; be sure to add it.
 
 ![Post-processing settings](../_img/postprocessing.png)
 
-## Other tips
+## Other Tips
 
 - It is recommended to turn on HDR.
 - This project implements its own screen space shadows. Please do not add the `ScreenSpaceShadows` RendererFeature of URP again.

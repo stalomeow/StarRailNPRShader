@@ -12,7 +12,7 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 
 ## Features
 
-### Character shaders
+### Character Shaders
 
 - Honkai Star Rail/Character/Body
 - Honkai Star Rail/Character/Body (Transparent)
@@ -45,7 +45,7 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 - Build processor and Shader stripper.
 - `material.json` inspector.
 
-## Special thanks
+## Special Thanks
 
 - miHoYo / HoYoverse
 - Razmoth

@@ -1,4 +1,4 @@
-# Setup a character
+# Setup a Character
 
 ## Materials
 
@@ -6,7 +6,7 @@
 - After changing the Material's Shader, remember to reset it.
 - If there is no outline/rim light, adjust the `Model Scale` on the Material.
 
-## Character rendering controller
+## Character Rendering Controller
 
 The `StarRail Character Rendering Controller` component is automatically added to the root object of the character.
 
@@ -35,7 +35,7 @@ This component makes it easy to control some rendering parameters. The relevant 
 
 This component uses [`MaterialPropertyBlock`](https://docs.unity3d.com/ScriptReference/MaterialPropertyBlock.html) and does not support [SRP Batcher](https://docs.unity3d.com/Manual/SRPBatcher.html) in Editor. However, [`Renderer.material`](https://docs.unity3d.com/ScriptReference/Renderer-material.html) will be used after Build to support SRP Batcher.
 
-## For MMD models
+## For MMD Models
 
 Additional steps are required:
 
