@@ -2,17 +2,17 @@
 
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub Release Date" src="https://img.shields.io/github/release-date/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub License" src="https://img.shields.io/github/license/stalomeow/StarRailNPRShader?style=for-the-badge">
 
-[Documentation](Documentation~/en-us/README.md) | [简体中文](README_CN.md)
+[文档](Documentation~/zh-cn/README.md) | [English](README.md)
 
-Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
+这是基于 Unity URP 的仿星穹铁道渲染 Shader。这不是逆向工程，Shader 代码不可能和游戏里的一模一样，我只是尽力去还原渲染效果。
 
-|Sparkle|Firefly|
+|花火|流萤|
 |:-:|:-:|
 |![sparkle](Documentation~/_img/sparkle.png)|![firefly](Documentation~/_img/firefly.png)|
 
-## Features
+## 特点
 
-### Character shaders
+### 角色着色器
 
 - Honkai Star Rail/Character/Body
 - Honkai Star Rail/Character/Body (Transparent)
@@ -21,31 +21,31 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 - Honkai Star Rail/Character/FaceMask
 - Honkai Star Rail/Character/Hair
 
-### Rendering
+### 渲染
 
-- Both Game model and MMD model.
-- Both `Forward` and `Forward+` rendering paths.
-- A single `RendererFeature` to manage all custom passes.
-- Provide C# API to control some rendering behavior.
-- Characters receive only scene shadows and ignore self-shadows.
-- Per-object shadow, supporting up to 16 shadows on the same screen.
-- Custom bloom using the method shared by Jack He in Unite 2018.
-- Custom ACES tonemapping. The formula is
+- 支持游戏模型和 MMD 模型。
+- 支持 `Forward` 和 `Forward+` 渲染路径。
+- 一个 `RendererFeature` 管理所有自定义 pass。
+- 提供 C# API 来控制一些渲染行为。
+- 角色只接收场景阴影，忽略自身阴影。
+- 逐物体阴影，同屏最多 16 个。
+- 自定义 Bloom 效果。用的贺甲在 Unite 2018 上分享的方法。
+- 自定义 ACES tonemapping。公式是
 
     $$f(x)=\frac{x(ax+b)}{x(cx+d)+e}$$
 
-    where $a,b,c,d,e$ are all parameters.
+    其中 $a,b,c,d,e$ 都是参数。
 
-### Editor
+### 编辑器
 
-- Customized material editor.
-- Configurable asset processor integrated with Unity preset system.
-- Automatically smooth normal.
-- Automatic material setup.
-- Build processor and Shader stripper.
-- `material.json` inspector.
+- 定制的 Material 编辑器。
+- 与 Unity Preset 系统集成的可配置资产处理器。
+- 自动平滑法线。
+- 自动设置 Material。
+- Build processor 和 Shader stripper。
+- `material.json` inspector。
 
-## Special thanks
+## 特别感谢
 
 - miHoYo / HoYoverse
 - Razmoth
