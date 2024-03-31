@@ -137,8 +137,10 @@ Shader "Honkai Star Rail/Character/Body"
         [HSRMaterialIDProperty(_BloomColor, 223)] _BloomColor7("Bloom Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Rim Light)]
-        _RimIntensity("Intensity (Front)", Range(0, 1)) = 0.5
-        _RimIntensityBackFace("Intensity (Back)", Range(0, 1)) = 0
+        _RimIntensity("Intensity (Front Main)", Float) = 0.5
+        _RimIntensityAdditionalLight("Intensity (Front Additional)", Float) = 0.5
+        _RimIntensityBackFace("Intensity (Back Main)", Float) = 0
+        _RimIntensityBackFaceAdditionalLight("Intensity (Back Additional)", Float) = 0
         _RimThresholdMin("Threshold Min", Float) = 0.6
         _RimThresholdMax("Threshold Max", Float) = 0.9
         [HSRMaterialIDFoldout] _RimWidth("Width", Float) = 0

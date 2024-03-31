@@ -242,8 +242,6 @@ struct RimLightMaskData
     float edgeSoftness;
     float thresholdMin;
     float thresholdMax;
-    float intensityFrontFace;
-    float intensityBackFace;
     float modelScale;
     float ditherAlpha;
     float NoV;
@@ -253,7 +251,6 @@ float3 GetRimLightMask(
     RimLightMaskData rlmData,
     float4 svPosition,
     float3 normalWS,
-    FRONT_FACE_TYPE isFrontFace,
     float4 lightMap)
 {
     float rimWidth = rlmData.width / 2000.0; // rimWidth 表示的是屏幕上像素的偏移量，和 modelScale 无关
@@ -286,7 +283,6 @@ float3 GetRimLightMask(
 
     float depthDelta = (offsetDepth - depth) * 50; // 只有 depth 小于 offsetDepth 的时候再画
     float intensity = smoothstep(rimThresholdMin, rimThresholdMax, depthDelta);
-    intensity *= IS_FRONT_VFACE(isFrontFace, rlmData.intensityFrontFace, rlmData.intensityBackFace);
 
     // 用于柔化边缘光，edgeSoftness 越大，越柔和
     float fresnel = pow(clamp(1 - rlmData.NoV, 0.01, 1), max(rlmData.edgeSoftness, 0.01));
@@ -298,10 +294,18 @@ float3 GetRimLightMask(
     return rlmData.color * (intensity * fresnel * ditherAlphaFadeOut);
 }
 
-float3 GetRimLight(float3 rimMask, float rimDarkenValue, float NoL, Light light)
+struct RimLightData
 {
-    float intensity = saturate(NoL * light.shadowAttenuation * light.distanceAttenuation);
-    return rimMask * light.color * lerp(rimDarkenValue, 1, intensity);
+    float darkValue;
+    float intensityFrontFace;
+    float intensityBackFace;
+};
+
+float3 GetRimLight(RimLightData rimData, float3 rimMask, float NoL, Light light, FRONT_FACE_TYPE isFrontFace)
+{
+    float attenuation = saturate(NoL * light.shadowAttenuation * light.distanceAttenuation);
+    float intensity = IS_FRONT_VFACE(isFrontFace, rimData.intensityFrontFace, rimData.intensityBackFace);
+    return rimMask * light.color * (lerp(rimData.darkValue, 1, attenuation) * intensity);
 }
 
 void DoDitherAlphaEffect(float4 svPosition, float ditherAlpha)

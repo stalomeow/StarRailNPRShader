@@ -60,7 +60,9 @@ CBUFFER_START(UnityPerMaterial)
     float4 _BloomColor0;
 
     float _RimIntensity;
+    float _RimIntensityAdditionalLight;
     float _RimIntensityBackFace;
+    float _RimIntensityBackFaceAdditionalLight;
     float _RimThresholdMin;
     float _RimThresholdMax;
     float _RimEdgeSoftness;
@@ -121,11 +123,14 @@ float4 BaseHairOpaqueFragment(
     rimLightMaskData.edgeSoftness = _RimEdgeSoftness;
     rimLightMaskData.thresholdMin = _RimThresholdMin;
     rimLightMaskData.thresholdMax = _RimThresholdMax;
-    rimLightMaskData.intensityFrontFace = _RimIntensity;
-    rimLightMaskData.intensityBackFace = _RimIntensityBackFace;
     rimLightMaskData.modelScale = _ModelScale;
     rimLightMaskData.ditherAlpha = _DitherAlpha;
     rimLightMaskData.NoV = dirWS.NoV;
+
+    RimLightData rimLightData;
+    rimLightData.darkValue = _RimDark0;
+    rimLightData.intensityFrontFace = _RimIntensity;
+    rimLightData.intensityBackFace = _RimIntensityBackFace;
 
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
@@ -136,8 +141,8 @@ float4 BaseHairOpaqueFragment(
     float3 diffuse = GetRampDiffuse(diffuseData, light, i.color, texColor.rgb, lightMap,
         TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
     float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
-    float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
-    float3 rimLight = GetRimLight(rimLightMask, _RimDark0, dirWS.NoL, light);
+    float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, lightMap);
+    float3 rimLight = GetRimLight(rimLightData, rimLightMask, dirWS.NoL, light, isFrontFace);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
     #if defined(_ADDITIONAL_LIGHTS)
@@ -156,7 +161,11 @@ float4 BaseHairOpaqueFragment(
             specularDataAdd.metallic = 0;
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 
-            rimLight += GetRimLight(rimLightMask, 0, dirWSAdd.NoL, lightAdd);
+            RimLightData rimLightDataAdd;
+            rimLightDataAdd.darkValue = 0;
+            rimLightDataAdd.intensityFrontFace = _RimIntensityAdditionalLight;
+            rimLightDataAdd.intensityBackFace = _RimIntensityBackFaceAdditionalLight;
+            rimLight += GetRimLight(rimLightDataAdd, rimLightMask, dirWSAdd.NoL, lightAdd, isFrontFace);
         CHAR_LIGHT_LOOP_END
     #endif
 
