@@ -160,18 +160,16 @@ void FaceOpaqueAndZFragment(
 
     // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
 
-    float3 diffuseAdd = 0;
-
     #if defined(_ADDITIONAL_LIGHTS)
         CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
             Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
             float attenuationAdd = saturate(lightAdd.distanceAttenuation);
-            diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
+            diffuse = CombineColorPreserveLuminance(diffuse, texColor.rgb * lightAdd.color * attenuationAdd);
         CHAR_LIGHT_LOOP_END
     #endif
 
     // Output
-    colorTarget = float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + emission, texColor.a);
+    colorTarget = float4(diffuse + emission, texColor.a);
     bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
 
     // Fog

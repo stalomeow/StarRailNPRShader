@@ -140,16 +140,13 @@ float4 BaseHairOpaqueFragment(
     float3 rimLight = GetRimLight(rimLightData, i.positionHCS, dirWS.N, isFrontFace, lightMap);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
-    float3 diffuseAdd = 0;
-    float3 specularAdd = 0;
-
     #if defined(_ADDITIONAL_LIGHTS)
         CHAR_LIGHT_LOOP_BEGIN(i.positionWS, i.positionHCS)
             Light lightAdd = GetAdditionalLight(lightIndex, i.positionWS);
             Directions dirWSAdd = GetWorldSpaceDirections(lightAdd, i.positionWS, i.normalWS);
             float attenuationAdd = saturate(lightAdd.distanceAttenuation);
 
-            diffuseAdd += texColor.rgb * lightAdd.color * attenuationAdd;
+            diffuse = CombineColorPreserveLuminance(diffuse, texColor.rgb * lightAdd.color * attenuationAdd);
 
             SpecularData specularDataAdd;
             specularDataAdd.color = _SpecularColor0.rgb;
@@ -158,12 +155,12 @@ float4 BaseHairOpaqueFragment(
             specularDataAdd.edgeSoftness = _SpecularEdgeSoftness0;
             specularDataAdd.intensity = _SpecularIntensity0;
             specularDataAdd.metallic = 0;
-            specularAdd += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
+            specular += GetSpecular(specularDataAdd, texColor.rgb, lightAdd.color, lightMap, 1) * attenuationAdd;
         CHAR_LIGHT_LOOP_END
     #endif
 
     // Output
-    return float4(CombineColorPreserveLuminance(diffuse, diffuseAdd) + specular + specularAdd + rimLight + emission, texColor.a);
+    return float4(diffuse + specular + rimLight + emission, texColor.a);
 }
 
 void HairOpaqueFragment(
