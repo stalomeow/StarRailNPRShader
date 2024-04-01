@@ -314,6 +314,37 @@ Shader "Honkai Star Rail/Character/Face"
 
         Pass
         {
+            Name "FaceGBuffer"
+
+            Tags
+            {
+                "LightMode" = "UniversalGBuffer"
+            }
+
+            Cull Back
+            ZWrite On
+
+            HLSLPROGRAM
+
+            #pragma target 4.5
+
+            // Deferred Rendering Path does not support the OpenGL-based graphics API:
+            // Desktop OpenGL, OpenGL ES 3.0, WebGL 2.0.
+            #pragma exclude_renderers gles3 glcore
+
+            #pragma vertex FaceGBufferVertex
+            #pragma fragment FaceGBufferFragment
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+
+            #include "CharFaceCore.hlsl"
+
+            ENDHLSL
+        }
+
+        Pass
+        {
             Name "FaceMotionVectors"
 
             Tags

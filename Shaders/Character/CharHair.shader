@@ -332,6 +332,37 @@ Shader "Honkai Star Rail/Character/Hair"
 
         Pass
         {
+            Name "HairGBuffer"
+
+            Tags
+            {
+                "LightMode" = "UniversalGBuffer"
+            }
+
+            Cull [_Cull]
+            ZWrite On
+
+            HLSLPROGRAM
+
+            #pragma target 4.5
+
+            // Deferred Rendering Path does not support the OpenGL-based graphics API:
+            // Desktop OpenGL, OpenGL ES 3.0, WebGL 2.0.
+            #pragma exclude_renderers gles3 glcore
+
+            #pragma vertex HairGBufferVertex
+            #pragma fragment HairGBufferFragment
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+
+            #include "CharHairCore.hlsl"
+
+            ENDHLSL
+        }
+
+        Pass
+        {
             Name "HairMotionVectors"
 
             Tags

@@ -49,7 +49,7 @@ namespace HSR.NPRShader.Editor.Build
                 {
                     foreach (ScriptableRendererFeature rendererFeature in rendererData.rendererFeatures)
                     {
-                        if (rendererFeature is StarRailForward && rendererFeature.isActive)
+                        if (rendererFeature is StarRailRendererFeature && rendererFeature.isActive)
                         {
                             return true;
                         }

@@ -26,8 +26,8 @@ using UnityEngine.Rendering.Universal;
 
 namespace HSR.NPRShader
 {
-    [DisallowMultipleRendererFeature]
-    public class StarRailForward : ScriptableRendererFeature
+    [DisallowMultipleRendererFeature("Honkai Star Rail")]
+    public class StarRailRendererFeature : ScriptableRendererFeature
     {
 #if UNITY_EDITOR
         [UnityEditor.ShaderKeywordFilter.ApplyRulesIfNotGraphicsAPI(GraphicsDeviceType.OpenGLES2)]
@@ -35,8 +35,8 @@ namespace HSR.NPRShader
         private const bool k_RequiresScreenSpaceShadowsKeyword = true;
 #endif
 
-        [NonSerialized] private RequestResourcePass m_ForceDepthPrepassPass;
         [NonSerialized] private MainLightPerObjectShadowCasterPass m_MainLightPerObjShadowPass;
+        [NonSerialized] private RequestResourcePass m_ForceDepthPrepassPass;
         [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward1Pass;
@@ -48,9 +48,8 @@ namespace HSR.NPRShader
 
         public override void Create()
         {
-            m_ForceDepthPrepassPass = new RequestResourcePass(RenderPassEvent.AfterRenderingGbuffer,
-                ScriptableRenderPassInput.Depth); // 在 Opaque 前要求 DepthTexture，强行 DepthPrepass
             m_MainLightPerObjShadowPass = new MainLightPerObjectShadowCasterPass();
+            m_ForceDepthPrepassPass = new RequestResourcePass(RenderPassEvent.AfterRenderingGbuffer, ScriptableRenderPassInput.Depth);
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
             m_DrawOpaqueForward1Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (1)", true,

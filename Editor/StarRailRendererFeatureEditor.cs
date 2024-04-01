@@ -20,24 +20,25 @@
  */
 
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
+using UnityEditor;
 
-namespace HSR.NPRShader.Passes
+namespace HSR.NPRShader.Editor
 {
-    public class ClearRTPass : ScriptableRenderPass
+    [CustomEditor(typeof(StarRailRendererFeature))]
+    public class StarRailRendererFeatureEditor : UnityEditor.Editor
     {
-        public ClearRTPass(RenderPassEvent @event)
-        {
-            renderPassEvent = @event;
-        }
+        public const string GitHubLink = "https://github.com/stalomeow/StarRailNPRShader";
 
-        public void SetupClear(RTHandle[] rtHandles, ClearFlag flag, Color color)
+        public override void OnInspectorGUI()
         {
-            ConfigureTarget(rtHandles);
-            ConfigureClear(flag, color);
-        }
+            EditorGUILayout.Space();
 
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) { }
+            EditorGUILayout.LabelField("Github Repository", EditorStyles.boldLabel);
+
+            if (EditorGUILayout.LinkButton(GitHubLink))
+            {
+                Application.OpenURL(GitHubLink);
+            }
+        }
     }
 }

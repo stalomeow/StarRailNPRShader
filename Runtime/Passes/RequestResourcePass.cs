@@ -26,9 +26,9 @@ namespace HSR.NPRShader.Passes
 {
     public class RequestResourcePass : ScriptableRenderPass
     {
-        public RequestResourcePass(RenderPassEvent @event, ScriptableRenderPassInput passInput)
+        public RequestResourcePass(RenderPassEvent evt, ScriptableRenderPassInput passInput)
         {
-            renderPassEvent = @event;
+            renderPassEvent = evt;
             ConfigureInput(passInput);
         }
 

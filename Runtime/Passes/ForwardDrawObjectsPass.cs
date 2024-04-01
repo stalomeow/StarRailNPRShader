@@ -33,7 +33,6 @@ namespace HSR.NPRShader.Passes
 
         public ForwardDrawObjectsPass(string profilerTag, bool isOpaque, LayerMask layerMask, params ShaderTagId[] shaderTagIds)
             : base(profilerTag, shaderTagIds, isOpaque,
-                // 在 UniversalForward 之后绘制，利用深度测试尽量少写入无用像素
                 isOpaque ? RenderPassEvent.AfterRenderingOpaques : RenderPassEvent.AfterRenderingTransparents,
                 isOpaque ? RenderQueueRange.opaque : RenderQueueRange.transparent,
                 layerMask, new StencilState(), 0) { }

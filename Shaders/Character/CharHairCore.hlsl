@@ -31,6 +31,7 @@
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
 #include "Shared/CharMotionVectors.hlsl"
+#include "Shared/CharGBuffer.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_LightMap); SAMPLER(sampler_LightMap);
@@ -308,6 +309,26 @@ float4 HairDepthNormalsFragment(
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthNormalsFragment(i);
+}
+
+CharGBufferVaryings HairGBufferVertex(CharGBufferAttributes i)
+{
+    return CharGBufferVertex(i, _Maps_ST);
+}
+
+FragmentOutput HairGBufferFragment(
+    CharGBufferVaryings i,
+    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
+{
+    SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
+
+    float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
+    texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
+
+    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
+
+    return CharGBufferFragment(i);
 }
 
 CharMotionVectorsVaryings HairMotionVectorsVertex(CharMotionVectorsAttributes i)
