@@ -33,7 +33,7 @@ namespace HSR.NPRShader.Editor
         {
             EditorGUILayout.Space();
 
-            EditorGUILayout.LabelField("Github Repository", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("GitHub Repository", EditorStyles.boldLabel);
 
             if (EditorGUILayout.LinkButton(GitHubLink))
             {
