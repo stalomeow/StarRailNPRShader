@@ -72,7 +72,6 @@ Shader "Honkai Star Rail/Character/FaceMask"
             ZWrite On
 
             ColorMask RGBA 0
-            ColorMask RGBA 1
 
             HLSLPROGRAM
 
@@ -87,13 +86,11 @@ Shader "Honkai Star Rail/Character/FaceMask"
             }
 
             void frag(CharCoreVaryings i,
-                out float4 colorTarget : SV_Target0,
-                out float4 bloomTarget : SV_Target1)
+                out float4 colorTarget : SV_Target0)
             {
                 DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
                 colorTarget = _Color;
-                bloomTarget = EncodeBloomColor(float3(0, 0, 0), 0);
 
                 // Fog
                 real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);

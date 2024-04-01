@@ -52,7 +52,7 @@ Shader "Honkai Star Rail/Character/Face"
         _EmissionIntensity("Intensity", Float) = 0.3
 
         [HeaderFoldout(Bloom)]
-        _mBloomIntensity0("Intensity", Range(0, 100)) = 1
+        _mmBloomIntensity0("Intensity", Float) = 0
         _BloomColor0("Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Outline)]
@@ -121,10 +121,8 @@ Shader "Honkai Star Rail/Character/Face"
             ZWrite On
 
             Blend 0 One Zero, [_SrcBlendAlpha] [_DstBlendAlpha]
-            Blend 1 One Zero
 
             ColorMask RGBA 0
-            ColorMask RGBA 1
 
             HLSLPROGRAM
 
@@ -173,7 +171,6 @@ Shader "Honkai Star Rail/Character/Face"
             ZTest LEqual // 眼白是在脸后面的，并且比眼睛要大，需要 ZTest 来剔除，然后再写 Stencil，这样才能准确抠出眼睛
 
             ColorMask 0 0
-            ColorMask 0 1
 
             HLSLPROGRAM
 
@@ -212,10 +209,8 @@ Shader "Honkai Star Rail/Character/Face"
             ZWrite On
 
             Blend 0 One Zero, [_SrcBlendAlpha] [_DstBlendAlpha]
-            Blend 1 Zero Zero
 
             ColorMask RGBA 0
-            ColorMask 0 1
 
             HLSLPROGRAM
 

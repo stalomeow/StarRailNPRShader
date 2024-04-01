@@ -56,7 +56,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionThreshold;
     float _EmissionIntensity;
 
-    float _mBloomIntensity0;
+    float _mmBloomIntensity0;
     float4 _BloomColor0;
 
     float _RimIntensity;
@@ -176,13 +176,12 @@ float4 BaseHairOpaqueFragment(
 void HairOpaqueFragment(
     CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC,
-    out float4 colorTarget      : SV_Target0,
-    out float4 bloomTarget      : SV_Target1)
+    out float4 colorTarget      : SV_Target0)
 {
     float4 hairColor = BaseHairOpaqueFragment(i, isFrontFace);
 
     colorTarget = float4(hairColor.rgb, 1);
-    bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
+    colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor0.rgb, _mmBloomIntensity0);
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
@@ -192,8 +191,7 @@ void HairOpaqueFragment(
 void HairFakeTransparentFragment(
     CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC,
-    out float4 colorTarget      : SV_Target0,
-    out float4 bloomTarget      : SV_Target1)
+    out float4 colorTarget      : SV_Target0)
 {
     // 手动做一次深度测试，保证只有最上面一层头发和眼睛做 alpha 混合。这样看上去更加通透
     float sceneDepth = GetLinearEyeDepthAnyProjection(LoadSceneDepth(i.positionHCS.xy - 0.5));
@@ -219,7 +217,7 @@ void HairFakeTransparentFragment(
 
     // Output
     colorTarget = float4(hairColor.rgb, max(max(alpha1, alpha2), _HairBlendAlpha));
-    bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
+    colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor0.rgb, _mmBloomIntensity0);
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);

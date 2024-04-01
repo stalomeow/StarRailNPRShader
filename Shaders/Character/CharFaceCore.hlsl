@@ -50,7 +50,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionThreshold;
     float _EmissionIntensity;
 
-    float _mBloomIntensity0;
+    float _mmBloomIntensity0;
     float4 _BloomColor0;
 
     float _OutlineWidth;
@@ -110,8 +110,7 @@ float3 GetFaceOrEyeDiffuse(
 
 void FaceOpaqueAndZFragment(
     CharCoreVaryings i,
-    out float4 colorTarget : SV_Target0,
-    out float4 bloomTarget : SV_Target1)
+    out float4 colorTarget : SV_Target0)
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 
@@ -168,7 +167,7 @@ void FaceOpaqueAndZFragment(
 
     // Output
     colorTarget = float4(diffuse + emission, texColor.a);
-    bloomTarget = EncodeBloomColor(_BloomColor0.rgb, _mBloomIntensity0);
+    colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor0.rgb, _mmBloomIntensity0);
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);

@@ -115,14 +115,14 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
         [HeaderFoldout(Bloom)]
         [HSRMaterialIDFoldout] _BloomIntensity("Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 0)] _mBloomIntensity0("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 31)] _mBloomIntensity1("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 63)] _mBloomIntensity2("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 95)] _mBloomIntensity3("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 127)] _mBloomIntensity4("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 159)] _mBloomIntensity5("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 192)] _mBloomIntensity6("Bloom Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_BloomIntensity, 223)] _mBloomIntensity7("Bloom Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_BloomIntensity, 0)] _mmBloomIntensity0("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 31)] _mmBloomIntensity1("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 63)] _mmBloomIntensity2("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 95)] _mmBloomIntensity3("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 127)] _mmBloomIntensity4("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 159)] _mmBloomIntensity5("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 192)] _mmBloomIntensity6("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 223)] _mmBloomIntensity7("Bloom Intensity", Float) = 0
         [HSRMaterialIDFoldout] _BloomColor("Color", Float) = 0
         [HSRMaterialIDProperty(_BloomColor, 0)] _BloomColor0("Bloom Color", Color) = (1, 1, 1, 1)
         [HSRMaterialIDProperty(_BloomColor, 31)] _BloomColor1("Bloom Color", Color) = (1, 1, 1, 1)
@@ -231,10 +231,8 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             ZWrite Off
 
             Blend 0 [_SrcBlendColor] [_DstBlendColor], [_SrcBlendAlpha] [_DstBlendAlpha]
-            Blend 1 One Zero
 
             ColorMask RGBA 0
-            ColorMask RGBA 1
 
             HLSLPROGRAM
 
@@ -283,10 +281,8 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             ZWrite Off
 
             Blend 0 [_SrcBlendColor] [_DstBlendColor], [_SrcBlendAlpha] [_DstBlendAlpha]
-            Blend 1 Zero Zero
 
             ColorMask RGBA 0
-            ColorMask 0 1
 
             HLSLPROGRAM
 

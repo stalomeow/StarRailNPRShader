@@ -36,7 +36,7 @@ namespace HSR.NPRShader.Passes
 
         public ScreenSpaceShadowsPass()
         {
-            renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
+            renderPassEvent = RenderPassEvent.AfterRenderingGbuffer;
             profilingSampler = new ProfilingSampler("ScreenSpaceShadows");
         }
 

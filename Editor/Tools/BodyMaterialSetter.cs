@@ -56,6 +56,11 @@ namespace HSR.NPRShader.Editor.Tools
             yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
             yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
 
+            for (int i = 0; i <= 7; i++)
+            {
+                yield return ($"_mmBloomIntensity{i}", floats[$"_mBloomIntensity{i}"]);
+            }
+
             // Stockings
             yield return ("_StockingsDarkWidth", floats["_StockDarkWidth"]);
             yield return ("_StockingsPower", floats["_Stockpower"]);

@@ -68,7 +68,7 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionThreshold;
     float _EmissionIntensity;
 
-    CHAR_MAT_PROP(float, _mBloomIntensity);
+    CHAR_MAT_PROP(float, _mmBloomIntensity);
     CHAR_MAT_PROP(float4, _BloomColor);
 
     float _RimIntensity;
@@ -116,13 +116,12 @@ void ApplyStockings(inout float3 baseColor, float2 uv, float NoV)
     baseColor = lerp(baseColor, stockings, step(0.01, stockingsMap.r));
 }
 
-void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget, inout float4 bloomTarget)
+void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget)
 {
     #if _SINGLEMATERIAL_ON
         if (abs(floor(8 * lightMap.a) - _SingleMaterialID) > 0.01)
         {
             colorTarget.rgb = 0;
-            bloomTarget = 0; // intensity
         }
     #endif
 }
@@ -135,8 +134,7 @@ CharCoreVaryings BodyVertex(CharCoreAttributes i)
 void BodyColorFragment(
     CharCoreVaryings i,
     FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC,
-    out float4 colorTarget      : SV_Target0,
-    out float4 bloomTarget      : SV_Target1)
+    out float4 colorTarget      : SV_Target0)
 {
     SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
@@ -157,7 +155,7 @@ void BodyColorFragment(
         float4, rimColor             = _RimColor,
         float , rimDark              = _RimDark,
         float , rimEdgeSoftness      = _RimEdgeSoftness,
-        float , bloomIntensity       = _mBloomIntensity,
+        float , bloomIntensity       = _mmBloomIntensity,
         float4, bloomColor           = _BloomColor
     );
 
@@ -233,14 +231,14 @@ void BodyColorFragment(
 
     // Output
     colorTarget = float4(diffuse + specular + rimLight + emission, texColor.a);
-    bloomTarget = EncodeBloomColor(bloomColor.rgb, bloomIntensity);
+    colorTarget.rgb = MixBloomColor(colorTarget.rgb, bloomColor.rgb, bloomIntensity);
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
     colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
 
     // Debug
-    ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
+    ApplyDebugSettings(lightMap, colorTarget);
 }
 
 CharOutlineVaryings BodyOutlineVertex(CharOutlineAttributes i)
@@ -270,14 +268,13 @@ void BodyOutlineFragment(
     );
 
     colorTarget = float4(outlineColor.rgb, 1);
-    float4 bloomTarget = 0;
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
     colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
 
     // Debug
-    ApplyDebugSettings(lightMap, colorTarget, bloomTarget);
+    ApplyDebugSettings(lightMap, colorTarget);
 }
 
 CharShadowVaryings BodyShadowVertex(CharShadowAttributes i)

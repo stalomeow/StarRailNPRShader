@@ -48,6 +48,8 @@ namespace HSR.NPRShader.Editor.Tools
 
             yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
             yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
+
+            yield return ("_mmBloomIntensity0", floats["_mBloomIntensity0"]);
         }
 
         protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)

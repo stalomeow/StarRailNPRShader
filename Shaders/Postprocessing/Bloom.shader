@@ -47,7 +47,6 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
         #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
         #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-        #include "../Includes/HSRGBuffer.hlsl"
         #include "../Character/Shared/CharRenderingHelpers.hlsl"
 
         float4 _BlitTexture_TexelSize;
@@ -101,8 +100,7 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
 #endif
 
             float3 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv).rgb;
-            float4 bloom = HSRSampleGBuffer0(uv);
-            color = max(0, color - _BloomThreshold.rrr) * DecodeBloomColor(bloom);
+            color = max(0, color - _BloomThreshold.rrr);
             return EncodeHDR(color);
         }
 
