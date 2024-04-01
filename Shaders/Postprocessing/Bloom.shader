@@ -238,6 +238,26 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
             #pragma fragment FragCombine
             ENDHLSL
         }
+
+        Pass
+        {
+            Name "Bloom Blit Character Color"
+
+            // 角色的 Stencil
+            Stencil
+            {
+                Ref 1
+                ReadMask 1
+                Comp Equal
+                Pass Keep
+                Fail Keep
+            }
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment FragNearest
+            ENDHLSL
+        }
     }
 
     Fallback Off

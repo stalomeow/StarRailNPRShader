@@ -20,7 +20,6 @@
  */
 
 using System;
-using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace HSR.NPRShader.PostProcessing
@@ -28,8 +27,6 @@ namespace HSR.NPRShader.PostProcessing
     public enum CustomTonemappingMode
     {
         None = 0,
-
-        [InspectorName("ACES (Custom)")]
         ACES = 1,
     }
 

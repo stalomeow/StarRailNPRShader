@@ -35,6 +35,7 @@ namespace HSR.NPRShader.PostProcessing
         public MinFloatParameter Threshold = new(0.7f, 0);
         public ColorParameter Tint = new(Color.white, false, false, true);
         public ClampedIntParameter MipDownCount = new(2, 2, 4);
+        public BoolParameter CharactersOnly = new(true, BoolParameter.DisplayType.EnumPopup);
 
         [Header("Blur First RT Size")]
 

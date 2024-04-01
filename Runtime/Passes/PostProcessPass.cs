@@ -47,6 +47,7 @@ namespace HSR.NPRShader.Passes
         private RTHandle[] m_BloomMipDown;
         private RTHandle m_BloomAtlas1;
         private RTHandle m_BloomAtlas2;
+        private RTHandle m_BloomCharacterColor;
         private readonly Rect[] m_BloomAtlasViewports;
         private readonly Vector4[] m_BloomAtlasUVMinMax;
         private readonly float[][] m_BloomKernels;
@@ -137,6 +138,7 @@ namespace HSR.NPRShader.Passes
 
             ReAllocateMipDownArrayIfNeeded(in cameraTextureDescriptor);
             ReAllocateBloomAtlasIfNeeded(in cameraTextureDescriptor);
+            ReAllocateBloomCharacterColorIfNeeded(in cameraTextureDescriptor);
 
             for (int i = 0; i < m_BloomKernels.Length; i++)
             {
@@ -148,7 +150,7 @@ namespace HSR.NPRShader.Passes
         {
             RenderTextureDescriptor mipDesc = cameraTextureDescriptor;
             mipDesc.graphicsFormat = m_DefaultHDRFormat;
-            mipDesc.depthBufferBits = 0;
+            mipDesc.depthBufferBits = (int)DepthBits.None;
             mipDesc.msaaSamples = 1;
 
             int mipDownCountExtra = m_BloomConfig.MipDownCount.value;
@@ -180,7 +182,7 @@ namespace HSR.NPRShader.Passes
 
             RenderTextureDescriptor atlasDesc = cameraTextureDescriptor;
             atlasDesc.graphicsFormat = m_DefaultHDRFormat;
-            atlasDesc.depthBufferBits = 0;
+            atlasDesc.depthBufferBits = (int)DepthBits.None;
             atlasDesc.msaaSamples = 1;
 
             // 加几个像素的 padding，防止最后 bilinear combine 时混合到其他部分导致漏光
@@ -201,6 +203,21 @@ namespace HSR.NPRShader.Passes
             m_BloomAtlasUVMinMax[1] = ViewportToUVMinMax(m_BloomAtlasViewports[1], atlasDesc.width, atlasDesc.height);
             m_BloomAtlasUVMinMax[2] = ViewportToUVMinMax(m_BloomAtlasViewports[2], atlasDesc.width, atlasDesc.height);
             m_BloomAtlasUVMinMax[3] = ViewportToUVMinMax(m_BloomAtlasViewports[3], atlasDesc.width, atlasDesc.height);
+        }
+
+        private void ReAllocateBloomCharacterColorIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
+        {
+            if (!m_BloomConfig.CharactersOnly.value)
+            {
+                m_BloomCharacterColor?.Release();
+                m_BloomCharacterColor = null;
+                return;
+            }
+
+            RenderTextureDescriptor desc = cameraTextureDescriptor;
+            desc.msaaSamples = 1;
+            desc.depthBufferBits = (int)DepthBits.None;
+            RenderingUtils.ReAllocateIfNeeded(ref m_BloomCharacterColor, desc, name: "_BloomCharacterColor");
         }
 
         private static Vector4 ViewportToUVMinMax(Rect rect, float textureWidth, float textureHeight)
@@ -244,8 +261,10 @@ namespace HSR.NPRShader.Passes
 
             m_BloomAtlas1?.Release();
             m_BloomAtlas2?.Release();
+            m_BloomCharacterColor?.Release();
             m_BloomAtlas1 = null;
             m_BloomAtlas2 = null;
+            m_BloomCharacterColor = null;
         }
 
         private RTHandle GetBiggestBlurRTHandle()
@@ -264,9 +283,18 @@ namespace HSR.NPRShader.Passes
             ScriptableRenderer renderer = renderingData.cameraData.renderer;
             RTHandle colorTargetHandle = renderer.cameraColorTargetHandle;
             Material material = m_BloomMaterial.Value;
+            Vector4 scaleBias = new Vector4(1, 1, 0, 0);
 
             using (new ProfilingScope(cmd, m_BloomSampler))
             {
+                if (m_BloomConfig.CharactersOnly.value)
+                {
+                    RTHandle depthTargetHandle = renderer.cameraDepthTargetHandle;
+                    CoreUtils.SetRenderTarget(cmd, m_BloomCharacterColor, depthTargetHandle, ClearFlag.Color, Color.black);
+                    Blitter.BlitTexture(cmd, colorTargetHandle, scaleBias, material, 5);
+                    colorTargetHandle = m_BloomCharacterColor;
+                }
+
                 CoreUtils.SetKeyword(material, ShaderKeywordStrings.UseRGBM, m_UseRGBM);
 
                 cmd.SetGlobalFloat(PropertyIds._BloomThreshold, m_BloomConfig.Threshold.value);
@@ -284,7 +312,6 @@ namespace HSR.NPRShader.Passes
                 }
 
                 int blurStartIndex = m_BloomMipDown.Length - BloomMipDownBlurCount;
-                Vector4 scaleBias = new Vector4(1, 1, 0, 0);
 
                 // Alpha Channel 也要清空为 0，适配 RGBM 编码
                 CoreUtils.SetRenderTarget(cmd, m_BloomAtlas1, ClearFlag.All, new Color(0, 0, 0, 0));
