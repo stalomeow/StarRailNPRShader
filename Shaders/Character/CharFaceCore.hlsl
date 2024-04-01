@@ -288,7 +288,7 @@ CharGBufferVaryings FaceGBufferVertex(CharGBufferAttributes i)
 
 FragmentOutput FaceGBufferFragment(
     CharGBufferVaryings i,
-    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
+    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC)
 {
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
 

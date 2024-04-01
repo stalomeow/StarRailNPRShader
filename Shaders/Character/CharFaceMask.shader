@@ -239,7 +239,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
                 return CharGBufferVertex(i, 0);
             }
 
-            FragmentOutput FaceMaskGBufferFragment(CharGBufferVaryings i) : SV_Target
+            FragmentOutput FaceMaskGBufferFragment(CharGBufferVaryings i)
             {
                 DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
                 return CharGBufferFragment(i);

@@ -318,7 +318,7 @@ CharGBufferVaryings HairGBufferVertex(CharGBufferAttributes i)
 
 FragmentOutput HairGBufferFragment(
     CharGBufferVaryings i,
-    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC) : SV_Target
+    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC)
 {
     SetupDualFaceRendering(i.normalWS, i.uv, isFrontFace);
 
