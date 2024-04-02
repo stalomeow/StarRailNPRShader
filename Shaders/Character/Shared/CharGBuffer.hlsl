@@ -1,5 +1,5 @@
 /*
-* StarRailNPRShader - Fan-made shaders for Unity URP attempting to replicate
+ * StarRailNPRShader - Fan-made shaders for Unity URP attempting to replicate
  * the shading of Honkai: Star Rail.
  * https://github.com/stalomeow/StarRailNPRShader
  *
