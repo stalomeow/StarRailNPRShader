@@ -24,7 +24,7 @@ Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: St
 ### Rendering
 
 - Both Game model and MMD model.
-- Both `Forward` and `Forward+` rendering paths.
+- Support `Forward`, `Forward+` and `Deferred` rendering paths.
 - A single `RendererFeature` to manage all custom passes.
 - Provide C# API to control some rendering behavior.
 - Characters receive only scene shadows and ignore self-shadows.

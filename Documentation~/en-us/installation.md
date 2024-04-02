@@ -14,9 +14,8 @@ Install these packages **in order**. The second one requires Unity >= 2022.3, bu
 ## RenderPipeline Settings
 
 - Use linear color space instead of gamma.
-- Use `Forward` or `Forward+` rendering path.
-- Disable depth priming.
-- Add `StarRailForward` RendererFeature to the renderer.
+- Disable depth priming when using `Forward` or `Forward+` rendering path.
+- Add `Honkai Star Rail` RendererFeature to the renderer.
 
 ## Recommended Post-processing Settings
 

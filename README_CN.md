@@ -24,7 +24,7 @@
 ### 渲染
 
 - 支持游戏模型和 MMD 模型。
-- 支持 `Forward` 和 `Forward+` 渲染路径。
+- 支持 `Forward`、`Forward+` 和 `Deferred` 渲染路径。
 - 一个 `RendererFeature` 管理所有自定义 pass。
 - 提供 C# API 来控制一些渲染行为。
 - 角色只接收场景阴影，忽略自身阴影。
