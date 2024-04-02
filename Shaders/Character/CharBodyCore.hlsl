@@ -37,11 +37,18 @@ TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_LightMap); SAMPLER(sampler_LightMap);
 TEXTURE2D(_RampMapCool); SAMPLER(sampler_RampMapCool);
 TEXTURE2D(_RampMapWarm); SAMPLER(sampler_RampMapWarm);
-TEXTURE2D(_StockingsMap); SAMPLER(sampler_StockingsMap);
+
+#if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+    TEXTURE2D(_StockingsMap); SAMPLER(sampler_StockingsMap);
+#endif
 
 CBUFFER_START(UnityPerMaterial)
     float _ModelScale;
+
+#if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float _AlphaTestThreshold;
+#endif
+
     float _SingleMaterialID;
 
     float4 _Color;
@@ -56,6 +63,7 @@ CBUFFER_START(UnityPerMaterial)
     CHAR_MAT_PROP(float, _SpecularIntensity);
     CHAR_MAT_PROP(float, _SpecularEdgeSoftness);
 
+#if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float4 _StockingsMap_ST;
     float4 _StockingsColor;
     float4 _StockingsColorDark;
@@ -64,6 +72,7 @@ CBUFFER_START(UnityPerMaterial)
     float _StockingsLightedWidth;
     float _StockingsLightedIntensity;
     float _StockingsRoughness;
+#endif
 
     float4 _EmissionColor;
     float _EmissionThreshold;
@@ -72,6 +81,7 @@ CBUFFER_START(UnityPerMaterial)
     CHAR_MAT_PROP(float, _mmBloomIntensity);
     CHAR_MAT_PROP(float4, _BloomColor);
 
+#if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float _RimIntensity;
     float _RimIntensityAdditionalLight;
     float _RimIntensityBackFace;
@@ -82,6 +92,7 @@ CBUFFER_START(UnityPerMaterial)
     CHAR_MAT_PROP(float4, _RimColor);
     CHAR_MAT_PROP(float, _RimDark);
     CHAR_MAT_PROP(float, _RimEdgeSoftness);
+#endif
 
     float _OutlineWidth;
     float _OutlineZOffset;
@@ -94,27 +105,29 @@ void ApplyStockings(inout float3 baseColor, float2 uv, float NoV)
 {
     // * Modified from °Nya°222's blender shader.
 
-    float4 stockingsMap = SAMPLE_TEXTURE2D(_StockingsMap, sampler_StockingsMap, uv);
-    stockingsMap.b = SAMPLE_TEXTURE2D(_StockingsMap, sampler_StockingsMap, TRANSFORM_TEX(uv, _StockingsMap)).b;
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        float4 stockingsMap = SAMPLE_TEXTURE2D(_StockingsMap, sampler_StockingsMap, uv);
+        stockingsMap.b = SAMPLE_TEXTURE2D(_StockingsMap, sampler_StockingsMap, TRANSFORM_TEX(uv, _StockingsMap)).b;
 
-    NoV = saturate(NoV);
+        NoV = saturate(NoV);
 
-    float power = max(0.04, _StockingsPower);
-    float darkWidth = max(0, _StockingsDarkWidth * power);
+        float power = max(0.04, _StockingsPower);
+        float darkWidth = max(0, _StockingsDarkWidth * power);
 
-    float darkIntensity = (NoV - power) / (darkWidth - power);
-    darkIntensity = saturate(darkIntensity * (1 - _StockingsLightedIntensity)) * stockingsMap.r;
+        float darkIntensity = (NoV - power) / (darkWidth - power);
+        darkIntensity = saturate(darkIntensity * (1 - _StockingsLightedIntensity)) * stockingsMap.r;
 
-    float3 darkColor = lerp(1, _StockingsColorDark.rgb, darkIntensity);
-    darkColor = lerp(1, darkColor * baseColor, darkIntensity) * baseColor;
+        float3 darkColor = lerp(1, _StockingsColorDark.rgb, darkIntensity);
+        darkColor = lerp(1, darkColor * baseColor, darkIntensity) * baseColor;
 
-    float lightIntensity = lerp(0.5, 1, stockingsMap.b * _StockingsRoughness); // 映射到 0.5 - 1，太黑不好看
-    lightIntensity *= stockingsMap.g;
-    lightIntensity *= _StockingsLightedIntensity;
-    lightIntensity *= max(0.004, pow(NoV, _StockingsLightedWidth));
+        float lightIntensity = lerp(0.5, 1, stockingsMap.b * _StockingsRoughness); // 映射到 0.5 - 1，太黑不好看
+        lightIntensity *= stockingsMap.g;
+        lightIntensity *= _StockingsLightedIntensity;
+        lightIntensity *= max(0.004, pow(NoV, _StockingsLightedWidth));
 
-    float3 stockings = lightIntensity * (darkColor + _StockingsColor.rgb) + darkColor;
-    baseColor = lerp(baseColor, stockings, step(0.01, stockingsMap.r));
+        float3 stockings = lightIntensity * (darkColor + _StockingsColor.rgb) + darkColor;
+        baseColor = lerp(baseColor, stockings, step(0.01, stockingsMap.r));
+    #endif
 }
 
 void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget)
@@ -143,22 +156,30 @@ void BodyColorFragment(
     float4 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    SELECT_CHAR_MAT_PROPS_11(lightMap,
+    SELECT_CHAR_MAT_PROPS_7(lightMap,
         float4, specularColor        = _SpecularColor,
         float , specularMetallic     = _SpecularMetallic,
         float , specularShininess    = _SpecularShininess,
         float , specularIntensity    = _SpecularIntensity,
         float , specularEdgeSoftness = _SpecularEdgeSoftness,
-        float , rimWidth             = _RimWidth,
-        float4, rimColor             = _RimColor,
-        float , rimDark              = _RimDark,
-        float , rimEdgeSoftness      = _RimEdgeSoftness,
         float , bloomIntensity       = _mmBloomIntensity,
         float4, bloomColor           = _BloomColor
     );
+
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        SELECT_CHAR_MAT_PROPS_4(lightMap,
+            float , rimWidth             = _RimWidth,
+            float4, rimColor             = _RimColor,
+            float , rimDark              = _RimDark,
+            float , rimEdgeSoftness      = _RimEdgeSoftness
+        );
+    #endif
 
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
@@ -178,20 +199,24 @@ void BodyColorFragment(
     specularData.intensity = specularIntensity;
     specularData.metallic = specularMetallic;
 
-    RimLightMaskData rimLightMaskData;
-    rimLightMaskData.color = rimColor.rgb;
-    rimLightMaskData.width = rimWidth;
-    rimLightMaskData.edgeSoftness = rimEdgeSoftness;
-    rimLightMaskData.thresholdMin = _RimThresholdMin;
-    rimLightMaskData.thresholdMax = _RimThresholdMax;
-    rimLightMaskData.modelScale = _ModelScale;
-    rimLightMaskData.ditherAlpha = _DitherAlpha;
-    rimLightMaskData.NoV = dirWS.NoV;
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        RimLightMaskData rimLightMaskData;
+        rimLightMaskData.color = rimColor.rgb;
+        rimLightMaskData.width = rimWidth;
+        rimLightMaskData.edgeSoftness = rimEdgeSoftness;
+        rimLightMaskData.thresholdMin = _RimThresholdMin;
+        rimLightMaskData.thresholdMax = _RimThresholdMax;
+        rimLightMaskData.modelScale = _ModelScale;
+        rimLightMaskData.ditherAlpha = _DitherAlpha;
+        rimLightMaskData.NoV = dirWS.NoV;
+    #endif
 
-    RimLightData rimLightData;
-    rimLightData.darkValue = rimDark;
-    rimLightData.intensityFrontFace = _RimIntensity;
-    rimLightData.intensityBackFace = _RimIntensityBackFace;
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        RimLightData rimLightData;
+        rimLightData.darkValue = rimDark;
+        rimLightData.intensityFrontFace = _RimIntensity;
+        rimLightData.intensityBackFace = _RimIntensityBackFace;
+    #endif
 
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
@@ -202,8 +227,13 @@ void BodyColorFragment(
     float3 diffuse = GetRampDiffuse(diffuseData, light, i.color, texColor.rgb, lightMap,
         TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
     float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
-    float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, lightMap);
-    float3 rimLight = GetRimLight(rimLightData, rimLightMask, dirWS.NoL, light, isFrontFace);
+
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, lightMap);
+        float3 rimLight = GetRimLight(rimLightData, rimLightMask, dirWS.NoL, light, isFrontFace);
+    #else
+        float3 rimLight = 0;
+    #endif
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
     #if defined(_ADDITIONAL_LIGHTS)
@@ -222,11 +252,13 @@ void BodyColorFragment(
             specularDataAdd.metallic = specularMetallic;
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 
-            RimLightData rimLightDataAdd;
-            rimLightDataAdd.darkValue = 0;
-            rimLightDataAdd.intensityFrontFace = _RimIntensityAdditionalLight;
-            rimLightDataAdd.intensityBackFace = _RimIntensityBackFaceAdditionalLight;
-            rimLight += GetRimLight(rimLightDataAdd, rimLightMask, dirWSAdd.NoL, lightAdd, isFrontFace);
+            #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+                RimLightData rimLightDataAdd;
+                rimLightDataAdd.darkValue = 0;
+                rimLightDataAdd.intensityFrontFace = _RimIntensityAdditionalLight;
+                rimLightDataAdd.intensityBackFace = _RimIntensityBackFaceAdditionalLight;
+                rimLight += GetRimLight(rimLightDataAdd, rimLightMask, dirWSAdd.NoL, lightAdd, isFrontFace);
+            #endif
         CHAR_LIGHT_LOOP_END
     #endif
 
@@ -261,7 +293,10 @@ void BodyOutlineFragment(
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
     float4 lightMap = SAMPLE_TEXTURE2D(_LightMap, sampler_LightMap, i.uv.xy);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     SELECT_CHAR_MAT_PROPS_1(lightMap,
@@ -292,7 +327,10 @@ void BodyShadowFragment(
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 }
 
@@ -310,7 +348,10 @@ float4 BodyDepthOnlyFragment(
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthOnlyFragment(i);
@@ -330,7 +371,10 @@ float4 BodyDepthNormalsFragment(
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthNormalsFragment(i);
@@ -350,7 +394,10 @@ FragmentOutput BodyGBufferFragment(
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharGBufferFragment(i);
@@ -370,7 +417,10 @@ half4 BodyMotionVectorsFragment(
     float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy);
     texColor *= IS_FRONT_VFACE(isFrontFace, _Color, _BackColor);
 
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
+        DoAlphaClip(texColor.a, _AlphaTestThreshold);
+    #endif
+
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharMotionVectorsFragment(i);
