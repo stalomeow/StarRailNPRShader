@@ -136,7 +136,7 @@ namespace HSR.NPRShader.Passes
                 return;
             }
 
-            ReAllocateMipDownArrayIfNeeded(in cameraTextureDescriptor);
+            ReAllocateBloomMipDownArrayIfNeeded(in cameraTextureDescriptor);
             ReAllocateBloomAtlasIfNeeded(in cameraTextureDescriptor);
             ReAllocateBloomCharacterColorIfNeeded(in cameraTextureDescriptor);
 
@@ -146,7 +146,7 @@ namespace HSR.NPRShader.Passes
             }
         }
 
-        private void ReAllocateMipDownArrayIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
+        private void ReAllocateBloomMipDownArrayIfNeeded(in RenderTextureDescriptor cameraTextureDescriptor)
         {
             RenderTextureDescriptor mipDesc = cameraTextureDescriptor;
             mipDesc.graphicsFormat = m_DefaultHDRFormat;
@@ -215,9 +215,9 @@ namespace HSR.NPRShader.Passes
             }
 
             RenderTextureDescriptor desc = cameraTextureDescriptor;
-            desc.msaaSamples = 1;
             desc.depthBufferBits = (int)DepthBits.None;
-            RenderingUtils.ReAllocateIfNeeded(ref m_BloomCharacterColor, desc, name: "_BloomCharacterColor");
+            desc.msaaSamples = 1;
+            RenderingUtils.ReAllocateIfNeeded(ref m_BloomCharacterColor, in desc, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_BloomCharacterColor");
         }
 
         private static Vector4 ViewportToUVMinMax(Rect rect, float textureWidth, float textureHeight)

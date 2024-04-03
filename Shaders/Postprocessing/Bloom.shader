@@ -255,7 +255,8 @@ Shader "Hidden/Honkai Star Rail/Post Processing/Bloom"
 
             HLSLPROGRAM
             #pragma vertex Vert
-            #pragma fragment FragNearest
+            // #pragma fragment FragNearest
+            #pragma fragment FragBilinear // 和 PostProcessPass 中声明的 RT 保持一致，不然 OpenGL ES 上效果不一致
             ENDHLSL
         }
     }
