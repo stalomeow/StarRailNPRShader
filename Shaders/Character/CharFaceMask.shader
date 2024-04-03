@@ -33,7 +33,7 @@ Shader "Honkai Star Rail/Character/FaceMask"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Opaque"
-            "UniversalMaterialType" = "Lit"
+            "UniversalMaterialType" = "ComplexLit" // Packages/com.unity.render-pipelines.universal/Runtime/Passes/GBufferPass.cs: Fill GBuffer, but skip lighting pass for ComplexLit
             "Queue" = "Geometry"
         }
 
@@ -201,48 +201,6 @@ Shader "Honkai Star Rail/Character/FaceMask"
             {
                 DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
                 return CharDepthNormalsFragment(i);
-            }
-
-            ENDHLSL
-        }
-
-        Pass
-        {
-            Name "FaceMaskGBuffer"
-
-            Tags
-            {
-                "LightMode" = "UniversalGBuffer"
-            }
-
-            Cull Off
-            ZWrite On
-
-            HLSLPROGRAM
-
-            #pragma target 4.5
-
-            // Deferred Rendering Path does not support the OpenGL-based graphics API:
-            // Desktop OpenGL, OpenGL ES 3.0, WebGL 2.0.
-            #pragma exclude_renderers gles3 glcore
-
-            #pragma vertex FaceMaskGBufferVertex
-            #pragma fragment FaceMaskGBufferFragment
-
-            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
-            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-
-            #include "Shared/CharGBuffer.hlsl"
-
-            CharGBufferVaryings FaceMaskGBufferVertex(CharGBufferAttributes i)
-            {
-                return CharGBufferVertex(i, 0);
-            }
-
-            FragmentOutput FaceMaskGBufferFragment(CharGBufferVaryings i)
-            {
-                DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
-                return CharGBufferFragment(i);
             }
 
             ENDHLSL

@@ -94,7 +94,7 @@ Shader "Honkai Star Rail/Character/Face"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Opaque"
-            "UniversalMaterialType" = "Lit"
+            "UniversalMaterialType" = "ComplexLit" // Packages/com.unity.render-pipelines.universal/Runtime/Passes/GBufferPass.cs: Fill GBuffer, but skip lighting pass for ComplexLit
             "Queue" = "Geometry" // 最先渲染
         }
 
@@ -303,37 +303,6 @@ Shader "Honkai Star Rail/Character/Face"
 
             #pragma vertex FaceDepthNormalsVertex
             #pragma fragment FaceDepthNormalsFragment
-
-            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
-            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
-
-            #include "CharFaceCore.hlsl"
-
-            ENDHLSL
-        }
-
-        Pass
-        {
-            Name "FaceGBuffer"
-
-            Tags
-            {
-                "LightMode" = "UniversalGBuffer"
-            }
-
-            Cull Back
-            ZWrite On
-
-            HLSLPROGRAM
-
-            #pragma target 4.5
-
-            // Deferred Rendering Path does not support the OpenGL-based graphics API:
-            // Desktop OpenGL, OpenGL ES 3.0, WebGL 2.0.
-            #pragma exclude_renderers gles3 glcore
-
-            #pragma vertex FaceGBufferVertex
-            #pragma fragment FaceGBufferFragment
 
             #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON

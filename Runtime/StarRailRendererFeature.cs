@@ -71,7 +71,7 @@ namespace HSR.NPRShader
             renderer.EnqueuePass(m_MainLightPerObjShadowPass);
 
             // AfterRenderingGbuffer
-            renderer.EnqueuePass(m_ForceDepthPrepassPass);
+            renderer.EnqueuePass(m_ForceDepthPrepassPass); // 保证 RimLight、眼睛等需要深度图的效果正常工作
             renderer.EnqueuePass(m_ScreenSpaceShadowPass);
 
             // AfterRenderingOpaques

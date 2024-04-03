@@ -31,7 +31,6 @@
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
 #include "Shared/CharMotionVectors.hlsl"
-#include "Shared/CharGBuffer.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_FaceMap); SAMPLER(sampler_FaceMap);
@@ -279,23 +278,6 @@ float4 FaceDepthNormalsFragment(CharDepthNormalsVaryings i) : SV_Target
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
     return CharDepthNormalsFragment(i);
-}
-
-CharGBufferVaryings FaceGBufferVertex(CharGBufferAttributes i)
-{
-    return CharGBufferVertex(i, _Maps_ST);
-}
-
-FragmentOutput FaceGBufferFragment(
-    CharGBufferVaryings i,
-    FRONT_FACE_TYPE isFrontFace : FRONT_FACE_SEMANTIC)
-{
-    float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv.xy) * _Color;
-
-    DoAlphaClip(texColor.a, _AlphaTestThreshold);
-    DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
-
-    return CharGBufferFragment(i);
 }
 
 CharMotionVectorsVaryings FaceMotionVectorsVertex(CharMotionVectorsAttributes i)

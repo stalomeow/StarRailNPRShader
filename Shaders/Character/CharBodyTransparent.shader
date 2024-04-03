@@ -146,7 +146,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Transparent"
-            "UniversalMaterialType" = "Lit"
+            "UniversalMaterialType" = "ComplexLit" // Packages/com.unity.render-pipelines.universal/Runtime/Passes/GBufferPass.cs: Fill GBuffer, but skip lighting pass for ComplexLit
             "Queue" = "Transparent"
         }
 

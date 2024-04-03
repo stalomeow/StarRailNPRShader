@@ -35,7 +35,7 @@ Shader "Honkai Star Rail/Character/EyeShadow"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Opaque"
-            "UniversalMaterialType" = "Lit"
+            "UniversalMaterialType" = "ComplexLit" // Packages/com.unity.render-pipelines.universal/Runtime/Passes/GBufferPass.cs: Fill GBuffer, but skip lighting pass for ComplexLit
             "Queue" = "Geometry+10"  // 必须在脸之后绘制
         }
 
