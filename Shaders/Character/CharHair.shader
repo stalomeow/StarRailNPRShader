@@ -72,7 +72,7 @@ Shader "Honkai Star Rail/Character/Hair"
         _RimThresholdMax("Threshold Max", Float) = 0.9
         _RimWidth0("Width", Float) = 0.5
         _RimColor0("Color", Color) = (1.0, 1.0, 1.0, 1.0)
-        _RimDark0("Dark Value", Range(0, 1)) = 0.5
+        _RimDark0("Darken Value", Range(0, 1)) = 0.5
         _RimEdgeSoftness("Edge Softness", Float) = 0.05
 
         [HeaderFoldout(Outline)]

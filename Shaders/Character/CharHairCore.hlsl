@@ -128,7 +128,7 @@ float4 BaseHairOpaqueFragment(
     rimLightMaskData.NoV = dirWS.NoV;
 
     RimLightData rimLightData;
-    rimLightData.darkValue = _RimDark0;
+    rimLightData.darkenValue = _RimDark0;
     rimLightData.intensityFrontFace = _RimIntensity;
     rimLightData.intensityBackFace = _RimIntensityBackFace;
 
@@ -162,7 +162,7 @@ float4 BaseHairOpaqueFragment(
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 
             RimLightData rimLightDataAdd;
-            rimLightDataAdd.darkValue = 0;
+            rimLightDataAdd.darkenValue = 0;
             rimLightDataAdd.intensityFrontFace = _RimIntensityAdditionalLight;
             rimLightDataAdd.intensityBackFace = _RimIntensityBackFaceAdditionalLight;
             rimLight += GetRimLight(rimLightDataAdd, rimLightMask, dirWSAdd.NoL, lightAdd, isFrontFace);
