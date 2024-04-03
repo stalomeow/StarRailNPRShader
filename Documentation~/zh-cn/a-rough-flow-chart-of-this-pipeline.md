@@ -4,14 +4,14 @@
 flowchart TD
     URPShadowCaster[URP ShadowCaster] --> StarRail1
 
-    subgraph StarRail1[StarRailForward]
+    subgraph StarRail1[Honkai Star Rail]
         PerObjShadowCaster([MainLight PerObjectShadowCaster])
     end
 
     StarRail1 --> URPDepthPrepass[URP DepthPrepass]
     URPDepthPrepass --> StarRail2
 
-    subgraph StarRail2[StarRailForward]
+    subgraph StarRail2[Honkai Star Rail]
         ScreenSpaceShadow([Generate ScreenSpaceShadowMap]) --> ScreenSpaceShadowKeyword
         ScreenSpaceShadowKeyword([_MAIN_LIGHT_SHADOWS_SCREEN])
     end
@@ -19,7 +19,7 @@ flowchart TD
     StarRail2 --> URPOpaque[URP Opaque]
     URPOpaque --> StarRail3
 
-    subgraph StarRail3[StarRailForward]
+    subgraph StarRail3[Honkai Star Rail]
         CascadedShadow(["_MAIN_LIGHT_SHADOWS_CASCADE"])
         CascadedShadow --> SROpaque
 
@@ -35,7 +35,7 @@ flowchart TD
     URPSkybox --> URPTransparent[URP Transparent]
     URPTransparent --> StarRail4
 
-    subgraph StarRail4[StarRailForward]
+    subgraph StarRail4[Honkai Star Rail]
         SRTransparent(["Transparent"]) --> SRPost
 
         subgraph SRPost[PostProcess]
