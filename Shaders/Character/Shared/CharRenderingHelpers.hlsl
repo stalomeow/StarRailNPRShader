@@ -358,6 +358,15 @@ Light GetCharacterMainLight(float4 shadowCoord, float3 positionWS)
         light.shadowAttenuation = lerp(light.shadowAttenuation, 1, GetMainLightShadowFade(positionWS));
     #endif
 
+    #ifdef _LIGHT_LAYERS
+        if (!IsMatchingLightLayer(light.layerMask, GetMeshRenderingLayer()))
+        {
+            // 偷个懒，直接把强度改成 0
+            light.distanceAttenuation = 0;
+            light.shadowAttenuation = 0;
+        }
+    #endif
+
     return light;
 }
 
@@ -369,6 +378,15 @@ Light GetCharacterAdditionalLight(uint lightIndex, float3 positionWS)
     #if defined(ADDITIONAL_LIGHT_CALCULATE_SHADOWS)
         light.shadowAttenuation = AdditionalLightRealtimeShadow(lightIndex, positionWS, light.direction);
         light.shadowAttenuation = lerp(light.shadowAttenuation, 1, GetAdditionalLightShadowFade(positionWS));
+    #endif
+
+    #ifdef _LIGHT_LAYERS
+        if (!IsMatchingLightLayer(light.layerMask, GetMeshRenderingLayer()))
+        {
+            // 偷个懒，直接把强度改成 0
+            light.distanceAttenuation = 0;
+            light.shadowAttenuation = 0;
+        }
     #endif
 
     return light;
