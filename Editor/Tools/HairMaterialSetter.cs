@@ -49,6 +49,10 @@ namespace HSR.NPRShader.Editor.Tools
             yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
             yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
 
+            yield return ("_SpecularIntensity0", floats["_SpecularIntensity0"]);
+            yield return ("_SpecularShininess0", floats["_SpecularShininess0"]);
+            yield return ("_SpecularRoughness0", floats["_SpecularRoughness0"]);
+
             yield return ("_mmBloomIntensity0", floats["_mBloomIntensity0"]);
         }
 

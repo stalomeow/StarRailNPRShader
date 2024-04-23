@@ -200,7 +200,7 @@ struct SpecularData
     float3 color;
     float NoH;
     float shininess;
-    float edgeSoftness;
+    float roughness;
     float intensity;
 };
 
@@ -213,7 +213,7 @@ float3 GetSpecular(SpecularData data, Light light, float3 baseColor, float4 ligh
     float blinnPhong = pow(max(0.01, data.NoH), data.shininess) * attenuation;
 
     float threshold = 1.03 - lightMap.b; // 0.03 is an offset
-    float specular = smoothstep(threshold - data.edgeSoftness, threshold + data.edgeSoftness, blinnPhong);
+    float specular = smoothstep(threshold - data.roughness, threshold + data.roughness, blinnPhong);
     specular *= lightMap.r * data.intensity;
 
     // 游戏里似乎没有区分金属和非金属

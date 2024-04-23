@@ -59,7 +59,7 @@ CBUFFER_START(UnityPerMaterial)
     DEF_CHAR_MAT_PROP(float4, _SpecularColor);
     DEF_CHAR_MAT_PROP(float, _SpecularShininess);
     DEF_CHAR_MAT_PROP(float, _SpecularIntensity);
-    DEF_CHAR_MAT_PROP(float, _SpecularEdgeSoftness);
+    DEF_CHAR_MAT_PROP(float, _SpecularRoughness);
 
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float4 _StockingsMap_ST;
@@ -162,7 +162,7 @@ void BodyColorFragment(
     SETUP_CHAR_MAT_PROP(float4, _SpecularColor, materialId);
     SETUP_CHAR_MAT_PROP(float, _SpecularShininess, materialId);
     SETUP_CHAR_MAT_PROP(float, _SpecularIntensity, materialId);
-    SETUP_CHAR_MAT_PROP(float, _SpecularEdgeSoftness, materialId);
+    SETUP_CHAR_MAT_PROP(float, _SpecularRoughness, materialId);
     SETUP_CHAR_MAT_PROP(float, _mmBloomIntensity, materialId);
     SETUP_CHAR_MAT_PROP(float4, _BloomColor, materialId);
 
@@ -187,7 +187,7 @@ void BodyColorFragment(
     specularData.color = _SpecularColor.rgb;
     specularData.NoH = dirWS.NoH;
     specularData.shininess = _SpecularShininess;
-    specularData.edgeSoftness = _SpecularEdgeSoftness;
+    specularData.roughness = _SpecularRoughness;
     specularData.intensity = _SpecularIntensity;
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
@@ -235,7 +235,7 @@ void BodyColorFragment(
             specularDataAdd.color = _SpecularColor.rgb;
             specularDataAdd.NoH = dirWSAdd.NoH;
             specularDataAdd.shininess = _SpecularShininess;
-            specularDataAdd.edgeSoftness = _SpecularEdgeSoftness;
+            specularDataAdd.roughness = _SpecularRoughness;
             specularDataAdd.intensity = _SpecularIntensity;
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 

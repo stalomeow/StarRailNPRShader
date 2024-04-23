@@ -58,6 +58,10 @@ namespace HSR.NPRShader.Editor.Tools
 
             for (int i = 0; i <= 7; i++)
             {
+                yield return ($"_SpecularIntensity{i}", floats[$"_SpecularIntensity{i}"]);
+                yield return ($"_SpecularShininess{i}", floats[$"_SpecularShininess{i}"]);
+                yield return ($"_SpecularRoughness{i}", floats[$"_SpecularRoughness{i}"]);
+
                 yield return ($"_mmBloomIntensity{i}", floats[$"_mBloomIntensity{i}"]);
             }
 

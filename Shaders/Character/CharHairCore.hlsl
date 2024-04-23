@@ -50,7 +50,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _SpecularColor0;
     float _SpecularShininess0;
     float _SpecularIntensity0;
-    float _SpecularEdgeSoftness0;
+    float _SpecularRoughness0;
 
     float4 _EmissionColor;
     float _EmissionThreshold;
@@ -111,7 +111,7 @@ float4 BaseHairOpaqueFragment(
     specularData.color = _SpecularColor0.rgb;
     specularData.NoH = dirWS.NoV * (dirWS.NoL > 0); // 感觉 NoV 做头发高光更好看！有随视线流动的效果
     specularData.shininess = _SpecularShininess0;
-    specularData.edgeSoftness = _SpecularEdgeSoftness0;
+    specularData.roughness = _SpecularRoughness0;
     specularData.intensity = _SpecularIntensity0;
 
     RimLightMaskData rimLightMaskData;
@@ -150,7 +150,7 @@ float4 BaseHairOpaqueFragment(
             specularDataAdd.color = _SpecularColor0.rgb;
             specularDataAdd.NoH = dirWSAdd.NoV * (dirWSAdd.NoL > 0); // 感觉 NoV 做头发高光更好看！有随视线流动的效果
             specularDataAdd.shininess = _SpecularShininess0;
-            specularDataAdd.edgeSoftness = _SpecularEdgeSoftness0;
+            specularDataAdd.roughness = _SpecularRoughness0;
             specularDataAdd.intensity = _SpecularIntensity0;
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 

@@ -52,7 +52,7 @@ Shader "Honkai Star Rail/Character/Hair"
         _SpecularColor0("Color", Color) = (1,1,1,1)
         _SpecularShininess0("Shininess", Range(0.1, 500)) = 10
         _SpecularIntensity0("Intensity", Range(0, 100)) = 1
-        _SpecularEdgeSoftness0("Edge Softness", Range(0, 1)) = 0.1
+        _SpecularRoughness0("Roughness", Range(0, 1)) = 0.02
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)

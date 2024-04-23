@@ -87,15 +87,15 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HSRMaterialIDProperty(_SpecularIntensity, 159)] _SpecularIntensity5("Specular Intensity", Range(0, 100)) = 1
         [HSRMaterialIDProperty(_SpecularIntensity, 192)] _SpecularIntensity6("Specular Intensity", Range(0, 100)) = 1
         [HSRMaterialIDProperty(_SpecularIntensity, 223)] _SpecularIntensity7("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDFoldout] _SpecularEdgeSoftness("Edge Softness", Float) = 0
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 0)] _SpecularEdgeSoftness0("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 31)] _SpecularEdgeSoftness1("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 63)] _SpecularEdgeSoftness2("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 95)] _SpecularEdgeSoftness3("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 127)] _SpecularEdgeSoftness4("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 159)] _SpecularEdgeSoftness5("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 192)] _SpecularEdgeSoftness6("Specular Edge Softness", Range(0, 1)) = 0.1
-        [HSRMaterialIDProperty(_SpecularEdgeSoftness, 223)] _SpecularEdgeSoftness7("Specular Edge Softness", Range(0, 1)) = 0.1
+        [HSRMaterialIDFoldout] _SpecularRoughness("Roughness", Float) = 0
+        [HSRMaterialIDProperty(_SpecularRoughness, 0)] _SpecularRoughness0("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 31)] _SpecularRoughness1("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 63)] _SpecularRoughness2("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 95)] _SpecularRoughness3("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 127)] _SpecularRoughness4("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 159)] _SpecularRoughness5("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 192)] _SpecularRoughness6("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 223)] _SpecularRoughness7("Specular Roughness", Range(0, 1)) = 0.02
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
