@@ -57,7 +57,6 @@ CBUFFER_START(UnityPerMaterial)
     float _RampCoolWarmLerpFactor;
 
     DEF_CHAR_MAT_PROP(float4, _SpecularColor);
-    DEF_CHAR_MAT_PROP(float, _SpecularMetallic);
     DEF_CHAR_MAT_PROP(float, _SpecularShininess);
     DEF_CHAR_MAT_PROP(float, _SpecularIntensity);
     DEF_CHAR_MAT_PROP(float, _SpecularEdgeSoftness);
@@ -161,7 +160,6 @@ void BodyColorFragment(
 
     int materialId = GetCharMaterialId(lightMap);
     SETUP_CHAR_MAT_PROP(float4, _SpecularColor, materialId);
-    SETUP_CHAR_MAT_PROP(float, _SpecularMetallic, materialId);
     SETUP_CHAR_MAT_PROP(float, _SpecularShininess, materialId);
     SETUP_CHAR_MAT_PROP(float, _SpecularIntensity, materialId);
     SETUP_CHAR_MAT_PROP(float, _SpecularEdgeSoftness, materialId);
@@ -191,7 +189,6 @@ void BodyColorFragment(
     specularData.shininess = _SpecularShininess;
     specularData.edgeSoftness = _SpecularEdgeSoftness;
     specularData.intensity = _SpecularIntensity;
-    specularData.metallic = _SpecularMetallic;
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
         RimLightMaskData rimLightMaskData;
@@ -240,7 +237,6 @@ void BodyColorFragment(
             specularDataAdd.shininess = _SpecularShininess;
             specularDataAdd.edgeSoftness = _SpecularEdgeSoftness;
             specularDataAdd.intensity = _SpecularIntensity;
-            specularDataAdd.metallic = _SpecularMetallic;
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 
             #if !defined(CHAR_BODY_SHADER_TRANSPARENT)

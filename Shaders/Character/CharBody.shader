@@ -63,15 +63,6 @@ Shader "Honkai Star Rail/Character/Body"
         [HSRMaterialIDProperty(_SpecularColor, 159)] _SpecularColor5("Specular Color", Color) = (1, 1, 1, 1)
         [HSRMaterialIDProperty(_SpecularColor, 192)] _SpecularColor6("Specular Color", Color) = (1, 1, 1, 1)
         [HSRMaterialIDProperty(_SpecularColor, 223)] _SpecularColor7("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDFoldout] _SpecularMetallic("Metallic", Float) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 0)] _SpecularMetallic0("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 31)] _SpecularMetallic1("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 63)] _SpecularMetallic2("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 95)] _SpecularMetallic3("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 127)] _SpecularMetallic4("Specular Metallic", Range(0, 1)) = 1 // 一般情况下是金属
-        [HSRMaterialIDProperty(_SpecularMetallic, 159)] _SpecularMetallic5("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 192)] _SpecularMetallic6("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 223)] _SpecularMetallic7("Specular Metallic", Range(0, 1)) = 0
         [HSRMaterialIDFoldout] _SpecularShininess("Shininess", Float) = 0
         [HSRMaterialIDProperty(_SpecularShininess, 0)] _SpecularShininess0("Specular Shininess", Range(0.1, 500)) = 10
         [HSRMaterialIDProperty(_SpecularShininess, 31)] _SpecularShininess1("Specular Shininess", Range(0.1, 500)) = 10

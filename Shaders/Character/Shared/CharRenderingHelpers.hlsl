@@ -202,7 +202,6 @@ struct SpecularData
     float shininess;
     float edgeSoftness;
     float intensity;
-    float metallic;
 };
 
 float3 GetSpecular(SpecularData data, Light light, float3 baseColor, float4 lightMap)
@@ -210,15 +209,17 @@ float3 GetSpecular(SpecularData data, Light light, float3 baseColor, float4 ligh
     // lightMap.r: specular intensity
     // lightMap.b: specular threshold
 
-    float threshold = 1.03 - lightMap.b; // 0.03 is an offset
-    float blinnPhong = pow(max(0.01, data.NoH), data.shininess);
-    blinnPhong = smoothstep(threshold, threshold + data.edgeSoftness, blinnPhong);
-
-    // 用 F_Schlick 的效果不好看，我直接用 f0 了
-    float3 fresnel = lerp(0.04, baseColor, data.metallic);
-
     float attenuation = light.shadowAttenuation * saturate(light.distanceAttenuation);
-    return data.color * fresnel * light.color * (blinnPhong * lightMap.r * data.intensity * attenuation);
+    float blinnPhong = pow(max(0.01, data.NoH), data.shininess) * attenuation;
+
+    float threshold = 1.03 - lightMap.b; // 0.03 is an offset
+    float specular = smoothstep(threshold - data.edgeSoftness, threshold + data.edgeSoftness, blinnPhong);
+    specular *= lightMap.r * data.intensity;
+
+    // 游戏里似乎没有区分金属和非金属
+    // float3 fresnel = lerp(0.04, baseColor, data.metallic);
+
+    return data.color * baseColor * light.color * specular;
 }
 
 struct EmissionData
