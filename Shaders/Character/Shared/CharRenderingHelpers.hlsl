@@ -233,7 +233,7 @@ struct EmissionData
 float3 GetEmission(EmissionData data, float3 baseColor)
 {
     float emissionMask = 1 - step(data.value, data.threshold);
-    return data.color * baseColor * (emissionMask * data.intensity);
+    return data.color * baseColor * max(0, emissionMask * data.intensity);
 }
 
 struct RimLightMaskData
@@ -301,7 +301,7 @@ float3 GetRimLight(RimLightData rimData, float3 rimMask, float NoL, Light light,
 {
     float attenuation = saturate(NoL * light.shadowAttenuation * light.distanceAttenuation);
     float intensity = IS_FRONT_VFACE(isFrontFace, rimData.intensityFrontFace, rimData.intensityBackFace);
-    return rimMask * light.color * (lerp(rimData.darkenValue, 1, attenuation) * intensity);
+    return rimMask * light.color * (lerp(rimData.darkenValue, 1, attenuation) * max(0, intensity));
 }
 
 void DoDitherAlphaEffect(float4 svPosition, float ditherAlpha)
