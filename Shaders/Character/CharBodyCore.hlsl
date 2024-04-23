@@ -56,11 +56,11 @@ CBUFFER_START(UnityPerMaterial)
 
     float _RampCoolWarmLerpFactor;
 
-    CHAR_MAT_PROP(float4, _SpecularColor);
-    CHAR_MAT_PROP(float, _SpecularMetallic);
-    CHAR_MAT_PROP(float, _SpecularShininess);
-    CHAR_MAT_PROP(float, _SpecularIntensity);
-    CHAR_MAT_PROP(float, _SpecularEdgeSoftness);
+    DEF_CHAR_MAT_PROP(float4, _SpecularColor);
+    DEF_CHAR_MAT_PROP(float, _SpecularMetallic);
+    DEF_CHAR_MAT_PROP(float, _SpecularShininess);
+    DEF_CHAR_MAT_PROP(float, _SpecularIntensity);
+    DEF_CHAR_MAT_PROP(float, _SpecularEdgeSoftness);
 
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float4 _StockingsMap_ST;
@@ -77,23 +77,23 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionThreshold;
     float _EmissionIntensity;
 
-    CHAR_MAT_PROP(float, _mmBloomIntensity);
-    CHAR_MAT_PROP(float4, _BloomColor);
+    DEF_CHAR_MAT_PROP(float, _mmBloomIntensity);
+    DEF_CHAR_MAT_PROP(float4, _BloomColor);
 
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float _RimIntensity;
     float _RimIntensityAdditionalLight;
     float _RimIntensityBackFace;
     float _RimIntensityBackFaceAdditionalLight;
-    CHAR_MAT_PROP(float, _RimWidth);
-    CHAR_MAT_PROP(float4, _RimColor);
-    CHAR_MAT_PROP(float, _RimDark);
-    CHAR_MAT_PROP(float, _RimEdgeSoftness);
+    DEF_CHAR_MAT_PROP(float, _RimWidth);
+    DEF_CHAR_MAT_PROP(float4, _RimColor);
+    DEF_CHAR_MAT_PROP(float, _RimDark);
+    DEF_CHAR_MAT_PROP(float, _RimEdgeSoftness);
 #endif
 
     float _OutlineWidth;
     float _OutlineZOffset;
-    CHAR_MAT_PROP(float4, _OutlineColor);
+    DEF_CHAR_MAT_PROP(float4, _OutlineColor);
 
     float _DitherAlpha;
 CBUFFER_END
@@ -127,10 +127,10 @@ void ApplyStockings(inout float3 baseColor, float2 uv, float NoV)
     #endif
 }
 
-void ApplyDebugSettings(float4 lightMap, inout float4 colorTarget)
+void ApplyDebugSettings(inout float4 colorTarget, int materialId)
 {
     #if _SINGLEMATERIAL_ON
-        if (abs(floor(8 * lightMap.a) - _SingleMaterialID) > 0.01)
+        if (abs(materialId - _SingleMaterialID) > 0.01)
         {
             colorTarget.rgb = 0;
         }
@@ -159,23 +159,20 @@ void BodyColorFragment(
 
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    SELECT_CHAR_MAT_PROPS_7(lightMap,
-        float4, specularColor        = _SpecularColor,
-        float , specularMetallic     = _SpecularMetallic,
-        float , specularShininess    = _SpecularShininess,
-        float , specularIntensity    = _SpecularIntensity,
-        float , specularEdgeSoftness = _SpecularEdgeSoftness,
-        float , bloomIntensity       = _mmBloomIntensity,
-        float4, bloomColor           = _BloomColor
-    );
+    int materialId = GetCharMaterialId(lightMap);
+    SETUP_CHAR_MAT_PROP(float4, _SpecularColor, materialId);
+    SETUP_CHAR_MAT_PROP(float, _SpecularMetallic, materialId);
+    SETUP_CHAR_MAT_PROP(float, _SpecularShininess, materialId);
+    SETUP_CHAR_MAT_PROP(float, _SpecularIntensity, materialId);
+    SETUP_CHAR_MAT_PROP(float, _SpecularEdgeSoftness, materialId);
+    SETUP_CHAR_MAT_PROP(float, _mmBloomIntensity, materialId);
+    SETUP_CHAR_MAT_PROP(float4, _BloomColor, materialId);
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
-        SELECT_CHAR_MAT_PROPS_4(lightMap,
-            float , rimWidth             = _RimWidth,
-            float4, rimColor             = _RimColor,
-            float , rimDark              = _RimDark,
-            float , rimEdgeSoftness      = _RimEdgeSoftness
-        );
+        SETUP_CHAR_MAT_PROP(float, _RimWidth, materialId);
+        SETUP_CHAR_MAT_PROP(float4, _RimColor, materialId);
+        SETUP_CHAR_MAT_PROP(float, _RimDark, materialId);
+        SETUP_CHAR_MAT_PROP(float, _RimEdgeSoftness, materialId);
     #endif
 
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
@@ -189,25 +186,25 @@ void BodyColorFragment(
     diffuseData.rampCoolOrWarm = _RampCoolWarmLerpFactor;
 
     SpecularData specularData;
-    specularData.color = specularColor.rgb;
+    specularData.color = _SpecularColor.rgb;
     specularData.NoH = dirWS.NoH;
-    specularData.shininess = specularShininess;
-    specularData.edgeSoftness = specularEdgeSoftness;
-    specularData.intensity = specularIntensity;
-    specularData.metallic = specularMetallic;
+    specularData.shininess = _SpecularShininess;
+    specularData.edgeSoftness = _SpecularEdgeSoftness;
+    specularData.intensity = _SpecularIntensity;
+    specularData.metallic = _SpecularMetallic;
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
         RimLightMaskData rimLightMaskData;
-        rimLightMaskData.color = rimColor.rgb;
-        rimLightMaskData.width = rimWidth;
-        rimLightMaskData.edgeSoftness = rimEdgeSoftness;
+        rimLightMaskData.color = _RimColor.rgb;
+        rimLightMaskData.width = _RimWidth;
+        rimLightMaskData.edgeSoftness = _RimEdgeSoftness;
         rimLightMaskData.modelScale = _ModelScale;
         rimLightMaskData.ditherAlpha = _DitherAlpha;
     #endif
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
         RimLightData rimLightData;
-        rimLightData.darkenValue = rimDark;
+        rimLightData.darkenValue = _RimDark;
         rimLightData.intensityFrontFace = _RimIntensity;
         rimLightData.intensityBackFace = _RimIntensityBackFace;
     #endif
@@ -238,12 +235,12 @@ void BodyColorFragment(
             diffuse = CombineColorPreserveLuminance(diffuse, GetAdditionalLightDiffuse(texColor.rgb, lightAdd));
 
             SpecularData specularDataAdd;
-            specularDataAdd.color = specularColor.rgb;
+            specularDataAdd.color = _SpecularColor.rgb;
             specularDataAdd.NoH = dirWSAdd.NoH;
-            specularDataAdd.shininess = specularShininess;
-            specularDataAdd.edgeSoftness = specularEdgeSoftness;
-            specularDataAdd.intensity = specularIntensity;
-            specularDataAdd.metallic = specularMetallic;
+            specularDataAdd.shininess = _SpecularShininess;
+            specularDataAdd.edgeSoftness = _SpecularEdgeSoftness;
+            specularDataAdd.intensity = _SpecularIntensity;
+            specularDataAdd.metallic = _SpecularMetallic;
             specular += GetSpecular(specularDataAdd, lightAdd, texColor.rgb, lightMap);
 
             #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
@@ -258,14 +255,14 @@ void BodyColorFragment(
 
     // Output
     colorTarget = float4(diffuse + specular + rimLight + emission, texColor.a);
-    colorTarget.rgb = MixBloomColor(colorTarget.rgb, bloomColor.rgb, bloomIntensity);
+    colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor.rgb, _mmBloomIntensity);
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
     colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
 
     // Debug
-    ApplyDebugSettings(lightMap, colorTarget);
+    ApplyDebugSettings(colorTarget, materialId);
 }
 
 CharOutlineVaryings BodyOutlineVertex(CharOutlineAttributes i)
@@ -293,18 +290,17 @@ void BodyOutlineFragment(
 
     DoDitherAlphaEffect(i.positionHCS, _DitherAlpha);
 
-    SELECT_CHAR_MAT_PROPS_1(lightMap,
-        float4, outlineColor = _OutlineColor
-    );
+    int materialId = GetCharMaterialId(lightMap);
+    SETUP_CHAR_MAT_PROP(float4, _OutlineColor, materialId);
 
-    colorTarget = float4(outlineColor.rgb, 1);
+    colorTarget = float4(_OutlineColor.rgb, 1);
 
     // Fog
     real fogFactor = InitializeInputDataFog(float4(i.positionWS, 1.0), i.fogFactor);
     colorTarget.rgb = MixFog(colorTarget.rgb, fogFactor);
 
     // Debug
-    ApplyDebugSettings(lightMap, colorTarget);
+    ApplyDebugSettings(colorTarget, materialId);
 }
 
 CharShadowVaryings BodyShadowVertex(CharShadowAttributes i)
