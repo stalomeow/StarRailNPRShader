@@ -63,8 +63,6 @@ CBUFFER_START(UnityPerMaterial)
     float _RimIntensityAdditionalLight;
     float _RimIntensityBackFace;
     float _RimIntensityBackFaceAdditionalLight;
-    float _RimThresholdMin;
-    float _RimThresholdMax;
     float _RimEdgeSoftness;
     float _RimWidth0;
     float4 _RimColor0;
@@ -121,11 +119,8 @@ float4 BaseHairOpaqueFragment(
     rimLightMaskData.color = _RimColor0.rgb;
     rimLightMaskData.width = _RimWidth0;
     rimLightMaskData.edgeSoftness = _RimEdgeSoftness;
-    rimLightMaskData.thresholdMin = _RimThresholdMin;
-    rimLightMaskData.thresholdMax = _RimThresholdMax;
     rimLightMaskData.modelScale = _ModelScale;
     rimLightMaskData.ditherAlpha = _DitherAlpha;
-    rimLightMaskData.NoV = dirWS.NoV;
 
     RimLightData rimLightData;
     rimLightData.darkenValue = _RimDark0;
@@ -141,7 +136,7 @@ float4 BaseHairOpaqueFragment(
     float3 diffuse = GetRampDiffuse(diffuseData, light, i.color, texColor.rgb, lightMap,
         TEXTURE2D_ARGS(_RampMapCool, sampler_RampMapCool), TEXTURE2D_ARGS(_RampMapWarm, sampler_RampMapWarm));
     float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
-    float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, lightMap);
+    float3 rimLightMask = GetRimLightMask(rimLightMaskData, dirWS, i.positionHCS, lightMap);
     float3 rimLight = GetRimLight(rimLightData, rimLightMask, dirWS.NoL, light, isFrontFace);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 

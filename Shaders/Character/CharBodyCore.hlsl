@@ -85,8 +85,6 @@ CBUFFER_START(UnityPerMaterial)
     float _RimIntensityAdditionalLight;
     float _RimIntensityBackFace;
     float _RimIntensityBackFaceAdditionalLight;
-    float _RimThresholdMin;
-    float _RimThresholdMax;
     CHAR_MAT_PROP(float, _RimWidth);
     CHAR_MAT_PROP(float4, _RimColor);
     CHAR_MAT_PROP(float, _RimDark);
@@ -203,11 +201,8 @@ void BodyColorFragment(
         rimLightMaskData.color = rimColor.rgb;
         rimLightMaskData.width = rimWidth;
         rimLightMaskData.edgeSoftness = rimEdgeSoftness;
-        rimLightMaskData.thresholdMin = _RimThresholdMin;
-        rimLightMaskData.thresholdMax = _RimThresholdMax;
         rimLightMaskData.modelScale = _ModelScale;
         rimLightMaskData.ditherAlpha = _DitherAlpha;
-        rimLightMaskData.NoV = dirWS.NoV;
     #endif
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
@@ -228,7 +223,7 @@ void BodyColorFragment(
     float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
 
     #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
-        float3 rimLightMask = GetRimLightMask(rimLightMaskData, i.positionHCS, dirWS.N, lightMap);
+        float3 rimLightMask = GetRimLightMask(rimLightMaskData, dirWS, i.positionHCS, lightMap);
         float3 rimLight = GetRimLight(rimLightData, rimLightMask, dirWS.NoL, light, isFrontFace);
     #else
         float3 rimLight = 0;

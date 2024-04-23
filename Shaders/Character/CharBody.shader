@@ -141,8 +141,6 @@ Shader "Honkai Star Rail/Character/Body"
         _RimIntensityAdditionalLight("Intensity (Front Additional)", Float) = 0.5
         _RimIntensityBackFace("Intensity (Back Main)", Float) = 0
         _RimIntensityBackFaceAdditionalLight("Intensity (Back Additional)", Float) = 0
-        _RimThresholdMin("Threshold Min", Float) = 0.6
-        _RimThresholdMax("Threshold Max", Float) = 0.9
         [HSRMaterialIDFoldout] _RimWidth("Width", Float) = 0
         [HSRMaterialIDProperty(_RimWidth, 0)] _RimWidth0("Rim Width", Float) = 0.3
         [HSRMaterialIDProperty(_RimWidth, 31)] _RimWidth1("Rim Width", Float) = 0.3

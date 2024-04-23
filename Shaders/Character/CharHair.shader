@@ -68,8 +68,6 @@ Shader "Honkai Star Rail/Character/Hair"
         _RimIntensityAdditionalLight("Intensity (Front Additional)", Float) = 0.5
         _RimIntensityBackFace("Intensity (Back Main)", Float) = 0
         _RimIntensityBackFaceAdditionalLight("Intensity (Back Additional)", Float) = 0
-        _RimThresholdMin("Threshold Min", Float) = 0.6
-        _RimThresholdMax("Threshold Max", Float) = 0.9
         _RimWidth0("Width", Float) = 0.5
         _RimColor0("Color", Color) = (1.0, 1.0, 1.0, 1.0)
         _RimDark0("Darken Value", Range(0, 1)) = 0.5
