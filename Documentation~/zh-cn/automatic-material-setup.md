@@ -12,7 +12,7 @@
 
 ## 工具扩展
 
-引入 `HSR.NPRShader.Editor.Tools` 命名空间后，声明一个具有无参构造方法的类，派生自 `BaseMaterialSetter`。可重写的成员如下：
+引入 `HSR.NPRShader.Editor.Automation` 命名空间后，声明一个具有无参构造方法的类，派生自 `BaseMaterialSetter`。可重写的成员如下：
 
 ### Properties
 
@@ -42,7 +42,7 @@ public class FaceMaterialSetter : BaseMaterialSetter
         ["miHoYo/CRP_Character/CharacterFace"] = "Honkai Star Rail/Character/Face"
     };
 
-    protected override IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(IReadOnlyDictionary<string, MaterialInfo.TextureInfo> textures)
+    protected override IEnumerable<(string, TextureJsonData)> ApplyTextures(IReadOnlyDictionary<string, TextureJsonData> textures)
     {
         yield return ("_MainTex", textures["_MainTex"]);
         yield return ("_FaceMap", textures["_FaceMap"]);
@@ -60,6 +60,8 @@ public class FaceMaterialSetter : BaseMaterialSetter
         yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
 
         yield return ("_NoseLinePower", floats["_NoseLinePower"]);
+
+        yield return ("_mmBloomIntensity0", floats["_mBloomIntensity0"]);
     }
 
     protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)

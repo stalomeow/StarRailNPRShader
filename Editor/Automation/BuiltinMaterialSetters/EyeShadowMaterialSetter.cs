@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 {
     public class EyeShadowMaterialSetter : BaseMaterialSetter
     {

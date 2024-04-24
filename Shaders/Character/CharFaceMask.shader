@@ -242,6 +242,6 @@ Shader "Honkai Star Rail/Character/FaceMask"
         // No Outline
     }
 
-    CustomEditor "StaloSRPShaderGUI"
+    CustomEditor "StarRailShaderGUI"
     Fallback Off
 }

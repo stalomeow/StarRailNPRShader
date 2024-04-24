@@ -25,38 +25,38 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation
 {
     public abstract class BaseMaterialSetter
     {
-        public bool TrySet(MaterialInfo srcMatInfo, Material dstMaterial)
+        public bool TrySet(MaterialJsonData srcMatJsonData, Material dstMaterial)
         {
-            if (!SupportedShaderMap.TryGetValue(srcMatInfo.Shader, out string shader))
+            if (!SupportedShaderMap.TryGetValue(srcMatJsonData.Shader, out string shader))
             {
                 return false;
             }
 
             MaterialUtility.SetShaderAndResetProperties(dstMaterial, shader);
-            SetProperties(srcMatInfo, dstMaterial);
+            SetProperties(srcMatJsonData, dstMaterial);
             return true;
         }
 
-        public bool TryCreate(MaterialInfo matInfo, out Material material)
+        public bool TryCreate(MaterialJsonData matJsonData, out Material material)
         {
-            if (!SupportedShaderMap.TryGetValue(matInfo.Shader, out string shader))
+            if (!SupportedShaderMap.TryGetValue(matJsonData.Shader, out string shader))
             {
                 material = null;
                 return false;
             }
 
             material = new Material(Shader.Find(shader));
-            SetProperties(matInfo, material);
+            SetProperties(matJsonData, material);
             return true;
         }
 
-        private void SetProperties(MaterialInfo matInfo, Material material)
+        private void SetProperties(MaterialJsonData matJsonData, Material material)
         {
-            foreach (var (key, value) in ApplyTextures(EntriesToDict(matInfo.Textures)))
+            foreach (var (key, value) in ApplyTextures(EntriesToDict(matJsonData.Textures)))
             {
                 if (value.IsNull)
                 {
@@ -82,23 +82,23 @@ namespace HSR.NPRShader.Editor.Tools
                 material.SetTextureOffset(key, value.Offset);
             }
 
-            foreach (var (key, value) in ApplyInts(EntriesToDict(matInfo.Ints)))
+            foreach (var (key, value) in ApplyInts(EntriesToDict(matJsonData.Ints)))
             {
                 material.SetInt(key, value);
             }
 
-            foreach (var (key, value) in ApplyFloats(EntriesToDict(matInfo.Floats)))
+            foreach (var (key, value) in ApplyFloats(EntriesToDict(matJsonData.Floats)))
             {
                 material.SetFloat(key, value);
             }
 
-            foreach (var (key, value) in ApplyColors(EntriesToDict(matInfo.Colors)))
+            foreach (var (key, value) in ApplyColors(EntriesToDict(matJsonData.Colors)))
             {
                 material.SetColor(key, value);
             }
         }
 
-        private static Dictionary<string, T> EntriesToDict<T>(List<MaterialInfo.Entry<T>> entries)
+        private static Dictionary<string, T> EntriesToDict<T>(List<MaterialJsonData.Entry<T>> entries)
         {
             return entries.ToDictionary(e => e.Key, e => e.Value);
         }
@@ -133,7 +133,7 @@ namespace HSR.NPRShader.Editor.Tools
 
         protected abstract IReadOnlyDictionary<string, string> SupportedShaderMap { get; }
 
-        protected virtual IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(IReadOnlyDictionary<string, MaterialInfo.TextureInfo> textures)
+        protected virtual IEnumerable<(string, TextureJsonData)> ApplyTextures(IReadOnlyDictionary<string, TextureJsonData> textures)
         {
             yield break;
         }

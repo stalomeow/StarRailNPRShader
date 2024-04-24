@@ -1,15 +1,15 @@
 # 安装
 
-这个包已经在 Windows 和 Android 上经过验证。
+这个包要求 **Unity >= 2022.3** 且已经在 Windows 和 Android 上经过验证。由于 SRP & URP 的 API 经常发生变化，建议**别用太高的版本**。
 
 ## 从 git URL 安装
 
-**按顺序**安装这些包。第二个包要求 Unity >= 2022.3，但建议别用太高的版本。
+1. 在 Package Manager 的添加菜单中选择 `Add package from git URL...`。
 
-1. https://github.com/stalomeow/ShaderUtilsForSRP.git
-2. https://github.com/stalomeow/StarRailNPRShader.git
+    ![安装](../_img/install.png)
 
-![安装](../_img/install.png)
+2. 在文本框中输入 `https://github.com/stalomeow/StarRailNPRShader.git`。
+3. 选择 `Add`。
 
 ## 渲染管线设置
 

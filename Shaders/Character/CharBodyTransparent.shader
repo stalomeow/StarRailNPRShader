@@ -286,6 +286,6 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         // No Motion Vectors
     }
 
-    CustomEditor "StaloSRPShaderGUI"
+    CustomEditor "StarRailShaderGUI"
     Fallback Off
 }

@@ -23,24 +23,23 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using Stalo.ShaderUtils.Editor;
 using UnityEditor.Callbacks;
 using UnityEditor.IMGUI.Controls;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation
 {
     public class HSRMaterialViewer : EditorWindow
     {
         [OnOpenAsset(callbackOrder: -42)]
         public static bool Open(int instanceID, int line, int column)
         {
-            if (EditorUtility.InstanceIDToObject(instanceID) is not MaterialInfo matInfo)
+            if (EditorUtility.InstanceIDToObject(instanceID) is not MaterialJsonData matInfo)
             {
                 return false;
             }
 
             var window = GetWindow<HSRMaterialViewer>("HSR Material Viewer");
-            window.m_GameMatInfo = matInfo;
+            window.m_GameMatJsonData = matInfo;
             return true;
         }
 
@@ -49,7 +48,7 @@ namespace HSR.NPRShader.Editor.Tools
             "Textures", "Colors", "Floats", "Ints"
         };
 
-        [SerializeField] private MaterialInfo m_GameMatInfo;
+        [SerializeField] private MaterialJsonData m_GameMatJsonData;
         [SerializeField] private string m_SearchText;
         [SerializeField] private int m_ToolbarIndex;
         [SerializeField] private Vector2[] m_ScrollPos = new Vector2[4];
@@ -66,8 +65,8 @@ namespace HSR.NPRShader.Editor.Tools
                 m_SearchText = m_Search.OnToolbarGUI(searchRect, m_SearchText);
             }
 
-            EditorGUILayout.TextField("Material Name", m_GameMatInfo.Name);
-            EditorGUILayout.TextField("Shader Name", m_GameMatInfo.Shader);
+            EditorGUILayout.TextField("Material Name", m_GameMatJsonData.Name);
+            EditorGUILayout.TextField("Shader Name", m_GameMatJsonData.Shader);
             EditorGUILayout.Space();
 
             m_ToolbarIndex = GUILayout.Toolbar(m_ToolbarIndex, m_ToolbarLabels);
@@ -82,16 +81,16 @@ namespace HSR.NPRShader.Editor.Tools
                     switch (m_ToolbarIndex)
                     {
                         case 0:
-                            DrawEntries(m_GameMatInfo.Textures, TextureGUIAction);
+                            DrawEntries(m_GameMatJsonData.Textures, TextureGUIAction);
                             break;
                         case 1:
-                            DrawEntries(m_GameMatInfo.Colors, EditorGUILayout.ColorField);
+                            DrawEntries(m_GameMatJsonData.Colors, EditorGUILayout.ColorField);
                             break;
                         case 2:
-                            DrawEntries(m_GameMatInfo.Floats, EditorGUILayout.FloatField);
+                            DrawEntries(m_GameMatJsonData.Floats, EditorGUILayout.FloatField);
                             break;
                         case 3:
-                            DrawEntries(m_GameMatInfo.Ints, EditorGUILayout.IntField);
+                            DrawEntries(m_GameMatJsonData.Ints, EditorGUILayout.IntField);
                             break;
                     }
 
@@ -102,7 +101,7 @@ namespace HSR.NPRShader.Editor.Tools
 
         private delegate T EntryGUIAction<T>(string label, T value, params GUILayoutOption[] options);
 
-        private void DrawEntries<T>(List<MaterialInfo.Entry<T>> entries, EntryGUIAction<T> guiAction)
+        private void DrawEntries<T>(List<MaterialJsonData.Entry<T>> entries, EntryGUIAction<T> guiAction)
         {
             foreach (var entry in entries)
             {
@@ -118,7 +117,7 @@ namespace HSR.NPRShader.Editor.Tools
             }
         }
 
-        private MaterialInfo.TextureInfo TextureGUIAction(string key, MaterialInfo.TextureInfo value, params GUILayoutOption[] options)
+        private TextureJsonData TextureGUIAction(string key, TextureJsonData value, params GUILayoutOption[] options)
         {
             using (new EditorGUI.DisabledScope(value.IsNull))
             {

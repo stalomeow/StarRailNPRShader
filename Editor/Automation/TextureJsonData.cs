@@ -20,39 +20,38 @@
  */
 
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation
 {
-    public class MaterialInfo : ScriptableObject
+    [Serializable]
+    public class TextureJsonData
     {
-        [Serializable]
-        public class TextureInfo
+        [SerializeField] private string m_Name;
+        [SerializeField] private long m_PathId;
+        [SerializeField] private bool m_IsNull;
+        [SerializeField] private Vector2 m_Scale;
+        [SerializeField] private Vector2 m_Offset;
+
+        public TextureJsonData() : this(string.Empty, 0, true, Vector2.one, Vector2.zero) { }
+
+        public TextureJsonData(string name, long pathId, bool isNull, Vector2 scale, Vector2 offset)
         {
-            public string Name;
-            public long PathId;
-            public bool IsNull;
-            public Vector2 Scale;
-            public Vector2 Offset;
+            m_Name = name;
+            m_PathId = pathId;
+            m_IsNull = isNull;
+            m_Scale = scale;
+            m_Offset = offset;
         }
 
-        [Serializable]
-        public class Entry<T>
-        {
-            public string Key;
-            public T Value;
-        }
+        public string Name => m_Name;
 
-        public string Name;
-        public string Shader;
-        public List<Entry<TextureInfo>> Textures;
-        public int TexturesSkipCount;
-        public List<Entry<int>> Ints;
-        public int IntsSkipCount;
-        public List<Entry<float>> Floats;
-        public int FloatsSkipCount;
-        public List<Entry<Color>> Colors;
-        public int ColorsSkipCount;
+        public long PathId => m_PathId;
+
+        public bool IsNull => m_IsNull;
+
+        public Vector2 Scale => m_Scale;
+
+        public Vector2 Offset => m_Offset;
     }
 }

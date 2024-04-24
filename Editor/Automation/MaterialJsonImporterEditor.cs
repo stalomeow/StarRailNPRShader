@@ -27,7 +27,7 @@ using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(MaterialJsonImporter))]
@@ -104,7 +104,7 @@ namespace HSR.NPRShader.Editor.Tools
 
             Dictionary<string, BaseMaterialSetter> shaderMap = BaseMaterialSetter.AllShaderMap;
 
-            foreach (MaterialInfo matInfo in assetTargets.Select(x => x as MaterialInfo))
+            foreach (MaterialJsonData matInfo in assetTargets.Select(x => x as MaterialJsonData))
             {
                 bool ok = false;
 
@@ -156,7 +156,7 @@ namespace HSR.NPRShader.Editor.Tools
             Dictionary<string, BaseMaterialSetter> shaderMap = BaseMaterialSetter.AllShaderMap;
             bool ok = false;
 
-            foreach (MaterialInfo matInfo in assetTargets.Select(x => x as MaterialInfo))
+            foreach (MaterialJsonData matInfo in assetTargets.Select(x => x as MaterialJsonData))
             {
                 if (shaderMap.TryGetValue(matInfo.Shader, out BaseMaterialSetter setter))
                 {

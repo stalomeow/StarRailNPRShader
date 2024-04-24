@@ -19,21 +19,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
-using UnityEngine;
+using System;
+using UnityEditor;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.MaterialGUI.Wrappers
 {
-    public class FaceMaskMaterialSetter : BaseMaterialSetter
+    internal class HelpBoxWrapper : MaterialPropertyWrapper
     {
-        protected override IReadOnlyDictionary<string, string> SupportedShaderMap => new Dictionary<string, string>()
-        {
-            ["miHoYo/CRP_Character/Character Stencil Clear"] = "Honkai Star Rail/Character/FaceMask"
-        };
+        private readonly MessageType m_MsgType;
+        private readonly string m_Message;
 
-        protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
+        public HelpBoxWrapper(string rawArgs) : base(rawArgs)
         {
-            yield return ("_Color", colors["_Color"]);
+            string[] args = rawArgs.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                args[i] = args[i].Trim();
+            }
+
+            m_MsgType = Enum.Parse<MessageType>(args[0]);
+            m_Message = string.Join(", ", args[1..]);
+        }
+
+        public override void OnWillDrawProperty(MaterialProperty prop, string label, MaterialEditor editor)
+        {
+            EditorGUILayout.HelpBox(m_Message, m_MsgType);
         }
     }
 }

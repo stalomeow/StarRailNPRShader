@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 {
     public class BodyMaterialSetter : BaseMaterialSetter
     {
@@ -32,7 +32,7 @@ namespace HSR.NPRShader.Editor.Tools
             ["miHoYo/CRP_Character/CharacterTransparent"] = "Honkai Star Rail/Character/Body (Transparent)",
         };
 
-        protected override IEnumerable<(string, MaterialInfo.TextureInfo)> ApplyTextures(IReadOnlyDictionary<string, MaterialInfo.TextureInfo> textures)
+        protected override IEnumerable<(string, TextureJsonData)> ApplyTextures(IReadOnlyDictionary<string, TextureJsonData> textures)
         {
             yield return ("_MainTex", textures["_MainTex"]);
             yield return ("_LightMap", textures["_LightMap"]);

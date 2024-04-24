@@ -145,6 +145,6 @@ Shader "Honkai Star Rail/Character/EyeShadow"
         // No Depth
     }
 
-    CustomEditor "StaloSRPShaderGUI"
+    CustomEditor "StarRailShaderGUI"
     Fallback Off
 }

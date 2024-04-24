@@ -358,6 +358,6 @@ Shader "Honkai Star Rail/Character/Hair"
         }
     }
 
-    CustomEditor "StaloSRPShaderGUI"
+    CustomEditor "StarRailShaderGUI"
     Fallback Off
 }

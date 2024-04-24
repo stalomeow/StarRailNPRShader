@@ -27,9 +27,9 @@ using Newtonsoft.Json.Linq;
 using UnityEditor.AssetImporters;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.Tools
+namespace HSR.NPRShader.Editor.Automation
 {
-    [ScriptedImporter(9, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
+    [ScriptedImporter(10, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
     public class MaterialJsonImporter : ScriptedImporter
     {
         [SerializeField] private string m_OverrideShaderName;
@@ -39,7 +39,7 @@ namespace HSR.NPRShader.Editor.Tools
             string text = File.ReadAllText(ctx.assetPath);
             JObject json = JObject.Parse(text);
 
-            var matInfo = ScriptableObject.CreateInstance<MaterialInfo>();
+            var matInfo = ScriptableObject.CreateInstance<MaterialJsonData>();
             matInfo.Name = GetMaterialName(json);
             matInfo.Shader = GetShaderName(json);
             matInfo.Textures = DictToEntries(ReadTextures(json, out matInfo.TexturesSkipCount));
@@ -78,32 +78,19 @@ namespace HSR.NPRShader.Editor.Tools
             return string.Empty;
         }
 
-        private static List<MaterialInfo.Entry<T>> DictToEntries<T>(Dictionary<string, T> dict)
+        private static List<MaterialJsonData.Entry<T>> DictToEntries<T>(Dictionary<string, T> dict)
         {
-            return dict.Select(kvp => new MaterialInfo.Entry<T>
+            return dict.Select(kvp => new MaterialJsonData.Entry<T>
             {
                 Key = kvp.Key,
                 Value = kvp.Value
             }).OrderBy(entry => entry.Key).ToList();
         }
 
-        private static Dictionary<string, MaterialInfo.TextureInfo> ReadTextures(JObject json, out int skipCount)
+        private static Dictionary<string, TextureJsonData> ReadTextures(JObject json, out int skipCount)
         {
-            Dictionary<string, MaterialInfo.TextureInfo> results = ReadValues(json, "m_TexEnvs", out skipCount,
-                new Func<JToken, KeyValuePair<string, MaterialInfo.TextureInfo>>[] { ReadTextureV1, ReadTextureV2 });
-
-            foreach (MaterialInfo.TextureInfo info in results.Values)
-            {
-                if (!info.IsNull && string.IsNullOrWhiteSpace(info.Name))
-                {
-                    if (s_TextureMap.TryGetValue(info.PathId, out string textureName))
-                    {
-                        info.Name = textureName;
-                    }
-                }
-            }
-
-            return results;
+            return ReadValues(json, "m_TexEnvs", out skipCount,
+                new Func<JToken, KeyValuePair<string, TextureJsonData>>[] { ReadTextureV1, ReadTextureV2 });
         }
 
         private static Dictionary<string, T> ReadValues<T>(JObject json, string propsName, out int skipCount)
@@ -158,30 +145,40 @@ namespace HSR.NPRShader.Editor.Tools
             };
         }
 
-        private static KeyValuePair<string, MaterialInfo.TextureInfo> ReadTextureV1(JToken prop)
+        private static KeyValuePair<string, TextureJsonData> ReadTextureV1(JToken prop)
         {
+            string name = prop.First["m_Texture"]["Name"]?.ToObject<string>() ?? string.Empty;
+            long pathId = prop.First["m_Texture"]["m_PathID"].ToObject<long>();
+            bool isNull = prop.First["m_Texture"]["IsNull"].ToObject<bool>();
+            Vector2 scale = prop.First["m_Scale"].ToObject<Vector2>();
+            Vector2 offset = prop.First["m_Offset"].ToObject<Vector2>();
+
+            ValidateTextureName(ref name, pathId, isNull);
+
             string label = prop.Path.Split('.')[^1];
-            return new KeyValuePair<string, MaterialInfo.TextureInfo>(label, new MaterialInfo.TextureInfo
-            {
-                Name = prop.First["m_Texture"]["Name"]?.ToObject<string>() ?? string.Empty,
-                PathId = prop.First["m_Texture"]["m_PathID"].ToObject<long>(),
-                IsNull = prop.First["m_Texture"]["IsNull"].ToObject<bool>(),
-                Scale = prop.First["m_Scale"].ToObject<Vector2>(),
-                Offset = prop.First["m_Offset"].ToObject<Vector2>(),
-            });
+            return new KeyValuePair<string, TextureJsonData>(label, new TextureJsonData(name, pathId, isNull, scale, offset));
         }
 
-        private static KeyValuePair<string, MaterialInfo.TextureInfo> ReadTextureV2(JToken prop)
+        private static KeyValuePair<string, TextureJsonData> ReadTextureV2(JToken prop)
         {
+            string name = prop["Value"]["m_Texture"]["Name"]?.ToObject<string>() ?? string.Empty;
+            long pathId = prop["Value"]["m_Texture"]["m_PathID"].ToObject<long>();
+            bool isNull = prop["Value"]["m_Texture"]["IsNull"].ToObject<bool>();
+            Vector2 scale = prop["Value"]["m_Scale"].ToObject<Vector2>();
+            Vector2 offset = prop["Value"]["m_Offset"].ToObject<Vector2>();
+
+            ValidateTextureName(ref name, pathId, isNull);
+
             string label = prop["Key"].ToObject<string>();
-            return new KeyValuePair<string, MaterialInfo.TextureInfo>(label, new MaterialInfo.TextureInfo
+            return new KeyValuePair<string, TextureJsonData>(label, new TextureJsonData(name, pathId, isNull, scale, offset));
+        }
+
+        private static void ValidateTextureName(ref string name, long pathId, bool IsNullTexture)
+        {
+            if (!IsNullTexture && string.IsNullOrWhiteSpace(name))
             {
-                Name = prop["Value"]["m_Texture"]["Name"]?.ToObject<string>() ?? string.Empty,
-                PathId = prop["Value"]["m_Texture"]["m_PathID"].ToObject<long>(),
-                IsNull = prop["Value"]["m_Texture"]["IsNull"].ToObject<bool>(),
-                Scale = prop["Value"]["m_Scale"].ToObject<Vector2>(),
-                Offset = prop["Value"]["m_Offset"].ToObject<Vector2>(),
-            });
+                name = s_TextureMap.GetValueOrDefault(pathId, name);
+            }
         }
 
         private static KeyValuePair<string, T> ReadValueV1<T>(JToken prop)

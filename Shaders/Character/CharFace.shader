@@ -341,6 +341,6 @@ Shader "Honkai Star Rail/Character/Face"
         }
     }
 
-    CustomEditor "StaloSRPShaderGUI"
+    CustomEditor "StarRailShaderGUI"
     Fallback Off
 }

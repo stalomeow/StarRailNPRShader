@@ -1,15 +1,15 @@
 # Installation
 
-This package is verified on Windows & Android.
+This package requires **Unity >= 2022.3** and is verified on Windows & Android. Since the API of SRP & URP changes frequently, it is recommended **not to use a version that is too high**.
 
 ## Install via git URL
 
-Install these packages **in order**. The second one requires Unity >= 2022.3, but it is recommended not to use a version that is too high.
+1. Select `Add package from git URL...` from the add menu of Package Manager.
 
-1. https://github.com/stalomeow/ShaderUtilsForSRP.git
-2. https://github.com/stalomeow/StarRailNPRShader.git
+    ![Install](../_img/install.png)
 
-![Install](../_img/install.png)
+2. Enter `https://github.com/stalomeow/StarRailNPRShader.git` in the text box.
+3. Select `Add`.
 
 ## RenderPipeline Settings
 

@@ -19,14 +19,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 
-namespace HSR.NPRShader.Editor.MaterialDrawers
+namespace HSR.NPRShader.Editor.MaterialGUI.Drawers
 {
-    [PublicAPI]
-    public class HSRMaterialIDPropertyDrawer : MaterialPropertyDrawer
+    internal class HSRMaterialIDPropertyDrawer : MaterialPropertyDrawer
     {
         private readonly string m_FoldoutName;
         private readonly int m_MaterialID;

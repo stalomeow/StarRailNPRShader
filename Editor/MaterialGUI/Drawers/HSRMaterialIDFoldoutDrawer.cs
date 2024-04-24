@@ -19,15 +19,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
-using Stalo.ShaderUtils.Editor;
 
-namespace HSR.NPRShader.Editor.MaterialDrawers
+namespace HSR.NPRShader.Editor.MaterialGUI.Drawers
 {
-    [PublicAPI]
-    public class HSRMaterialIDFoldoutDrawer : MaterialPropertyDrawer
+    internal class HSRMaterialIDFoldoutDrawer : MaterialPropertyDrawer
     {
         public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
         {
