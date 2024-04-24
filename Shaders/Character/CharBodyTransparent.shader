@@ -25,6 +25,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
     {
         [KeywordEnum(Game, MMD)] _Model("Model Type", Float) = 0
         _ModelScale("Model Scale", Float) = 1
+        [HSRMaterialIDSelector] _SingleMaterialID("Material ID", Float) = -1
 
         [HeaderFoldout(Shader Options)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 0                       // 默认 Off
@@ -32,9 +33,6 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendColor("Dst Blend (RGB)", Float) = 10 // 默认 OneMinusSrcAlpha
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha("Src Blend (A)", Float) = 0    // 默认 Zero
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendAlpha("Dst Blend (A)", Float) = 0    // 默认 Zero
-        [Header(Debug)] [Space(5)]
-        [Toggle] _SingleMaterial("Show Part", Float) = 0
-        [If(_SINGLEMATERIAL_ON)] [Indent] [IntRange] _SingleMaterialID("Material Index", Range(-1, 7)) = -1
 
         [HeaderFoldout(Maps)]
         [SingleLineTextureNoScaleOffset(_Color)] _MainTex("Albedo", 2D) = "white" {}
@@ -53,49 +51,40 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HeaderFoldout(Specular)]
         [HSRMaterialIDFoldout] _SpecularColor("Color", Float) = 0
         [HSRMaterialIDProperty(_SpecularColor, 0)] _SpecularColor0("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 31)] _SpecularColor1("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 63)] _SpecularColor2("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 95)] _SpecularColor3("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 127)] _SpecularColor4("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 159)] _SpecularColor5("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 192)] _SpecularColor6("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_SpecularColor, 223)] _SpecularColor7("Specular Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDFoldout] _SpecularMetallic("Metallic", Float) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 0)] _SpecularMetallic0("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 31)] _SpecularMetallic1("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 63)] _SpecularMetallic2("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 95)] _SpecularMetallic3("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 127)] _SpecularMetallic4("Specular Metallic", Range(0, 1)) = 1 // 一般情况下是金属
-        [HSRMaterialIDProperty(_SpecularMetallic, 159)] _SpecularMetallic5("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 192)] _SpecularMetallic6("Specular Metallic", Range(0, 1)) = 0
-        [HSRMaterialIDProperty(_SpecularMetallic, 223)] _SpecularMetallic7("Specular Metallic", Range(0, 1)) = 0
+        [HSRMaterialIDProperty(_SpecularColor, 1)] _SpecularColor1("Specular Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_SpecularColor, 2)] _SpecularColor2("Specular Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_SpecularColor, 3)] _SpecularColor3("Specular Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_SpecularColor, 4)] _SpecularColor4("Specular Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_SpecularColor, 5)] _SpecularColor5("Specular Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_SpecularColor, 6)] _SpecularColor6("Specular Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_SpecularColor, 7)] _SpecularColor7("Specular Color", Color) = (1, 1, 1, 1)
         [HSRMaterialIDFoldout] _SpecularShininess("Shininess", Float) = 0
         [HSRMaterialIDProperty(_SpecularShininess, 0)] _SpecularShininess0("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 31)] _SpecularShininess1("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 63)] _SpecularShininess2("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 95)] _SpecularShininess3("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 127)] _SpecularShininess4("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 159)] _SpecularShininess5("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 192)] _SpecularShininess6("Specular Shininess", Range(0.1, 500)) = 10
-        [HSRMaterialIDProperty(_SpecularShininess, 223)] _SpecularShininess7("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 1)] _SpecularShininess1("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 2)] _SpecularShininess2("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 3)] _SpecularShininess3("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 4)] _SpecularShininess4("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 5)] _SpecularShininess5("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 6)] _SpecularShininess6("Specular Shininess", Range(0.1, 500)) = 10
+        [HSRMaterialIDProperty(_SpecularShininess, 7)] _SpecularShininess7("Specular Shininess", Range(0.1, 500)) = 10
         [HSRMaterialIDFoldout] _SpecularIntensity("Intensity", Float) = 0
         [HSRMaterialIDProperty(_SpecularIntensity, 0)] _SpecularIntensity0("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 31)] _SpecularIntensity1("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 63)] _SpecularIntensity2("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 95)] _SpecularIntensity3("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 127)] _SpecularIntensity4("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 159)] _SpecularIntensity5("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 192)] _SpecularIntensity6("Specular Intensity", Range(0, 100)) = 1
-        [HSRMaterialIDProperty(_SpecularIntensity, 223)] _SpecularIntensity7("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 1)] _SpecularIntensity1("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 2)] _SpecularIntensity2("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 3)] _SpecularIntensity3("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 4)] _SpecularIntensity4("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 5)] _SpecularIntensity5("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 6)] _SpecularIntensity6("Specular Intensity", Range(0, 100)) = 1
+        [HSRMaterialIDProperty(_SpecularIntensity, 7)] _SpecularIntensity7("Specular Intensity", Range(0, 100)) = 1
         [HSRMaterialIDFoldout] _SpecularRoughness("Roughness", Float) = 0
         [HSRMaterialIDProperty(_SpecularRoughness, 0)] _SpecularRoughness0("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 31)] _SpecularRoughness1("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 63)] _SpecularRoughness2("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 95)] _SpecularRoughness3("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 127)] _SpecularRoughness4("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 159)] _SpecularRoughness5("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 192)] _SpecularRoughness6("Specular Roughness", Range(0, 1)) = 0.02
-        [HSRMaterialIDProperty(_SpecularRoughness, 223)] _SpecularRoughness7("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 1)] _SpecularRoughness1("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 2)] _SpecularRoughness2("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 3)] _SpecularRoughness3("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 4)] _SpecularRoughness4("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 5)] _SpecularRoughness5("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 6)] _SpecularRoughness6("Specular Roughness", Range(0, 1)) = 0.02
+        [HSRMaterialIDProperty(_SpecularRoughness, 7)] _SpecularRoughness7("Specular Roughness", Range(0, 1)) = 0.02
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
@@ -105,22 +94,22 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HeaderFoldout(Bloom)]
         [HSRMaterialIDFoldout] _BloomIntensity("Intensity", Float) = 0
         [HSRMaterialIDProperty(_BloomIntensity, 0)] _mmBloomIntensity0("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 31)] _mmBloomIntensity1("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 63)] _mmBloomIntensity2("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 95)] _mmBloomIntensity3("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 127)] _mmBloomIntensity4("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 159)] _mmBloomIntensity5("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 192)] _mmBloomIntensity6("Bloom Intensity", Float) = 0
-        [HSRMaterialIDProperty(_BloomIntensity, 223)] _mmBloomIntensity7("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 1)] _mmBloomIntensity1("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 2)] _mmBloomIntensity2("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 3)] _mmBloomIntensity3("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 4)] _mmBloomIntensity4("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 5)] _mmBloomIntensity5("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 6)] _mmBloomIntensity6("Bloom Intensity", Float) = 0
+        [HSRMaterialIDProperty(_BloomIntensity, 7)] _mmBloomIntensity7("Bloom Intensity", Float) = 0
         [HSRMaterialIDFoldout] _BloomColor("Color", Float) = 0
         [HSRMaterialIDProperty(_BloomColor, 0)] _BloomColor0("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 31)] _BloomColor1("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 63)] _BloomColor2("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 95)] _BloomColor3("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 127)] _BloomColor4("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 159)] _BloomColor5("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 192)] _BloomColor6("Bloom Color", Color) = (1, 1, 1, 1)
-        [HSRMaterialIDProperty(_BloomColor, 223)] _BloomColor7("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 1)] _BloomColor1("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 2)] _BloomColor2("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 3)] _BloomColor3("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 4)] _BloomColor4("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 5)] _BloomColor5("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 6)] _BloomColor6("Bloom Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_BloomColor, 7)] _BloomColor7("Bloom Color", Color) = (1, 1, 1, 1)
 
         [HeaderFoldout(Outline)]
         [KeywordEnum(Tangent, Normal)] _OutlineNormal("Normal Source", Float) = 0
@@ -128,13 +117,13 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         _OutlineZOffset("Z Offset", Float) = 0
         [HSRMaterialIDFoldout] _OutlineColor("Color", Float) = 0
         [HSRMaterialIDProperty(_OutlineColor, 0)] _OutlineColor0("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 31)] _OutlineColor1("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 63)] _OutlineColor2("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 95)] _OutlineColor3("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 127)] _OutlineColor4("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 159)] _OutlineColor5("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 192)] _OutlineColor6("Outline Color", Color) = (0, 0, 0, 1)
-        [HSRMaterialIDProperty(_OutlineColor, 223)] _OutlineColor7("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 1)] _OutlineColor1("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 2)] _OutlineColor2("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 3)] _OutlineColor3("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 4)] _OutlineColor4("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 5)] _OutlineColor5("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 6)] _OutlineColor6("Outline Color", Color) = (0, 0, 0, 1)
+        [HSRMaterialIDProperty(_OutlineColor, 7)] _OutlineColor7("Outline Color", Color) = (0, 0, 0, 1)
 
         [HeaderFoldout(Dither)]
         _DitherAlpha("Alpha", Range(0, 1)) = 1
