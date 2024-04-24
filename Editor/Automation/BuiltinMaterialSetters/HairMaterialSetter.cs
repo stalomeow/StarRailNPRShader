@@ -49,6 +49,11 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
             yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
             yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
 
+            yield return ("_RimShadowCt", floats["_RimShadowCt"]);
+            yield return ("_RimShadowIntensity", floats["_RimShadowIntensity"]);
+            yield return ("_RimShadowWidth0", floats["_RimShadowWidth0"]);
+            yield return ("_RimShadowFeather0", floats["_RimShadowFeather0"]);
+
             yield return ("_SpecularIntensity0", floats["_SpecularIntensity0"]);
             yield return ("_SpecularShininess0", floats["_SpecularShininess0"]);
             yield return ("_SpecularRoughness0", floats["_SpecularRoughness0"]);
@@ -63,6 +68,9 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
             yield return ("_SpecularColor0", colors["_SpecularColor0"]);
             yield return ("_RimColor0", colors["_RimColor0"]);
             yield return ("_OutlineColor0", colors["_OutlineColor0"]);
+
+            yield return ("_RimShadowOffset", colors["_RimShadowOffset"]);
+            yield return ("_RimShadowColor0", colors["_RimShadowColor0"]);
 
             // Texture Scale Offset
             yield return ("_Maps_ST", colors["_MainMaps_ST"]);

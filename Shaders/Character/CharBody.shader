@@ -167,6 +167,38 @@ Shader "Honkai Star Rail/Character/Body"
         [HSRMaterialIDProperty(_RimEdgeSoftness, 6)] _RimEdgeSoftness6("Rim Edge Softness", Float) = 0.05
         [HSRMaterialIDProperty(_RimEdgeSoftness, 7)] _RimEdgeSoftness7("Rim Edge Softness", Float) = 0.05
 
+        [HeaderFoldout(Rim Shadow)]
+        _RimShadowCt("Ct", Float) = 1
+        _RimShadowIntensity("Intensity", Float) = 1
+        _RimShadowOffset("Offset", Vector) = (0, 0, 0, 0)
+        [HSRMaterialIDFoldout] _RimShadowColor("Color", Float) = 0
+        [HSRMaterialIDProperty(_RimShadowColor, 0)] _RimShadowColor0("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 1)] _RimShadowColor1("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 2)] _RimShadowColor2("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 3)] _RimShadowColor3("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 4)] _RimShadowColor4("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 5)] _RimShadowColor5("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 6)] _RimShadowColor6("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDProperty(_RimShadowColor, 7)] _RimShadowColor7("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        [HSRMaterialIDFoldout] _RimShadowWidth("Width", Float) = 0
+        [HSRMaterialIDProperty(_RimShadowWidth, 0)] _RimShadowWidth0("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 1)] _RimShadowWidth1("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 2)] _RimShadowWidth2("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 3)] _RimShadowWidth3("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 4)] _RimShadowWidth4("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 5)] _RimShadowWidth5("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 6)] _RimShadowWidth6("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDProperty(_RimShadowWidth, 7)] _RimShadowWidth7("Rim Shadow Width", Float) = 1
+        [HSRMaterialIDFoldout] _RimShadowFeather("Feather", Float) = 0
+        [HSRMaterialIDProperty(_RimShadowFeather, 0)] _RimShadowFeather0("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 1)] _RimShadowFeather1("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 2)] _RimShadowFeather2("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 3)] _RimShadowFeather3("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 4)] _RimShadowFeather4("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 5)] _RimShadowFeather5("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 6)] _RimShadowFeather6("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+        [HSRMaterialIDProperty(_RimShadowFeather, 7)] _RimShadowFeather7("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+
         [HeaderFoldout(Outline)]
         [KeywordEnum(Tangent, Normal)] _OutlineNormal("Normal Source", Float) = 0
         _OutlineWidth("Width", Range(0, 4)) = 1

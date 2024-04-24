@@ -90,6 +90,13 @@ CBUFFER_START(UnityPerMaterial)
     DEF_CHAR_MAT_PROP(float, _RimEdgeSoftness);
 #endif
 
+    float _RimShadowCt;
+    float _RimShadowIntensity;
+    float4 _RimShadowOffset;
+    DEF_CHAR_MAT_PROP(float4, _RimShadowColor);
+    DEF_CHAR_MAT_PROP(float, _RimShadowWidth);
+    DEF_CHAR_MAT_PROP(float, _RimShadowFeather);
+
     float _OutlineWidth;
     float _OutlineZOffset;
     DEF_CHAR_MAT_PROP(float4, _OutlineColor);
@@ -173,6 +180,10 @@ void BodyColorFragment(
         SETUP_CHAR_MAT_PROP(float, _RimEdgeSoftness, materialId);
     #endif
 
+    SETUP_CHAR_MAT_PROP(float4, _RimShadowColor, materialId);
+    SETUP_CHAR_MAT_PROP(float, _RimShadowWidth, materialId);
+    SETUP_CHAR_MAT_PROP(float, _RimShadowFeather, materialId);
+
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
@@ -206,6 +217,14 @@ void BodyColorFragment(
         rimLightData.intensityBackFace = _RimIntensityBackFace;
     #endif
 
+    RimShadowData rimShadowData;
+    rimShadowData.ct = _RimShadowCt;
+    rimShadowData.intensity = _RimShadowIntensity;
+    rimShadowData.offset = _RimShadowOffset.xyz;
+    rimShadowData.color = _RimShadowColor.rgb;
+    rimShadowData.width = _RimShadowWidth;
+    rimShadowData.feather = _RimShadowFeather;
+
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
     emissionData.value = texColor.a;
@@ -222,6 +241,8 @@ void BodyColorFragment(
     #else
         float3 rimLight = 0;
     #endif
+
+    float3 rimShadow = GetRimShadow(rimShadowData, dirWS);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
     #if defined(_ADDITIONAL_LIGHTS)
@@ -250,7 +271,7 @@ void BodyColorFragment(
     #endif
 
     // Output
-    colorTarget = float4(diffuse + specular + rimLight + emission, texColor.a);
+    colorTarget = float4((diffuse + specular + rimLight + emission) * rimShadow, texColor.a);
     colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor.rgb, _mmBloomIntensity);
 
     // Fog

@@ -56,11 +56,17 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
             yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
             yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
 
+            yield return ("_RimShadowCt", floats["_RimShadowCt"]);
+            yield return ("_RimShadowIntensity", floats["_RimShadowIntensity"]);
+
             for (int i = 0; i <= 7; i++)
             {
                 yield return ($"_SpecularIntensity{i}", floats[$"_SpecularIntensity{i}"]);
                 yield return ($"_SpecularShininess{i}", floats[$"_SpecularShininess{i}"]);
                 yield return ($"_SpecularRoughness{i}", floats[$"_SpecularRoughness{i}"]);
+
+                yield return ($"_RimShadowWidth{i}", floats[$"_RimShadowWidth{i}"]);
+                yield return ($"_RimShadowFeather{i}", floats[$"_RimShadowFeather{i}"]);
 
                 yield return ($"_mmBloomIntensity{i}", floats[$"_mBloomIntensity{i}"]);
             }
@@ -78,11 +84,13 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
             yield return ("_Color", colors["_Color"]);
             yield return ("_BackColor", colors["_BackColor"]);
             yield return ("_EmissionColor", colors["_EmissionTintColor"]);
+            yield return ("_RimShadowOffset", colors["_RimShadowOffset"]);
 
             for (int i = 0; i <= 7; i++)
             {
                 yield return ($"_SpecularColor{i}", colors[$"_SpecularColor{i}"]);
                 yield return ($"_RimColor{i}", colors[$"_RimColor{i}"]);
+                yield return ($"_RimShadowColor{i}", colors[$"_RimShadowColor{i}"]);
                 yield return ($"_OutlineColor{i}", colors[$"_OutlineColor{i}"]);
 
                 if (colors.TryGetValue($"_mBloomColor{i}", out Color bloomColor))

@@ -304,6 +304,26 @@ float3 GetRimLight(RimLightData rimData, float3 rimMask, float NoL, Light light,
     return rimMask * light.color * (lerp(rimData.darkenValue, 1, attenuation) * max(0, intensity));
 }
 
+struct RimShadowData
+{
+    float ct;
+    float intensity;
+    float3 offset;
+    float3 color;
+    float width;
+    float feather;
+};
+
+float3 GetRimShadow(RimShadowData data, Directions dirWS)
+{
+    float3 viewDirVS = TransformWorldToViewDir(dirWS.V);
+    float3 normalVS = TransformWorldToViewNormal(dirWS.N);
+    float rim = saturate(dot(normalize(viewDirVS - data.offset), normalVS));
+    float rimShadow = saturate(pow(max(1 - rim, 0.001), data.ct) * data.width);
+    rimShadow = smoothstep(data.feather, 1, rimShadow) * data.intensity * 0.25;
+    return lerp(1, data.color * 2, max(rimShadow, 0));
+}
+
 void DoDitherAlphaEffect(float4 svPosition, float ditherAlpha)
 {
     // 阈值矩阵，存成 const float4 数组比较省

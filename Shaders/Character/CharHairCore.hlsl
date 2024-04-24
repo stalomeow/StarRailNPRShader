@@ -68,6 +68,13 @@ CBUFFER_START(UnityPerMaterial)
     float4 _RimColor0;
     float _RimDark0;
 
+    float _RimShadowCt;
+    float _RimShadowIntensity;
+    float4 _RimShadowOffset;
+    float4 _RimShadowColor0;
+    float _RimShadowWidth0;
+    float _RimShadowFeather0;
+
     float _OutlineWidth;
     float _OutlineZOffset;
     float4 _OutlineColor0;
@@ -126,6 +133,14 @@ float4 BaseHairOpaqueFragment(
     rimLightData.intensityFrontFace = _RimIntensity;
     rimLightData.intensityBackFace = _RimIntensityBackFace;
 
+    RimShadowData rimShadowData;
+    rimShadowData.ct = _RimShadowCt;
+    rimShadowData.intensity = _RimShadowIntensity;
+    rimShadowData.offset = _RimShadowOffset.xyz;
+    rimShadowData.color = _RimShadowColor0.rgb;
+    rimShadowData.width = _RimShadowWidth0;
+    rimShadowData.feather = _RimShadowFeather0;
+
     EmissionData emissionData;
     emissionData.color = _EmissionColor.rgb;
     emissionData.value = texColor.a;
@@ -137,6 +152,7 @@ float4 BaseHairOpaqueFragment(
     float3 specular = GetSpecular(specularData, light, texColor.rgb, lightMap);
     float3 rimLightMask = GetRimLightMask(rimLightMaskData, dirWS, i.positionHCS, lightMap);
     float3 rimLight = GetRimLight(rimLightData, rimLightMask, dirWS.NoL, light, isFrontFace);
+    float3 rimShadow = GetRimShadow(rimShadowData, dirWS);
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
     #if defined(_ADDITIONAL_LIGHTS)
@@ -163,7 +179,7 @@ float4 BaseHairOpaqueFragment(
     #endif
 
     // Output
-    return float4(diffuse + specular + rimLight + emission, texColor.a);
+    return float4((diffuse + specular + rimLight + emission) * rimShadow, texColor.a);
 }
 
 void HairOpaqueFragment(

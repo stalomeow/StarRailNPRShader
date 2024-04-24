@@ -73,6 +73,14 @@ Shader "Honkai Star Rail/Character/Hair"
         _RimDark0("Darken Value", Range(0, 1)) = 0.5
         _RimEdgeSoftness("Edge Softness", Float) = 0.05
 
+        [HeaderFoldout(Rim Shadow)]
+        _RimShadowCt("Ct", Float) = 1
+        _RimShadowIntensity("Intensity", Float) = 1
+        _RimShadowOffset("Offset", Vector) = (0, 0, 0, 0)
+        _RimShadowColor0("Rim Shadow Color", Color) = (1, 1, 1, 1)
+        _RimShadowWidth0("Rim Shadow Width", Float) = 1
+        _RimShadowFeather0("Rim Shadow Feather", Range(0.01, 0.99)) = 0.01
+
         [HeaderFoldout(Outline)]
         [KeywordEnum(Tangent, Normal)] _OutlineNormal("Normal Source", Float) = 0
         _OutlineWidth("Width", Range(0,4)) = 1
