@@ -25,9 +25,11 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditor.Callbacks;
 using UnityEditor.IMGUI.Controls;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace HSR.NPRShader.Editor.Automation
 {
+    [MovedFrom("HSR.NPRShader.Editor.Tools")]
     public class HSRMaterialViewer : EditorWindow
     {
         [OnOpenAsset(callbackOrder: -42)]

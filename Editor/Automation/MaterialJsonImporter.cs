@@ -26,9 +26,11 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEditor.AssetImporters;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace HSR.NPRShader.Editor.Automation
 {
+    [MovedFrom("HSR.NPRShader.Editor.Tools")]
     [ScriptedImporter(10, exts: new[] { "hsrmat" }, overrideExts: new[] { "json" })]
     public class MaterialJsonImporter : ScriptedImporter
     {
