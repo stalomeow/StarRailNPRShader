@@ -216,7 +216,6 @@ namespace HSR.NPRShader.Passes
 
             RenderTextureDescriptor desc = cameraTextureDescriptor;
             desc.depthBufferBits = (int)DepthBits.None;
-            desc.msaaSamples = 1;
             RenderingUtils.ReAllocateIfNeeded(ref m_BloomCharacterColor, in desc, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_BloomCharacterColor");
         }
 
