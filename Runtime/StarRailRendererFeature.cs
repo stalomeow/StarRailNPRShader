@@ -21,11 +21,13 @@
 
 using System;
 using HSR.NPRShader.Passes;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace HSR.NPRShader
 {
+    [HelpURL("https://srshader.stalomeow.com/")]
     [DisallowMultipleRendererFeature("Honkai Star Rail")]
     public class StarRailRendererFeature : ScriptableRendererFeature
     {
