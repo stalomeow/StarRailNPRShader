@@ -32,6 +32,7 @@ namespace HSR.NPRShader.Editor
     public class StarRailRendererFeatureEditor : UnityEditor.Editor
     {
         public const string GitHubLink = "https://github.com/stalomeow/StarRailNPRShader";
+        public const string ScreenSpaceShadowsTypeName = "UnityEngine.Rendering.Universal.ScreenSpaceShadows";
 
         public override void OnInspectorGUI()
         {
@@ -47,6 +48,12 @@ namespace HSR.NPRShader.Editor
                 else if (rendererData.depthPrimingMode != DepthPrimingMode.Disabled)
                 {
                     EditorGUILayout.HelpBox("Depth Priming is not supported.", MessageType.Error);
+                    EditorGUILayout.Space();
+                }
+
+                if (rendererData.rendererFeatures.Exists(f => f.GetType().FullName == ScreenSpaceShadowsTypeName))
+                {
+                    EditorGUILayout.HelpBox("Screen Space Shadows must be removed.", MessageType.Error);
                     EditorGUILayout.Space();
                 }
             }
