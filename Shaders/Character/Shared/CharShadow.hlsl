@@ -47,10 +47,9 @@ struct CharShadowVaryings
     float4 uv           : TEXCOORD0;
 };
 
-float4 GetShadowPositionHClip(CharShadowAttributes input)
+float4 GetShadowPositionHClip(float3 positionOS, float3 normalWS)
 {
-    float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
-    float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+    float3 positionWS = TransformObjectToWorld(positionOS);
 
 #if _CASTING_PUNCTUAL_LIGHT_SHADOW
     float3 lightDirectionWS = normalize(_LightPosition - positionWS);
@@ -73,8 +72,8 @@ CharShadowVaryings CharShadowVertex(CharShadowAttributes i, float4 mapST)
 {
     CharShadowVaryings o;
 
-    o.positionHCS = GetShadowPositionHClip(i);
     o.normalWS = TransformObjectToWorldNormal(i.normalOS);
+    o.positionHCS = GetShadowPositionHClip(i.positionOS.xyz, o.normalWS);
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
 
     return o;

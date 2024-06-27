@@ -24,6 +24,7 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.stalomeow.star-rail-npr-shader/Shaders/Shadow/PerObjectShadow.hlsl"
 #include "Shared/CharCore.hlsl"
 #include "Shared/CharDepthOnly.hlsl"
 #include "Shared/CharDepthNormals.hlsl"
@@ -102,6 +103,8 @@ CBUFFER_START(UnityPerMaterial)
     DEF_CHAR_MAT_PROP(float4, _OutlineColor);
 
     float _DitherAlpha;
+
+    float _PerObjectShadowIndex;
 CBUFFER_END
 
 void ApplyStockings(inout float3 baseColor, float2 uv, float NoV)
@@ -186,6 +189,14 @@ void BodyColorFragment(
 
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
+    float perObjShadow = 1;
+
+    if (_PerObjectShadowIndex >= 0)
+    {
+        float4 shadowCoord = TransformWorldToPerObjectShadowCoord(_PerObjectShadowIndex, i.positionWS);
+        perObjShadow = MainLightPerObjectShadow(_PerObjectShadowIndex, shadowCoord);
+        light.shadowAttenuation = min(light.shadowAttenuation, perObjShadow);
+    }
 
     ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);
 

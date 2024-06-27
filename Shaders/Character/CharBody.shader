@@ -215,6 +215,8 @@ Shader "Honkai Star Rail/Character/Body"
 
         [HeaderFoldout(Dither)]
         _DitherAlpha("Alpha", Range(0, 1)) = 1
+
+        [HideInInspector] _PerObjectShadowIndex("Per Object Shadow Index", Float) = -1
     }
 
     SubShader

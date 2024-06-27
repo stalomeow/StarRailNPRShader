@@ -21,6 +21,7 @@
 
 using System;
 using HSR.NPRShader.Passes;
+using HSR.NPRShader.Shadow;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -69,6 +70,15 @@ namespace HSR.NPRShader
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if (TryGetMainLight(ref renderingData, out VisibleLight mainLight))
+            {
+                Camera camera = renderingData.cameraData.camera;
+                Quaternion mainLightRotation = mainLight.localToWorldMatrix.rotation;
+                ShadowCasterManager.UpdateVisibleCasters(camera, mainLightRotation, MainLightPerObjectShadowCasterPass.MaxShadowCount);
+            }
+
+            StarRailCharacterRenderingController.UpdateMaterialPropertiesOfAllControllers();
+
             // AfterRenderingShadows
             renderer.EnqueuePass(m_MainLightPerObjShadowPass);
 
@@ -88,6 +98,20 @@ namespace HSR.NPRShader
 
             // BeforeRenderingPostProcessing
             renderer.EnqueuePass(m_PostProcessPass);
+        }
+
+        private static bool TryGetMainLight(ref RenderingData renderingData, out VisibleLight mainLight)
+        {
+            int mainLightIndex = renderingData.lightData.mainLightIndex;
+
+            if (mainLightIndex < 0)
+            {
+                mainLight = default;
+                return false;
+            }
+
+            mainLight = renderingData.lightData.visibleLights[mainLightIndex];
+            return mainLight.lightType == LightType.Directional;
         }
 
         // public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)

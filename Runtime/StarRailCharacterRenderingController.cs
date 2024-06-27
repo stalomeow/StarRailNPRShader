@@ -31,8 +31,10 @@ namespace HSR.NPRShader
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [AddComponentMenu("StarRail NPR Shader/StarRail Character Rendering Controller")]
-    public sealed class StarRailCharacterRenderingController : MonoBehaviour
+    public sealed class StarRailCharacterRenderingController : MonoBehaviour, IShadowCaster
     {
+        private static HashSet<StarRailCharacterRenderingController> s_Controllers = new();
+
         private enum TransformDirection
         {
             [InspectorName("Use Forward Vector")] Forward,
@@ -56,8 +58,9 @@ namespace HSR.NPRShader
         [SerializeField] private TransformDirection m_MMDHeadBoneRight = TransformDirection.Right;
 
         [NonSerialized] private readonly List<Renderer> m_Renderers = new();
+        [NonSerialized] private int m_ShadowCasterIndex = -1;
+        [NonSerialized] private readonly ShadowRendererList m_ShadowRendererList = new();
         [NonSerialized] private readonly Lazy<MaterialPropertyBlock> m_PropertyBlock = new();
-        [NonSerialized] private PerObjectShadowCasterHandle m_ShadowCasterHandle;
 
         public float RampCoolWarmMix
         {
@@ -92,68 +95,65 @@ namespace HSR.NPRShader
         public bool IsCastingShadow
         {
             get => m_IsCastingShadow;
-            set
-            {
-                m_IsCastingShadow = value;
-                UpdateShadowCasterHandle();
-            }
+            set => m_IsCastingShadow = value;
         }
+
+        bool IShadowCaster.IsEnabled => IsCastingShadow && isActiveAndEnabled;
+
+        ShadowRendererList.ReadOnly IShadowCaster.RendererList => m_ShadowRendererList.AsReadOnly();
+
+        void IShadowCaster.SetCasterIndex(int index) => m_ShadowCasterIndex = index;
 
         private void OnEnable()
         {
-            UpdateShadowCasterHandle(true);
             UpdateRendererList();
-
-#if UNITY_EDITOR
-            UnityEditor.SceneVisibilityManager.visibilityChanged += OnCharacterVisibilityChanged;
-#endif
+            ShadowCasterManager.Register(this);
+            s_Controllers.Add(this);
         }
 
         private void OnDisable()
         {
-            UpdateShadowCasterHandle(false);
+            ShadowCasterManager.Unregister(this);
+            s_Controllers.Remove(this);
 
-#if UNITY_EDITOR
-            UnityEditor.SceneVisibilityManager.visibilityChanged -= OnCharacterVisibilityChanged;
-#endif
+            m_ShadowRendererList.Clear();
 
-            m_Renderers.Clear();
-            m_PropertyBlock.Value.Clear();
-        }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            UpdateShadowCasterHandle();
-        }
-
-        private void OnCharacterVisibilityChanged()
-        {
-            UpdateShadowCasterHandle();
-        }
-#endif
-
-        private void UpdateShadowCasterHandle(bool? scriptEnabled = null)
-        {
-            bool enable = scriptEnabled ?? enabled;
-
-#if UNITY_EDITOR
-            enable &= !UnityEditor.SceneVisibilityManager.instance.IsHidden(gameObject);
-#endif
-
-            if (!enable || !m_IsCastingShadow)
+            if (m_PropertyBlock.IsValueCreated)
             {
-                PerObjectShadowManager.FreeIfNot(in m_ShadowCasterHandle);
-            }
-            else
-            {
-                PerObjectShadowManager.AllocateIfNot(ref m_ShadowCasterHandle);
+                m_PropertyBlock.Value.Clear();
             }
         }
 
+#if UNITY_EDITOR
         private void Update()
         {
-            UpdateMaterialsAndShadowBounds(refreshRenderers: !Application.isPlaying);
+            // Editor 中 Shader 可以任意修改，所以每次都要更新
+            UpdateShadowRendererList();
+        }
+#endif
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!m_ShadowRendererList.TryGetWorldBounds(out Bounds bounds))
+            {
+                return;
+            }
+
+            Color color = Gizmos.color;
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(bounds.center, bounds.size);
+            Gizmos.color = color;
+        }
+
+        public void UpdateRendererList()
+        {
+            m_Renderers.Clear();
+            GetComponentsInChildren(true, m_Renderers);
+
+            // 因为 Build 之后需要实例化 Material，所以必须要先设置 MaterialProperties
+            // 这样后面访问 SharedMaterial 时才能拿到正确的材质
+            UpdateMaterialProperties();
+            UpdateShadowRendererList();
         }
 
         private void UpdateMaterialProperties()
@@ -168,6 +168,7 @@ namespace HSR.NPRShader
                 floats.Add((PropertyIds._ExCheekIntensity, m_ExCheekIntensity));
                 floats.Add((PropertyIds._ExShyIntensity, m_ExShyIntensity));
                 floats.Add((PropertyIds._ExShadowIntensity, m_ExShadowIntensity));
+                floats.Add((PropertyIds._PerObjectShadowIndex, m_ShadowCasterIndex));
 
                 if (m_MMDHeadBone != null)
                 {
@@ -189,47 +190,20 @@ namespace HSR.NPRShader
             }
         }
 
-        private void OnDrawGizmosSelected()
+        public static void UpdateMaterialPropertiesOfAllControllers()
         {
-            if (!m_ShadowCasterHandle.TryGetBounds(out Bounds bounds))
+            foreach (StarRailCharacterRenderingController controller in s_Controllers)
             {
-                return;
+                controller.UpdateMaterialProperties();
             }
-
-            Color color = Gizmos.color;
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireCube(bounds.center, bounds.size);
-            Gizmos.color = color;
         }
 
-        public void UpdateRendererList()
+        private void UpdateShadowRendererList()
         {
-            UpdateMaterialsAndShadowBounds(refreshRenderers: true);
-        }
-
-        private void UpdateMaterialsAndShadowBounds(bool refreshRenderers)
-        {
-            if (refreshRenderers)
+            m_ShadowRendererList.Clear();
+            foreach (Renderer r in m_Renderers)
             {
-                m_Renderers.Clear();
-                GetComponentsInChildren(true, m_Renderers);
-            }
-
-            // 因为 Build 之后需要实例化 Material，所以必须要先设置 MaterialProperties
-            // 这样后面访问 SharedMaterial 时才能拿到正确的材质
-            UpdateMaterialProperties();
-
-#if UNITY_EDITOR
-            // Editor 中 Shader 可以任意修改，所以每次都要更新 Renderer
-            refreshRenderers = true;
-#endif
-            if (refreshRenderers)
-            {
-                m_ShadowCasterHandle.TryUpdateRenderersAndBounds(m_Renderers);
-            }
-            else
-            {
-                m_ShadowCasterHandle.TryUpdateBounds();
+                m_ShadowRendererList.Add(r);
             }
         }
 
@@ -254,6 +228,7 @@ namespace HSR.NPRShader
             public static readonly int _ExCheekIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
             public static readonly int _ExShyIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
             public static readonly int _ExShadowIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjectShadowIndex = StringHelpers.ShaderPropertyIDFromMemberName();
 
             public static readonly int _MMDHeadBoneForward = StringHelpers.ShaderPropertyIDFromMemberName();
             public static readonly int _MMDHeadBoneUp = StringHelpers.ShaderPropertyIDFromMemberName();

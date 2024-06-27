@@ -25,6 +25,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 using static Unity.Mathematics.math;
 using float3 = Unity.Mathematics.float3;
 using float4x4 = Unity.Mathematics.float4x4;
@@ -46,35 +47,23 @@ namespace HSR.NPRShader.Shadow
         public float3 CameraPosition;
         public float3 CameraNormalizedForward;
 
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
+        [NoAlias, NativeDisableUnsafePtrRestriction]
         public float4* FrustumCorners;
         public int FrustumCornerCount;
 
         [ReadOnly, NoAlias]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float3> WorldBounds;
+        public NativeArray<float3x2> WorldBounds;
 
-        [WriteOnly, NoAlias]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float4x4> ViewProjectionMatrices;
+        [NoAlias, NativeDisableUnsafePtrRestriction]
+        public CullShadowCasterResult* Results;
 
-        [WriteOnly, NoAlias]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float> Priorities;
-
-        [WriteOnly, NoAlias]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<int> VisibleIndices;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public int* VisibleCount;
+        [NoAlias, NativeDisableUnsafePtrRestriction]
+        public int* ResultCount;
 
         public void Execute(int index)
         {
-            float3 aabbMin = WorldBounds[2 * index];
-            float3 aabbMax = WorldBounds[2 * index + 1];
+            float3 aabbMin = WorldBounds[index].c0;
+            float3 aabbMax = WorldBounds[index].c1;
 
             if (distancesq(aabbMin, aabbMax) <= 0.00001f)
             {
@@ -90,11 +79,11 @@ namespace HSR.NPRShader.Shadow
                 float cosAngle = dot(CameraNormalizedForward, normalizesafe(aabbCenter - CameraPosition));
                 float priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f);
 
-                int slot = Interlocked.Increment(ref *VisibleCount) - 1;
-                ViewProjectionMatrices[2 * slot] = viewMatrix;
-                ViewProjectionMatrices[2 * slot + 1] = projectionMatrix;
-                Priorities[slot] = priority; // 越小越优先
-                VisibleIndices[slot] = index;
+                CullShadowCasterResult* result = Results + Interlocked.Increment(ref *ResultCount) - 1;
+                result->Priority = priority; // 越小越优先
+                result->CandidateIndex = index;
+                result->ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix);
+                result->ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix);
             }
         }
 
@@ -129,8 +118,7 @@ namespace HSR.NPRShader.Shadow
             float bottom = shadowMin.y;
             float top = shadowMax.y;
             float zNear = -shadowMax.z;
-            float zFar = -min(shadowMin.z, frustumMin.z);
-            zFar = zNear + min(zFar - zNear, 5000); // 避免视锥体太长，深度的精度可能不够
+            float zFar = max(-shadowMin.z, min(-frustumMin.z, zNear + 50)); // 视锥体太长的话深度都集中在 0 或者 1 处，精度不够
 
             projectionMatrix = float4x4.OrthoOffCenter(left, right, bottom, top, zNear, zFar);
             return true;

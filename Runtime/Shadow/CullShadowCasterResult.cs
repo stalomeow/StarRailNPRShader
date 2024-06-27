@@ -19,17 +19,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
+using UnityEngine;
+
 namespace HSR.NPRShader.Shadow
 {
-    public readonly struct PerObjectShadowCasterHandle
+    internal struct CullShadowCasterResult : IComparable<CullShadowCasterResult>
     {
-        internal readonly int Index;
-        internal readonly int Version;
+        public float Priority;
+        public int CandidateIndex;
+        public Matrix4x4 ViewMatrix;
+        public Matrix4x4 ProjectionMatrix;
 
-        internal PerObjectShadowCasterHandle(int index, int version)
+        public int CompareTo(CullShadowCasterResult other)
         {
-            Index = index;
-            Version = version;
+            return Priority.CompareTo(other.Priority);
         }
     }
 }
