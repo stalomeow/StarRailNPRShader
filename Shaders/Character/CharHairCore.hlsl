@@ -52,6 +52,9 @@ CBUFFER_START(UnityPerMaterial)
     float _SpecularIntensity0;
     float _SpecularRoughness0;
 
+    float _SelfShadowDepthBias;
+    float _SelfShadowNormalBias;
+
     float4 _EmissionColor;
     float _EmissionThreshold;
     float _EmissionIntensity;
@@ -263,7 +266,7 @@ float4 HairOutlineFragment(CharOutlineVaryings i) : SV_Target0
 
 CharShadowVaryings HairShadowVertex(CharShadowAttributes i)
 {
-    return CharShadowVertex(i, _Maps_ST);
+    return CharShadowVertex(i, _Maps_ST, _SelfShadowDepthBias, _SelfShadowNormalBias);
 }
 
 void HairShadowFragment(

@@ -46,6 +46,9 @@ CBUFFER_START(UnityPerMaterial)
     float4 _ShadowColor;
     float4 _EyeShadowColor;
 
+    float _SelfShadowDepthBias;
+    float _SelfShadowNormalBias;
+
     float4 _EmissionColor;
     float _EmissionThreshold;
     float _EmissionIntensity;
@@ -239,7 +242,7 @@ float4 FaceOutlineFragment(CharOutlineVaryings i) : SV_Target0
 
 CharShadowVaryings FaceShadowVertex(CharShadowAttributes i)
 {
-    return CharShadowVertex(i, _Maps_ST);
+    return CharShadowVertex(i, _Maps_ST, _SelfShadowDepthBias, _SelfShadowNormalBias);
 }
 
 void FaceShadowFragment(CharShadowVaryings i)

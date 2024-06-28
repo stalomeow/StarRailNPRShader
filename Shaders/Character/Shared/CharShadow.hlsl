@@ -83,7 +83,7 @@ float4 GetShadowPositionHClip(float3 positionOS, float3 normalWS, float2 selfSha
     return positionCS;
 }
 
-CharShadowVaryings CharShadowVertex(CharShadowAttributes i, float4 mapST, float selfShadowDepthBias = 0, float selfShadowNormalBias = 0)
+CharShadowVaryings CharShadowVertex(CharShadowAttributes i, float4 mapST, float selfShadowDepthBias, float selfShadowNormalBias)
 {
     float2 selfShadowBias = float2(selfShadowDepthBias, selfShadowNormalBias);
 

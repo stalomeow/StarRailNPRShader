@@ -107,7 +107,7 @@ CBUFFER_START(UnityPerMaterial)
 
     float _DitherAlpha;
 
-    float _PerObjectShadowIndex;
+    float _PerObjShadowCasterId;
 CBUFFER_END
 
 void ApplyStockings(inout float3 baseColor, float2 uv, float NoV)
@@ -194,12 +194,8 @@ void BodyColorFragment(
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
     #if defined(_RECEIVE_SELF_SHADOW_ON)
-        if (_PerObjectShadowIndex >= 0)
-        {
-            float4 shadowCoord = TransformWorldToPerObjectShadowCoord(_PerObjectShadowIndex, i.positionWS);
-            float perObjShadow = MainLightPerObjectShadow(_PerObjectShadowIndex, shadowCoord);
-            light.shadowAttenuation = min(light.shadowAttenuation, perObjShadow);
-        }
+        float selfShadow = MainLightPerObjectShadow(i.positionWS, _PerObjShadowCasterId);
+        light.shadowAttenuation = min(light.shadowAttenuation, selfShadow);
     #endif
 
     ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);

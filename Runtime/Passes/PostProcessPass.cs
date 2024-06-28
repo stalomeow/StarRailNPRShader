@@ -397,29 +397,29 @@ namespace HSR.NPRShader.Passes
 
         private static class KeywordNames
         {
-            public static readonly string _BLOOM = StringHelpers.MemberName();
-            public static readonly string _BLOOM_USE_RGBM = StringHelpers.MemberName();
-            public static readonly string _TONEMAPPING_ACES = StringHelpers.MemberName();
-            public static readonly string _USE_FAST_SRGB_LINEAR_CONVERSION = StringHelpers.MemberName();
+            public static readonly string _BLOOM = MemberNameHelpers.String();
+            public static readonly string _BLOOM_USE_RGBM = MemberNameHelpers.String();
+            public static readonly string _TONEMAPPING_ACES = MemberNameHelpers.String();
+            public static readonly string _USE_FAST_SRGB_LINEAR_CONVERSION = MemberNameHelpers.String();
         }
 
         private static class PropertyIds
         {
-            public static readonly int _BloomThreshold = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomUVMinMax = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomUVIndex = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomKernelSize = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomKernel = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomThreshold = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _BloomUVMinMax = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _BloomUVIndex = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _BloomKernelSize = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _BloomKernel = MemberNameHelpers.ShaderPropertyID();
 
-            public static readonly int _BloomIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomTint = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _BloomTexture = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _BloomIntensity = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _BloomTint = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _BloomTexture = MemberNameHelpers.ShaderPropertyID();
 
-            public static readonly int _ACESParamA = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ACESParamB = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ACESParamC = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ACESParamD = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ACESParamE = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _ACESParamA = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ACESParamB = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ACESParamC = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ACESParamD = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ACESParamE = MemberNameHelpers.ShaderPropertyID();
         }
     }
 }

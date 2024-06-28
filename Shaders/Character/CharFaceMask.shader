@@ -24,7 +24,13 @@ Shader "Honkai Star Rail/Character/FaceMask"
     Properties
     {
         _Color("Color", Color) = (1, 1, 1, 1)
-        _DitherAlpha("Dither Alpha", Range(0, 1)) = 1
+
+        [HeaderFoldout(Self Shadow)]
+        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
+        _SelfShadowNormalBias("Normal Bias", Float) = 0
+
+        [HeaderFoldout(Dither)]
+        _DitherAlpha("Alpha", Range(0, 1)) = 1
     }
 
     SubShader
@@ -45,6 +51,8 @@ Shader "Honkai Star Rail/Character/FaceMask"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
+                float _SelfShadowDepthBias;
+                float _SelfShadowNormalBias;
                 float _DitherAlpha;
             CBUFFER_END
         ENDHLSL
@@ -123,12 +131,13 @@ Shader "Honkai Star Rail/Character/FaceMask"
             #pragma fragment FaceMaskShadowFragment
 
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_vertex _ _CASTING_SELF_SHADOW
 
             #include "Shared/CharShadow.hlsl"
 
             CharShadowVaryings FaceMaskShadowVertex(CharShadowAttributes i)
             {
-                return CharShadowVertex(i, 0);
+                return CharShadowVertex(i, 0, _SelfShadowDepthBias, _SelfShadowNormalBias);
             }
 
             void FaceMaskShadowFragment(CharShadowVaryings i)

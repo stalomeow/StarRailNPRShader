@@ -20,7 +20,7 @@
  */
 
 using System;
-using HSR.NPRShader.Shadow;
+using HSR.NPRShader.PerObjectShadow;
 using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -35,8 +35,9 @@ namespace HSR.NPRShader.Passes
 
         private readonly Matrix4x4[] m_ShadowMatrixArray;
         private readonly Vector4[] m_ShadowMapRectArray;
+        private readonly float[] m_ShadowCasterIdArray;
         private ShadowCasterManager m_CasterManager;
-        private ShadowCasterCategory m_CasterCategory;
+        private ShadowUsage m_Usage;
         private int m_TileResolution;
         private int m_ShadowMapSizeInTile; // 一行/一列有多少个 tile
         private RTHandle m_ShadowMap;
@@ -48,6 +49,7 @@ namespace HSR.NPRShader.Passes
 
             m_ShadowMatrixArray = new Matrix4x4[MaxShadowCount];
             m_ShadowMapRectArray = new Vector4[MaxShadowCount];
+            m_ShadowCasterIdArray = new float[MaxShadowCount];
         }
 
         public void Dispose()
@@ -55,19 +57,19 @@ namespace HSR.NPRShader.Passes
             m_ShadowMap?.Release();
         }
 
-        public void Setup(ShadowCasterManager casterManager, ShadowCasterCategory casterCategory, int tileResolution)
+        public void Setup(ShadowCasterManager casterManager, ShadowUsage usage, int tileResolution)
         {
             m_CasterManager = casterManager;
-            m_CasterCategory = casterCategory;
+            m_Usage = usage;
             m_TileResolution = tileResolution;
 
-            if (casterManager.GetVisibleCasterCount(casterCategory) <= 0)
+            if (casterManager.GetCasterCount(usage) <= 0)
             {
                 return;
             }
 
             // 保证 shadow map 是正方形
-            m_ShadowMapSizeInTile = Mathf.CeilToInt(Mathf.Sqrt(casterManager.GetVisibleCasterCount(casterCategory)));
+            m_ShadowMapSizeInTile = Mathf.CeilToInt(Mathf.Sqrt(casterManager.GetCasterCount(usage)));
             int shadowRTSize = m_ShadowMapSizeInTile * tileResolution;
             ShadowUtils.ShadowRTReAllocateIfNeeded(ref m_ShadowMap, shadowRTSize, shadowRTSize, ShadowMapBufferBits);
 
@@ -81,7 +83,7 @@ namespace HSR.NPRShader.Passes
 
             using (new ProfilingScope(cmd, profilingSampler))
             {
-                if (m_CasterManager.GetVisibleCasterCount(m_CasterCategory) > 0)
+                if (m_CasterManager.GetCasterCount(m_Usage) > 0)
                 {
                     RenderShadowMap(cmd, ref renderingData);
                     SetShadowSamplingData(cmd);
@@ -104,42 +106,46 @@ namespace HSR.NPRShader.Passes
         private void RenderShadowMap(CommandBuffer cmd, ref RenderingData renderingData)
         {
             cmd.SetGlobalDepthBias(1.0f, 2.5f); // these values match HDRP defaults (see https://github.com/Unity-Technologies/Graphics/blob/9544b8ed2f98c62803d285096c91b44e9d8cbc47/com.unity.render-pipelines.high-definition/Runtime/Lighting/Shadow/HDShadowAtlas.cs#L197 )
+            CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.CastingPunctualLightShadow, false);
 
-            for (int i = 0; i < m_CasterManager.GetVisibleCasterCount(m_CasterCategory); i++)
+            for (int i = 0; i < m_CasterManager.GetCasterCount(m_Usage); i++)
             {
-                m_CasterManager.GetVisibleCasterMatrices(m_CasterCategory, i, out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix);
+                m_CasterManager.GetMatrices(m_Usage, i, out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix);
 
-                if (m_CasterCategory == ShadowCasterCategory.MainLight)
+                if (m_Usage == ShadowUsage.Scene)
                 {
                     int mainLightIndex = renderingData.lightData.mainLightIndex;
                     VisibleLight mainLight = renderingData.lightData.visibleLights[mainLightIndex];
                     Vector4 shadowBias = ShadowUtils.GetShadowBias(ref mainLight, mainLightIndex,
                         ref renderingData.shadowData, projectionMatrix, m_ShadowMap.rt.width);
                     ShadowUtils.SetupShadowCasterConstantBuffer(cmd, ref mainLight, shadowBias);
-
-                    CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.CastingPunctualLightShadow, false);
                 }
-                else if (m_CasterCategory == ShadowCasterCategory.View)
+                else if (m_Usage == ShadowUsage.Self)
                 {
-                    Vector4 lightDirection = m_CasterManager.GetVisibleCasterLightDirection(m_CasterCategory, i);
+                    Vector4 lightDirection = m_CasterManager.GetLightDirection(m_Usage, i);
                     cmd.SetGlobalVector("_LightDirection", lightDirection);
-
                     CoreUtils.SetKeyword(cmd, KeywordNames._CASTING_SELF_SHADOW, true);
+                }
+                else
+                {
+                    throw new NotSupportedException($"Unsupported shadow usage: {m_Usage}.");
                 }
 
                 Vector2Int tilePos = new(i % m_ShadowMapSizeInTile, i / m_ShadowMapSizeInTile);
                 DrawShadow(cmd, i, tilePos, in viewMatrix, in projectionMatrix);
                 m_ShadowMatrixArray[i] = GetShadowMatrix(tilePos, in viewMatrix, projectionMatrix);
                 m_ShadowMapRectArray[i] = GetShadowMapRect(tilePos);
+                m_ShadowCasterIdArray[i] = m_CasterManager.GetCasterId(m_Usage, i);
             }
 
             cmd.SetGlobalDepthBias(0.0f, 0.0f); // Restore previous depth bias values
             CoreUtils.SetKeyword(cmd, KeywordNames._CASTING_SELF_SHADOW, false);
 
             cmd.SetGlobalTexture(PropertyIds._PerObjShadowMap, m_ShadowMap);
-            cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, m_CasterManager.GetVisibleCasterCount(m_CasterCategory));
+            cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, m_CasterManager.GetCasterCount(m_Usage));
             cmd.SetGlobalMatrixArray(PropertyIds._PerObjShadowMatrices, m_ShadowMatrixArray);
             cmd.SetGlobalVectorArray(PropertyIds._PerObjShadowMapRects, m_ShadowMapRectArray);
+            cmd.SetGlobalFloatArray(PropertyIds._PerObjShadowCasterIds, m_ShadowCasterIdArray);
         }
 
         private void SetShadowSamplingData(CommandBuffer cmd)
@@ -167,7 +173,7 @@ namespace HSR.NPRShader.Passes
             cmd.SetViewport(viewport);
 
             cmd.EnableScissorRect(new Rect(viewport.x + 4, viewport.y + 4, viewport.width - 8, viewport.height - 8));
-            m_CasterManager.DrawVisibleCaster(cmd, m_CasterCategory, casterIndex);
+            m_CasterManager.Draw(cmd, m_Usage, casterIndex);
             cmd.DisableScissorRect();
         }
 
@@ -206,19 +212,20 @@ namespace HSR.NPRShader.Passes
 
         private static class KeywordNames
         {
-            public static readonly string _CASTING_SELF_SHADOW = StringHelpers.MemberName();
+            public static readonly string _CASTING_SELF_SHADOW = MemberNameHelpers.String();
         }
 
         private static class PropertyIds
         {
-            public static readonly int _PerObjShadowMap = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _PerObjShadowCount = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _PerObjShadowMatrices = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _PerObjShadowMapRects = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowMap = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowCount = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowMatrices = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowMapRects = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowCasterIds = MemberNameHelpers.ShaderPropertyID();
 
-            public static readonly int _PerObjShadowOffset0 = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _PerObjShadowOffset1 = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _PerObjShadowMapSize = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _PerObjShadowOffset0 = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowOffset1 = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowMapSize = MemberNameHelpers.ShaderPropertyID();
         }
     }
 }

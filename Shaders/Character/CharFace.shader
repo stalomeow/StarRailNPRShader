@@ -46,6 +46,10 @@ Shader "Honkai Star Rail/Character/Face"
         _ShadowColor("Face Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
         _EyeShadowColor("Eye Shadow Color", Color) = (1, 1, 1, 1)
 
+        [HeaderFoldout(Self Shadow)]
+        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
+        _SelfShadowNormalBias("Normal Bias", Float) = 0
+
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
         _EmissionThreshold("Threshold", Range(0, 1)) = 0.1
@@ -256,6 +260,7 @@ Shader "Honkai Star Rail/Character/Face"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
 
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_vertex _ _CASTING_SELF_SHADOW
 
             #include "CharFaceCore.hlsl"
 

@@ -21,7 +21,7 @@
 
 using System;
 using HSR.NPRShader.Passes;
-using HSR.NPRShader.Shadow;
+using HSR.NPRShader.PerObjectShadow;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -40,11 +40,11 @@ namespace HSR.NPRShader
 
         [NonSerialized] private ShadowCasterManager m_ShadowCasterManager;
 
-        [NonSerialized] private PerObjectShadowCasterPass m_MainLightPerObjShadowPass;
+        [NonSerialized] private PerObjectShadowCasterPass m_ScenePerObjShadowPass;
         [NonSerialized] private RequestResourcePass m_ForceDepthPrepassPass;
         [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
-        [NonSerialized] private PerObjectShadowCasterPass m_ViewPerObjShadowPass;
+        [NonSerialized] private PerObjectShadowCasterPass m_SelfPerObjShadowPass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward1Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward2Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward3Pass;
@@ -56,11 +56,11 @@ namespace HSR.NPRShader
         {
             m_ShadowCasterManager = new ShadowCasterManager();
 
-            m_MainLightPerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectShadow", RenderPassEvent.AfterRenderingShadows);
+            m_ScenePerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSceneShadow", RenderPassEvent.AfterRenderingShadows);
             m_ForceDepthPrepassPass = new RequestResourcePass(RenderPassEvent.AfterRenderingGbuffer, ScriptableRenderPassInput.Depth);
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
-            m_ViewPerObjShadowPass = new PerObjectShadowCasterPass("ViewPerObjectShadow", RenderPassEvent.AfterRenderingOpaques);
+            m_SelfPerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSelfShadow", RenderPassEvent.AfterRenderingOpaques);
             m_DrawOpaqueForward1Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (1)", true,
                 new ShaderTagId("HSRForward1"));
             m_DrawOpaqueForward2Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (2)", true,
@@ -76,8 +76,10 @@ namespace HSR.NPRShader
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            // TODO preview camera
+
             // AfterRenderingShadows
-            renderer.EnqueuePass(m_MainLightPerObjShadowPass);
+            renderer.EnqueuePass(m_ScenePerObjShadowPass);
 
             // AfterRenderingGbuffer
             renderer.EnqueuePass(m_ForceDepthPrepassPass); // 保证 RimLight、眼睛等需要深度图的效果正常工作
@@ -85,7 +87,7 @@ namespace HSR.NPRShader
 
             // AfterRenderingOpaques
             renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
-            renderer.EnqueuePass(m_ViewPerObjShadowPass);
+            renderer.EnqueuePass(m_SelfPerObjShadowPass);
             renderer.EnqueuePass(m_DrawOpaqueForward1Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
@@ -113,13 +115,15 @@ namespace HSR.NPRShader
             {
                 Camera camera = renderingData.cameraData.camera;
                 Quaternion mainLightRotation = mainLight.localToWorldMatrix.rotation;
-                m_ShadowCasterManager.UpdateVisibleCasters(camera, mainLightRotation, PerObjectShadowCasterPass.MaxShadowCount);
+                m_ShadowCasterManager.Cull(camera, mainLightRotation, PerObjectShadowCasterPass.MaxShadowCount);
+            }
+            else
+            {
+                m_ShadowCasterManager.Clear();
             }
 
-            StarRailCharacterRenderingController.UpdateMaterialPropertiesOfAllControllers();
-
-            m_MainLightPerObjShadowPass.Setup(m_ShadowCasterManager, ShadowCasterCategory.MainLight, 512);
-            m_ViewPerObjShadowPass.Setup(m_ShadowCasterManager, ShadowCasterCategory.View, 1024);
+            m_ScenePerObjShadowPass.Setup(m_ShadowCasterManager, ShadowUsage.Scene, 512);
+            m_SelfPerObjShadowPass.Setup(m_ShadowCasterManager, ShadowUsage.Self, 1024);
         }
 
         private static bool TryGetMainLight(in RenderingData renderingData, out VisibleLight mainLight)
@@ -138,9 +142,9 @@ namespace HSR.NPRShader
 
         protected override void Dispose(bool disposing)
         {
-            m_MainLightPerObjShadowPass.Dispose();
+            m_ScenePerObjShadowPass.Dispose();
             m_ScreenSpaceShadowPass.Dispose();
-            m_ViewPerObjShadowPass.Dispose();
+            m_SelfPerObjShadowPass.Dispose();
             m_PostProcessPass.Dispose();
 
             base.Dispose(disposing);

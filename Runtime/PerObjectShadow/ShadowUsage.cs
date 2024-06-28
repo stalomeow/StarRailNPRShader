@@ -19,11 +19,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace HSR.NPRShader.Shadow
+namespace HSR.NPRShader.PerObjectShadow
 {
-    public enum ShadowCasterCategory
+    public enum ShadowUsage
     {
-        MainLight = 0,
-        View = 1,
+        /// <summary>
+        /// 场景阴影，使用主光源方向绘制阴影
+        /// </summary>
+        Scene = 0,
+
+        /// <summary>
+        /// 自阴影，使用主光源和视角的混合方向绘制阴影
+        /// </summary>
+        Self = 1,
     }
 }

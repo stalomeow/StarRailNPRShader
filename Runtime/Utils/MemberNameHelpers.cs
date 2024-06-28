@@ -19,22 +19,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Rendering;
 
-namespace HSR.NPRShader.Shadow
+namespace HSR.NPRShader.Utils
 {
-    internal struct CullShadowCasterResult : IComparable<CullShadowCasterResult>
+    public static class MemberNameHelpers
     {
-        public float Priority;
-        public int CandidateIndex;
-        public Vector4 LightDirection;
-        public Matrix4x4 ViewMatrix;
-        public Matrix4x4 ProjectionMatrix;
-
-        public int CompareTo(CullShadowCasterResult other)
+        public static ShaderTagId ShaderTagId([CallerMemberName] string name = null)
         {
-            return Priority.CompareTo(other.Priority);
+            return new ShaderTagId(name);
+        }
+
+        public static int ShaderPropertyID([CallerMemberName] string name = null)
+        {
+            return Shader.PropertyToID(name);
+        }
+
+        public static string String([CallerMemberName] string name = null)
+        {
+            return name;
         }
     }
 }

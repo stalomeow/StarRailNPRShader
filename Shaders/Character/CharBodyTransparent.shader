@@ -86,6 +86,10 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HSRMaterialIDProperty(_SpecularRoughness, 6)] _SpecularRoughness6("Specular Roughness", Range(0, 1)) = 0.02
         [HSRMaterialIDProperty(_SpecularRoughness, 7)] _SpecularRoughness7("Specular Roughness", Range(0, 1)) = 0.02
 
+        [HeaderFoldout(Self Shadow)]
+        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
+        _SelfShadowNormalBias("Normal Bias", Float) = 0
+
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
         _EmissionThreshold("Threshold", Range(0, 1)) = 1
@@ -296,6 +300,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_vertex _ _CASTING_SELF_SHADOW
 
             #define CHAR_BODY_SHADER_TRANSPARENT
             #include "CharBodyCore.hlsl"

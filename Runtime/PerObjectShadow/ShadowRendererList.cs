@@ -19,12 +19,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
+using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HSR.NPRShader.Shadow
+namespace HSR.NPRShader.PerObjectShadow
 {
     public class ShadowRendererList
     {
@@ -39,6 +39,28 @@ namespace HSR.NPRShader.Shadow
                 Renderer = renderer;
                 DrawCallIndexStartInclusive = drawCallIndexStartInclusive;
                 DrawCallIndexEndExclusive = drawCallIndexEndExclusive;
+            }
+
+            public bool IsEnabled
+            {
+                get
+                {
+                    if (DrawCallIndexEndExclusive - DrawCallIndexStartInclusive <= 0)
+                    {
+                        // 没有 draw call
+                        return false;
+                    }
+
+#if UNITY_EDITOR
+                    if (UnityEditor.SceneVisibilityManager.instance.IsHidden(Renderer.gameObject))
+                    {
+                        return false;
+                    }
+#endif
+
+                    return Renderer.enabled && Renderer.gameObject.activeInHierarchy &&
+                           Renderer.shadowCastingMode != ShadowCastingMode.Off;
+                }
             }
         }
 
@@ -59,7 +81,7 @@ namespace HSR.NPRShader.Shadow
         private readonly List<RendererEntry> m_Renderers = new();
         private readonly List<DrawCallData> m_DrawCalls = new();
 
-        public bool TryGetWorldBounds(out Bounds worldBounds, List<int> outAppendRendererIndices = null)
+        public bool TryGetWorldBounds(out Bounds worldBounds, ICollection<int> outAppendRendererIndices = null)
         {
             worldBounds = default;
             bool firstBounds = true;
@@ -68,7 +90,7 @@ namespace HSR.NPRShader.Shadow
             {
                 RendererEntry entry = m_Renderers[i];
 
-                if (!IsEntryEnabled(in entry))
+                if (!entry.IsEnabled)
                 {
                     continue;
                 }
@@ -89,37 +111,13 @@ namespace HSR.NPRShader.Shadow
             return !firstBounds;
         }
 
-        private static bool IsEntryEnabled(in RendererEntry entry)
+        public void Draw(CommandBuffer cmd, int rendererIndex)
         {
-            if (entry.DrawCallIndexEndExclusive - entry.DrawCallIndexStartInclusive <= 0)
+            RendererEntry entry = m_Renderers[rendererIndex];
+            for (int i = entry.DrawCallIndexStartInclusive; i < entry.DrawCallIndexEndExclusive; i++)
             {
-                // 没有 draw call
-                return false;
-            }
-
-            Renderer renderer = entry.Renderer;
-
-#if UNITY_EDITOR
-            if (UnityEditor.SceneVisibilityManager.instance.IsHidden(renderer.gameObject))
-            {
-                return false;
-            }
-#endif
-
-            return renderer.enabled && renderer.gameObject.activeInHierarchy &&
-                   renderer.shadowCastingMode != ShadowCastingMode.Off;
-        }
-
-        public void Draw(CommandBuffer cmd, List<int> rendererIndices, int startIndex, int count)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                RendererEntry entry = m_Renderers[rendererIndices[startIndex + i]];
-                for (int j = entry.DrawCallIndexStartInclusive; j < entry.DrawCallIndexEndExclusive; j++)
-                {
-                    DrawCallData dc = m_DrawCalls[j];
-                    cmd.DrawRenderer(entry.Renderer, dc.Material, dc.SubmeshIndex, dc.ShaderPass);
-                }
+                DrawCallData dc = m_DrawCalls[i];
+                cmd.DrawRenderer(entry.Renderer, dc.Material, dc.SubmeshIndex, dc.ShaderPass);
             }
         }
 
@@ -162,19 +160,13 @@ namespace HSR.NPRShader.Shadow
             }
         }
 
-        private static readonly Lazy<ShaderTagId> s_LightModeTagName =
-            new(() => new ShaderTagId("LightMode"));
-
-        private static readonly Lazy<ShaderTagId> s_ShadowCasterTagId =
-            new(() => new ShaderTagId("HSRPerObjectShadowCaster"));
-
         private static bool TryGetShadowCasterPass(Material material, out int passIndex)
         {
             Shader shader = material.shader;
 
             for (int i = 0; i < shader.passCount; i++)
             {
-                if (shader.FindPassTagValue(i, s_LightModeTagName.Value) == s_ShadowCasterTagId.Value)
+                if (shader.FindPassTagValue(i, ShaderTagIds.LightMode) == ShaderTagIds.HSRPerObjectShadowCaster)
                 {
                     passIndex = i;
                     return true;
@@ -199,15 +191,21 @@ namespace HSR.NPRShader.Shadow
                 m_List = list;
             }
 
-            public bool TryGetWorldBounds(out Bounds worldBounds, List<int> outAppendRendererIndices = null)
+            public bool TryGetWorldBounds(out Bounds worldBounds, ICollection<int> outAppendRendererIndices = null)
             {
                 return m_List.TryGetWorldBounds(out worldBounds, outAppendRendererIndices);
             }
 
-            public void Draw(CommandBuffer cmd, List<int> rendererIndices, int startIndex, int count)
+            public void Draw(CommandBuffer cmd, int rendererIndex)
             {
-                m_List.Draw(cmd, rendererIndices, startIndex, count);
+                m_List.Draw(cmd, rendererIndex);
             }
+        }
+
+        private static class ShaderTagIds
+        {
+            public static readonly ShaderTagId LightMode = MemberNameHelpers.ShaderTagId();
+            public static readonly ShaderTagId HSRPerObjectShadowCaster = MemberNameHelpers.ShaderTagId();
         }
     }
 }

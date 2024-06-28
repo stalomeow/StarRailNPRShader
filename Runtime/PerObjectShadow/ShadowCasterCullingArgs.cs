@@ -19,21 +19,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Runtime.CompilerServices;
-using UnityEngine;
+using Unity.Mathematics;
 
-namespace HSR.NPRShader.Utils
+namespace HSR.NPRShader.PerObjectShadow
 {
-    public static class StringHelpers
+    internal unsafe struct ShadowCasterCullingArgs
     {
-        public static int ShaderPropertyIDFromMemberName([CallerMemberName] string name = null)
-        {
-            return Shader.PropertyToID(name);
-        }
+        public float3 AABBMin;
+        public float3 AABBMax;
+        public quaternion LightRotation;
 
-        public static string MemberName([CallerMemberName] string name = null)
-        {
-            return name;
-        }
+        public float3 CameraPosition;
+        public float3 CameraNormalizedForward;
+        public float4* FrustumCorners;
+        public int FrustumCornerCount;
     }
 }

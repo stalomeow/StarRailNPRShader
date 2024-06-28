@@ -19,14 +19,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace HSR.NPRShader.Shadow
+using UnityEngine;
+
+namespace HSR.NPRShader.PerObjectShadow
 {
-    public interface IShadowCaster
+    internal struct ShadowCasterCullingResult
     {
-        bool IsEnabled { get; }
-
-        ShadowRendererList.ReadOnly RendererList { get; }
-
-        void SetCasterIndex(int index);
+        public IShadowCaster Caster;
+        public int RendererIndexStartInclusive;
+        public int RendererIndexEndExclusive;
+        public Vector4 LightDirection;
+        public Matrix4x4 ViewMatrix;
+        public Matrix4x4 ProjectionMatrix;
     }
 }

@@ -54,6 +54,10 @@ Shader "Honkai Star Rail/Character/Hair"
         _SpecularIntensity0("Intensity", Range(0, 100)) = 1
         _SpecularRoughness0("Roughness", Range(0, 1)) = 0.02
 
+        [HeaderFoldout(Self Shadow)]
+        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
+        _SelfShadowNormalBias("Normal Bias", Float) = 0
+
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
         _EmissionThreshold("Threshold", Range(0, 1)) = 1
@@ -281,6 +285,7 @@ Shader "Honkai Star Rail/Character/Hair"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
 
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_vertex _ _CASTING_SELF_SHADOW
 
             #include "CharHairCore.hlsl"
 

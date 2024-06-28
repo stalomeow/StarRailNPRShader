@@ -21,7 +21,7 @@
 
 using System;
 using System.Collections.Generic;
-using HSR.NPRShader.Shadow;
+using HSR.NPRShader.PerObjectShadow;
 using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -33,8 +33,6 @@ namespace HSR.NPRShader
     [AddComponentMenu("StarRail NPR Shader/StarRail Character Rendering Controller")]
     public sealed class StarRailCharacterRenderingController : MonoBehaviour, IShadowCaster
     {
-        private static HashSet<StarRailCharacterRenderingController> s_Controllers = new();
-
         private enum TransformDirection
         {
             [InspectorName("Use Forward Vector")] Forward,
@@ -58,7 +56,7 @@ namespace HSR.NPRShader
         [SerializeField] private TransformDirection m_MMDHeadBoneRight = TransformDirection.Right;
 
         [NonSerialized] private readonly List<Renderer> m_Renderers = new();
-        [NonSerialized] private int m_ShadowCasterIndex = -1;
+        [NonSerialized] private int m_ShadowCasterId = -1;
         [NonSerialized] private readonly ShadowRendererList m_ShadowRendererList = new();
         [NonSerialized] private readonly Lazy<MaterialPropertyBlock> m_PropertyBlock = new();
 
@@ -98,23 +96,25 @@ namespace HSR.NPRShader
             set => m_IsCastingShadow = value;
         }
 
+        int IShadowCaster.Id
+        {
+            get => m_ShadowCasterId;
+            set => m_ShadowCasterId = value;
+        }
+
         bool IShadowCaster.IsEnabled => IsCastingShadow && isActiveAndEnabled;
 
         ShadowRendererList.ReadOnly IShadowCaster.RendererList => m_ShadowRendererList.AsReadOnly();
-
-        void IShadowCaster.SetCasterIndex(int index) => m_ShadowCasterIndex = index;
 
         private void OnEnable()
         {
             UpdateRendererList();
             ShadowCasterManager.Register(this);
-            s_Controllers.Add(this);
         }
 
         private void OnDisable()
         {
             ShadowCasterManager.Unregister(this);
-            s_Controllers.Remove(this);
 
             m_ShadowRendererList.Clear();
 
@@ -124,13 +124,15 @@ namespace HSR.NPRShader
             }
         }
 
-#if UNITY_EDITOR
         private void Update()
         {
+            UpdateMaterialProperties();
+
+#if UNITY_EDITOR
             // Editor 中 Shader 可以任意修改，所以每次都要更新
             UpdateShadowRendererList();
-        }
 #endif
+        }
 
         private void OnDrawGizmosSelected()
         {
@@ -168,7 +170,7 @@ namespace HSR.NPRShader
                 floats.Add((PropertyIds._ExCheekIntensity, m_ExCheekIntensity));
                 floats.Add((PropertyIds._ExShyIntensity, m_ExShyIntensity));
                 floats.Add((PropertyIds._ExShadowIntensity, m_ExShadowIntensity));
-                floats.Add((PropertyIds._PerObjectShadowIndex, m_ShadowCasterIndex));
+                floats.Add((PropertyIds._PerObjShadowCasterId, m_ShadowCasterId));
 
                 if (m_MMDHeadBone != null)
                 {
@@ -187,14 +189,6 @@ namespace HSR.NPRShader
             {
                 ListPool<(int, float)>.Release(floats);
                 ListPool<(int, Vector4)>.Release(vectors);
-            }
-        }
-
-        public static void UpdateMaterialPropertiesOfAllControllers()
-        {
-            foreach (StarRailCharacterRenderingController controller in s_Controllers)
-            {
-                controller.UpdateMaterialProperties();
             }
         }
 
@@ -223,16 +217,16 @@ namespace HSR.NPRShader
 
         private static class PropertyIds
         {
-            public static readonly int _RampCoolWarmLerpFactor = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _DitherAlpha = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ExCheekIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ExShyIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _ExShadowIntensity = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _PerObjectShadowIndex = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _RampCoolWarmLerpFactor = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _DitherAlpha = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ExCheekIntensity = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ExShyIntensity = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _ExShadowIntensity = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _PerObjShadowCasterId = MemberNameHelpers.ShaderPropertyID();
 
-            public static readonly int _MMDHeadBoneForward = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _MMDHeadBoneUp = StringHelpers.ShaderPropertyIDFromMemberName();
-            public static readonly int _MMDHeadBoneRight = StringHelpers.ShaderPropertyIDFromMemberName();
+            public static readonly int _MMDHeadBoneForward = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _MMDHeadBoneUp = MemberNameHelpers.ShaderPropertyID();
+            public static readonly int _MMDHeadBoneRight = MemberNameHelpers.ShaderPropertyID();
         }
     }
 }

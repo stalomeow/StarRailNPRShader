@@ -33,6 +33,7 @@ SAMPLER_CMP(sampler_PerObjShadowMap);
 int _PerObjShadowCount;
 float4x4 _PerObjShadowMatrices[MAX_PER_OBJECT_SHADOW_COUNT];
 float4 _PerObjShadowMapRects[MAX_PER_OBJECT_SHADOW_COUNT];
+float _PerObjShadowCasterIds[MAX_PER_OBJECT_SHADOW_COUNT];
 
 float4 _PerObjShadowOffset0;
 float4 _PerObjShadowOffset1;
@@ -70,11 +71,21 @@ ShadowSamplingData GetMainLightPerObjectShadowSamplingData()
     return shadowSamplingData;
 }
 
-float MainLightPerObjectShadow(int index, float4 shadowCoord)
+float MainLightPerObjectShadow(float3 positionWS, float casterId)
 {
     ShadowSamplingData shadowSamplingData = GetMainLightPerObjectShadowSamplingData();
     half4 shadowParams = GetMainLightShadowParams();
-    return PerObjectShadow(index, shadowCoord, shadowSamplingData, shadowParams);
+
+    for (int i = 0; i < _PerObjShadowCount; i++)
+    {
+        if (abs(_PerObjShadowCasterIds[i] - casterId) <= 0.001)
+        {
+            float4 shadowCoord = TransformWorldToPerObjectShadowCoord(i, positionWS);
+            return PerObjectShadow(i, shadowCoord, shadowSamplingData, shadowParams);
+        }
+    }
+
+    return 1;
 }
 
 float MainLightPerObjectShadow(float3 positionWS)
