@@ -36,6 +36,17 @@ namespace HSR.NPRShader.Shadow
     [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
     internal unsafe struct CullShadowCasterJob : IJobParallelFor
     {
+        public struct LightData
+        {
+            public quaternion LightRotation;
+
+            [NoAlias, NativeDisableUnsafePtrRestriction]
+            public CullShadowCasterResult* ResultBuffer;
+
+            [NoAlias, NativeDisableUnsafePtrRestriction]
+            public int* ResultCount;
+        }
+
         private static readonly float4x4 s_FlipZMatrix = new(
             1, 0, 0, 0,
             0, 1, 0, 0,
@@ -43,7 +54,6 @@ namespace HSR.NPRShader.Shadow
             0, 0, 0, 1
         );
 
-        public quaternion MainLightRotationInv;
         public float3 CameraPosition;
         public float3 CameraNormalizedForward;
 
@@ -51,14 +61,12 @@ namespace HSR.NPRShader.Shadow
         public float4* FrustumCorners;
         public int FrustumCornerCount;
 
-        [ReadOnly, NoAlias]
+        [NoAlias, ReadOnly]
         public NativeArray<float3x2> WorldBounds;
 
         [NoAlias, NativeDisableUnsafePtrRestriction]
-        public CullShadowCasterResult* Results;
-
-        [NoAlias, NativeDisableUnsafePtrRestriction]
-        public int* ResultCount;
+        public LightData* Lights;
+        public int LightCount;
 
         public void Execute(int index)
         {
@@ -71,19 +79,29 @@ namespace HSR.NPRShader.Shadow
             }
 
             float3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
-            float4x4 viewMatrix = mul(s_FlipZMatrix, float4x4.TRS(-aabbCenter, MainLightRotationInv, 1));
 
-            if (GetProjectionMatrix(in aabbMin, in aabbMax, in viewMatrix, out float4x4 projectionMatrix))
+            for (int i = 0; i < LightCount; i++)
             {
-                float distSq = distancesq(aabbCenter, CameraPosition);
-                float cosAngle = dot(CameraNormalizedForward, normalizesafe(aabbCenter - CameraPosition));
-                float priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f);
+                quaternion lightRotationInv = inverse(Lights[i].LightRotation);
+                float4x4 viewMatrix = mul(s_FlipZMatrix, float4x4.TRS(-aabbCenter, lightRotationInv, 1));
 
-                CullShadowCasterResult* result = Results + Interlocked.Increment(ref *ResultCount) - 1;
-                result->Priority = priority; // 越小越优先
-                result->CandidateIndex = index;
-                result->ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix);
-                result->ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix);
+                if (GetProjectionMatrix(in aabbMin, in aabbMax, in viewMatrix, out float4x4 projectionMatrix))
+                {
+                    float distSq = distancesq(aabbCenter, CameraPosition);
+                    float cosAngle = dot(CameraNormalizedForward, normalizesafe(aabbCenter - CameraPosition));
+                    float priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f);
+
+                    float4 lightDirection = float4(-rotate(Lights[i].LightRotation, forward()), 0);
+
+                    int slot = Interlocked.Increment(ref *Lights[i].ResultCount) - 1;
+                    CullShadowCasterResult* result = Lights[i].ResultBuffer + slot;
+
+                    result->Priority = priority; // 越小越优先
+                    result->CandidateIndex = index;
+                    result->LightDirection = UnsafeUtility.As<float4, Vector4>(ref lightDirection);;
+                    result->ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix);
+                    result->ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix);
+                }
             }
         }
 
@@ -118,6 +136,7 @@ namespace HSR.NPRShader.Shadow
             float bottom = shadowMin.y;
             float top = shadowMax.y;
             float zNear = -shadowMax.z;
+            // TODO
             float zFar = max(-shadowMin.z, min(-frustumMin.z, zNear + 50)); // 视锥体太长的话深度都集中在 0 或者 1 处，精度不够
 
             projectionMatrix = float4x4.OrthoOffCenter(left, right, bottom, top, zNear, zFar);

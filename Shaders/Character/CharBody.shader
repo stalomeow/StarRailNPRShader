@@ -89,6 +89,11 @@ Shader "Honkai Star Rail/Character/Body"
         [HSRMaterialIDProperty(_SpecularRoughness, 6)] _SpecularRoughness6("Specular Roughness", Range(0, 1)) = 0.02
         [HSRMaterialIDProperty(_SpecularRoughness, 7)] _SpecularRoughness7("Specular Roughness", Range(0, 1)) = 0.02
 
+        [HeaderFoldout(Self Shadow)]
+        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
+        _SelfShadowNormalBias("Normal Bias", Float) = 0
+        [Toggle(_RECEIVE_SELF_SHADOW_ON)] _ReceiveSelfShadow("Receive Self Shadow", Float) = 1
+
         [HeaderFoldout(Stockings)]
         [PostHelpBox(Warning, DO NOT forget to set the Tiling.)]
         _StockingsMap("Range Texture", 2D) = "black" {}
@@ -265,6 +270,7 @@ Shader "Honkai Star Rail/Character/Body"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _SINGLEMATERIAL_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
+            #pragma shader_feature_local_fragment _ _RECEIVE_SELF_SHADOW_ON
 
             #pragma multi_compile_fog
 
@@ -353,6 +359,7 @@ Shader "Honkai Star Rail/Character/Body"
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
 
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_vertex _ _CASTING_SELF_SHADOW
 
             #include "CharBodyCore.hlsl"
 

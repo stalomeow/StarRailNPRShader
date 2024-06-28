@@ -47,17 +47,32 @@ struct CharShadowVaryings
     float4 uv           : TEXCOORD0;
 };
 
-float4 GetShadowPositionHClip(float3 positionOS, float3 normalWS)
+float3 ApplySelfShadowBias(float3 positionWS, float3 normalWS, float3 lightDirection, float2 selfShadowBias)
+{
+    float invNdotL = 1.0 - saturate(dot(lightDirection, normalWS));
+    float scale = invNdotL * selfShadowBias.y;
+
+    // normal bias is negative since we want to apply an inset normal offset
+    positionWS = lightDirection * selfShadowBias.xxx + positionWS;
+    positionWS = normalWS * scale.xxx + positionWS;
+    return positionWS;
+}
+
+float4 GetShadowPositionHClip(float3 positionOS, float3 normalWS, float2 selfShadowBias)
 {
     float3 positionWS = TransformObjectToWorld(positionOS);
 
-#if _CASTING_PUNCTUAL_LIGHT_SHADOW
+#if !_CASTING_SELF_SHADOW && _CASTING_PUNCTUAL_LIGHT_SHADOW
     float3 lightDirectionWS = normalize(_LightPosition - positionWS);
 #else
     float3 lightDirectionWS = _LightDirection;
 #endif
 
+#if _CASTING_SELF_SHADOW
+    float4 positionCS = TransformWorldToHClip(ApplySelfShadowBias(positionWS, normalWS, lightDirectionWS, selfShadowBias));
+#else
     float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
+#endif
 
 #if UNITY_REVERSED_Z
     positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
@@ -68,14 +83,14 @@ float4 GetShadowPositionHClip(float3 positionOS, float3 normalWS)
     return positionCS;
 }
 
-CharShadowVaryings CharShadowVertex(CharShadowAttributes i, float4 mapST)
+CharShadowVaryings CharShadowVertex(CharShadowAttributes i, float4 mapST, float selfShadowDepthBias = 0, float selfShadowNormalBias = 0)
 {
+    float2 selfShadowBias = float2(selfShadowDepthBias, selfShadowNormalBias);
+
     CharShadowVaryings o;
-
     o.normalWS = TransformObjectToWorldNormal(i.normalOS);
-    o.positionHCS = GetShadowPositionHClip(i.positionOS.xyz, o.normalWS);
+    o.positionHCS = GetShadowPositionHClip(i.positionOS.xyz, o.normalWS, selfShadowBias);
     o.uv = CombineAndTransformDualFaceUV(i.uv1, i.uv2, mapST);
-
     return o;
 }
 

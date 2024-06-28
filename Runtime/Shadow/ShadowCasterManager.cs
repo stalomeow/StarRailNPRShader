@@ -29,69 +29,87 @@ using UnityEngine.Rendering;
 
 namespace HSR.NPRShader.Shadow
 {
-    public static class ShadowCasterManager
+    public class ShadowCasterManager
     {
+        private static readonly HashSet<IShadowCaster> s_Casters = new();
+
+        public static bool Register(IShadowCaster caster) => s_Casters.Add(caster);
+
+        public static bool Unregister(IShadowCaster caster) => s_Casters.Remove(caster);
+
         private readonly struct CasterCullCandidate
         {
             public readonly IShadowCaster Caster;
-            public readonly int RendererIndicesStart;
-            public readonly int RendererIndicesCount;
+            public readonly int RendererIndexStart;
+            public readonly int RendererIndexCount;
 
-            public CasterCullCandidate(IShadowCaster caster, int rendererIndicesStart, int rendererIndicesCount)
+            public CasterCullCandidate(IShadowCaster caster, int rendererIndexStart, int rendererIndexCount)
             {
                 Caster = caster;
-                RendererIndicesStart = rendererIndicesStart;
-                RendererIndicesCount = rendererIndicesCount;
+                RendererIndexStart = rendererIndexStart;
+                RendererIndexCount = rendererIndexCount;
             }
         }
 
-        private static readonly HashSet<IShadowCaster> s_Casters = new();
-        private static readonly List<CasterCullCandidate> s_CasterCullCandidateList = new();
-        private static readonly List<int> s_CasterCullCandidateRendererIndexList = new();
-        private static CullShadowCasterResult[] s_CasterCullResultBuffer = Array.Empty<CullShadowCasterResult>();
-        private static int s_CasterCullResultCount;
+        private readonly List<CasterCullCandidate> m_CullCandidateList = new();
+        private readonly List<int> m_CullCandidateRendererIndexList = new();
+        private CullShadowCasterResult[] m_MainLightCullResultBuffer = Array.Empty<CullShadowCasterResult>();
+        private CullShadowCasterResult[] m_ViewCullResultBuffer = Array.Empty<CullShadowCasterResult>();
+        private int m_MainLightCullResultCount;
+        private int m_ViewCullResultCount;
 
-        public static bool Register(IShadowCaster caster)
+        public int GetVisibleCasterCount(ShadowCasterCategory category) => category switch
         {
-            return s_Casters.Add(caster);
-        }
+            ShadowCasterCategory.MainLight => m_MainLightCullResultCount,
+            ShadowCasterCategory.View => m_ViewCullResultCount,
+            _ => throw new NotImplementedException(),
+        };
 
-        public static bool Unregister(IShadowCaster caster)
+        public void GetVisibleCasterMatrices(ShadowCasterCategory category, int index, out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix)
         {
-            return s_Casters.Remove(caster);
-        }
-
-        public static int VisibleCasterCount => s_CasterCullResultCount;
-
-        public static void GetVisibleCasterMatrices(int index, out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix)
-        {
-            ref CullShadowCasterResult result = ref s_CasterCullResultBuffer[index];
+            ref CullShadowCasterResult result = ref GetVisibleCaster(category, index);
             viewMatrix = result.ViewMatrix;
             projectionMatrix = result.ProjectionMatrix;
         }
 
-        public static void DrawVisibleCaster(CommandBuffer cmd, int index)
+        public Vector4 GetVisibleCasterLightDirection(ShadowCasterCategory category, int index)
         {
-            ref CullShadowCasterResult result = ref s_CasterCullResultBuffer[index];
-            CasterCullCandidate caster = s_CasterCullCandidateList[result.CandidateIndex];
-            caster.Caster.RendererList.Draw(cmd, s_CasterCullCandidateRendererIndexList,
-                caster.RendererIndicesStart, caster.RendererIndicesCount);
+            return GetVisibleCaster(category, index).LightDirection;
         }
 
-        public static void ClearVisibleCasters()
+        public void DrawVisibleCaster(CommandBuffer cmd, ShadowCasterCategory category, int index)
         {
-            s_CasterCullCandidateList.Clear();
-            s_CasterCullCandidateRendererIndexList.Clear();
-            s_CasterCullResultCount = 0;
+            ref CullShadowCasterResult result = ref GetVisibleCaster(category, index);
+            CasterCullCandidate caster = m_CullCandidateList[result.CandidateIndex];
+            caster.Caster.RendererList.Draw(cmd, m_CullCandidateRendererIndexList,
+                caster.RendererIndexStart, caster.RendererIndexCount);
         }
 
-        public static unsafe void UpdateVisibleCasters(Camera camera, Quaternion mainLightRotation, int maxCount)
+        private ref CullShadowCasterResult GetVisibleCaster(ShadowCasterCategory category, int index)
+        {
+            switch (category)
+            {
+                case ShadowCasterCategory.MainLight: return ref m_MainLightCullResultBuffer[index];
+                case ShadowCasterCategory.View: return ref m_ViewCullResultBuffer[index];
+                default: throw new NotImplementedException();
+            }
+        }
+
+        public void ClearVisibleCasters()
+        {
+            m_CullCandidateList.Clear();
+            m_CullCandidateRendererIndexList.Clear();
+            m_MainLightCullResultCount = 0;
+            m_ViewCullResultCount = 0;
+        }
+
+        public unsafe void UpdateVisibleCasters(Camera camera, Quaternion mainLightRotation, int maxCount)
         {
             ClearVisibleCasters();
 
             using NativeArray<float3x2> worldBounds = FillCasterCullCandidateList();
 
-            if (s_CasterCullCandidateList.Count <= 0)
+            if (m_CullCandidateList.Count <= 0)
             {
                 return;
             }
@@ -100,55 +118,70 @@ namespace HSR.NPRShader.Shadow
             float4* frustumCorners = stackalloc float4[FrustumCornerCount];
             CalculateFrustumEightCorners(camera, frustumCorners);
 
-            int resultCount = 0;
-            EnsureCasterCullResultBufferSize();
-            fixed (CullShadowCasterResult* results = s_CasterCullResultBuffer)
+            int mainLightCullResultCount = 0;
+            int viewCullResultCount = 0;
+            EnsureCasterCullResultBufferSize(ref m_MainLightCullResultBuffer);
+            EnsureCasterCullResultBufferSize(ref m_ViewCullResultBuffer);
+
+            fixed (CullShadowCasterResult* mainLightCullResults = m_MainLightCullResultBuffer)
+            fixed (CullShadowCasterResult* viewCullResults = m_ViewCullResultBuffer)
             {
+                CullShadowCasterJob.LightData* lights = stackalloc CullShadowCasterJob.LightData[2];
+                lights[0].LightRotation = mainLightRotation;
+                lights[0].ResultBuffer = mainLightCullResults;
+                lights[0].ResultCount = &mainLightCullResultCount;
+                lights[1].LightRotation = Quaternion.Slerp(mainLightRotation, camera.transform.rotation, 0.8f);
+                lights[1].ResultBuffer = viewCullResults;
+                lights[1].ResultCount = &viewCullResultCount;
+
                 CullShadowCasterJob job = new()
                 {
-                    MainLightRotationInv = Quaternion.Inverse(mainLightRotation),
                     CameraPosition = camera.transform.position,
                     CameraNormalizedForward = camera.transform.forward,
                     FrustumCorners = frustumCorners,
                     FrustumCornerCount = FrustumCornerCount,
                     WorldBounds = worldBounds,
-                    Results = results,
-                    ResultCount = &resultCount,
+                    Lights = lights,
+                    LightCount = 2,
                 };
-                job.ScheduleByRef(s_CasterCullCandidateList.Count, 2).Complete();
+                job.ScheduleByRef(m_CullCandidateList.Count, 2).Complete();
             }
 
-            Array.Sort(s_CasterCullResultBuffer, 0, resultCount);
-            resultCount = Mathf.Min(resultCount, maxCount);
-            s_CasterCullResultCount = resultCount;
+            Array.Sort(m_MainLightCullResultBuffer, 0, mainLightCullResultCount);
+            mainLightCullResultCount = Mathf.Min(mainLightCullResultCount, maxCount);
+            m_MainLightCullResultCount = mainLightCullResultCount;
 
-            for (int i = 0; i < resultCount; i++)
+            Array.Sort(m_ViewCullResultBuffer, 0, viewCullResultCount);
+            viewCullResultCount = Mathf.Min(viewCullResultCount, maxCount);
+            m_ViewCullResultCount = viewCullResultCount;
+
+            for (int i = 0; i < viewCullResultCount; i++)
             {
-                ref CullShadowCasterResult result = ref s_CasterCullResultBuffer[i];
-                s_CasterCullCandidateList[result.CandidateIndex].Caster.SetCasterIndex(i);
+                ref CullShadowCasterResult result = ref m_ViewCullResultBuffer[i];
+                m_CullCandidateList[result.CandidateIndex].Caster.SetCasterIndex(i);
             }
         }
 
-        private static void EnsureCasterCullResultBufferSize()
+        private void EnsureCasterCullResultBufferSize(ref CullShadowCasterResult[] buffer)
         {
-            if (s_CasterCullResultBuffer.Length >= s_CasterCullCandidateList.Count)
+            if (buffer.Length >= m_CullCandidateList.Count)
             {
                 return;
             }
 
-            int newSize = Mathf.Max(s_CasterCullResultBuffer.Length * 2, s_CasterCullCandidateList.Count);
-            s_CasterCullResultBuffer = new CullShadowCasterResult[newSize];
+            int newSize = Mathf.Max(buffer.Length * 2, m_CullCandidateList.Count);
+            buffer = new CullShadowCasterResult[newSize];
         }
 
-        private static NativeArray<float3x2> FillCasterCullCandidateList()
+        private NativeArray<float3x2> FillCasterCullCandidateList()
         {
             if (s_Casters.Count <= 0)
             {
                 return default;
             }
 
-            s_CasterCullCandidateList.Clear();
-            s_CasterCullCandidateRendererIndexList.Clear();
+            m_CullCandidateList.Clear();
+            m_CullCandidateRendererIndexList.Clear();
             NativeArray<float3x2> worldBounds = FastAllocateTempJob<float3x2>(s_Casters.Count);
 
             foreach (var caster in s_Casters)
@@ -160,15 +193,15 @@ namespace HSR.NPRShader.Shadow
                     continue;
                 }
 
-                int rendererIndexInitialCount = s_CasterCullCandidateRendererIndexList.Count;
-                if (!caster.RendererList.TryGetWorldBounds(out Bounds bounds, s_CasterCullCandidateRendererIndexList))
+                int rendererIndexInitialCount = m_CullCandidateRendererIndexList.Count;
+                if (!caster.RendererList.TryGetWorldBounds(out Bounds bounds, m_CullCandidateRendererIndexList))
                 {
                     continue;
                 }
 
-                worldBounds[s_CasterCullCandidateList.Count] = new float3x2(bounds.min, bounds.max);
-                s_CasterCullCandidateList.Add(new CasterCullCandidate(caster, rendererIndexInitialCount,
-                    s_CasterCullCandidateRendererIndexList.Count - rendererIndexInitialCount));
+                worldBounds[m_CullCandidateList.Count] = new float3x2(bounds.min, bounds.max);
+                m_CullCandidateList.Add(new CasterCullCandidate(caster, rendererIndexInitialCount,
+                    m_CullCandidateRendererIndexList.Count - rendererIndexInitialCount));
             }
 
             return worldBounds;

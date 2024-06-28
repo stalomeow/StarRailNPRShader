@@ -19,22 +19,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
-using UnityEngine;
-
 namespace HSR.NPRShader.Shadow
 {
-    internal struct CullShadowCasterResult : IComparable<CullShadowCasterResult>
+    public enum ShadowCasterCategory
     {
-        public float Priority;
-        public int CandidateIndex;
-        public Vector4 LightDirection;
-        public Matrix4x4 ViewMatrix;
-        public Matrix4x4 ProjectionMatrix;
-
-        public int CompareTo(CullShadowCasterResult other)
-        {
-            return Priority.CompareTo(other.Priority);
-        }
+        MainLight = 0,
+        View = 1,
     }
 }

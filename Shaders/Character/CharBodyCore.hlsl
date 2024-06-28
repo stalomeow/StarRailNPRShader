@@ -62,6 +62,9 @@ CBUFFER_START(UnityPerMaterial)
     DEF_CHAR_MAT_PROP(float, _SpecularIntensity);
     DEF_CHAR_MAT_PROP(float, _SpecularRoughness);
 
+    float _SelfShadowDepthBias;
+    float _SelfShadowNormalBias;
+
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float4 _StockingsMap_ST;
     float4 _StockingsColor;
@@ -189,14 +192,15 @@ void BodyColorFragment(
 
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
-    float perObjShadow = 1;
 
-    if (_PerObjectShadowIndex >= 0)
-    {
-        float4 shadowCoord = TransformWorldToPerObjectShadowCoord(_PerObjectShadowIndex, i.positionWS);
-        perObjShadow = MainLightPerObjectShadow(_PerObjectShadowIndex, shadowCoord);
-        light.shadowAttenuation = min(light.shadowAttenuation, perObjShadow);
-    }
+    #if defined(_RECEIVE_SELF_SHADOW_ON)
+        if (_PerObjectShadowIndex >= 0)
+        {
+            float4 shadowCoord = TransformWorldToPerObjectShadowCoord(_PerObjectShadowIndex, i.positionWS);
+            float perObjShadow = MainLightPerObjectShadow(_PerObjectShadowIndex, shadowCoord);
+            light.shadowAttenuation = min(light.shadowAttenuation, perObjShadow);
+        }
+    #endif
 
     ApplyStockings(texColor.rgb, i.uv.xy, dirWS.NoV);
 
@@ -333,7 +337,7 @@ void BodyOutlineFragment(
 
 CharShadowVaryings BodyShadowVertex(CharShadowAttributes i)
 {
-    return CharShadowVertex(i, _Maps_ST);
+    return CharShadowVertex(i, _Maps_ST, _SelfShadowDepthBias, _SelfShadowNormalBias);
 }
 
 void BodyShadowFragment(
