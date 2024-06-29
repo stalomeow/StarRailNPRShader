@@ -89,6 +89,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HeaderFoldout(Self Shadow)]
         _SelfShadowDepthBias("Depth Bias", Float) = -0.01
         _SelfShadowNormalBias("Normal Bias", Float) = 0
+        [Toggle(_RECEIVE_SELF_SHADOW_ON)] _ReceiveSelfShadow("Receive Self Shadow", Float) = 1
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
@@ -163,6 +164,8 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
 
         [HeaderFoldout(Dither)]
         _DitherAlpha("Alpha", Range(0, 1)) = 1
+
+        [HideInInspector] _PerObjShadowCasterId("Per Object Shadow Caster Id", Float) = -1
     }
 
     SubShader
@@ -210,6 +213,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
             // #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _SINGLEMATERIAL_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
+            #pragma shader_feature_local_fragment _ _RECEIVE_SELF_SHADOW_ON
 
             #pragma multi_compile_fog
 
