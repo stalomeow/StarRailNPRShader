@@ -40,14 +40,14 @@ namespace HSR.NPRShader.PerObjectShadow
         );
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        public static bool Cull(in ShadowCasterCullingArgs args,
+        public static bool Cull(in float3 aabbMin, in float3 aabbMax, in ShadowCasterCullingArgs args,
             out float4x4 viewMatrix, out float4x4 projectionMatrix, out float priority, out float4 lightDirection)
         {
-            float3 aabbCenter = (args.AABBMin + args.AABBMax) * 0.5f;
+            float3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
             quaternion lightRotationInv = inverse(args.LightRotation);
             viewMatrix = mul(s_FlipZMatrix, float4x4.TRS(-aabbCenter, lightRotationInv, 1));
 
-            if (GetProjectionMatrix(in args, in viewMatrix, out projectionMatrix))
+            if (GetProjectionMatrix(in aabbMin, in aabbMax, in args, in viewMatrix, out projectionMatrix))
             {
                 float distSq = distancesq(aabbCenter, args.CameraPosition);
                 float cosAngle = dot(args.CameraNormalizedForward, normalizesafe(aabbCenter - args.CameraPosition));
@@ -62,18 +62,19 @@ namespace HSR.NPRShader.PerObjectShadow
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe bool GetProjectionMatrix(in ShadowCasterCullingArgs args, in float4x4 viewMatrix, out float4x4 projectionMatrix)
+        private static unsafe bool GetProjectionMatrix(in float3 aabbMin, in float3 aabbMax, in ShadowCasterCullingArgs args,
+            in float4x4 viewMatrix, out float4x4 projectionMatrix)
         {
             float4* aabbPoints = stackalloc float4[8]
             {
-                float4(args.AABBMin, 1),
-                float4(args.AABBMax.x, args.AABBMin.y, args.AABBMin.z, 1),
-                float4(args.AABBMin.x, args.AABBMax.y, args.AABBMin.z, 1),
-                float4(args.AABBMin.x, args.AABBMin.y, args.AABBMax.z, 1),
-                float4(args.AABBMax.x, args.AABBMax.y, args.AABBMin.z, 1),
-                float4(args.AABBMax.x, args.AABBMin.y, args.AABBMax.z, 1),
-                float4(args.AABBMin.x, args.AABBMax.y, args.AABBMax.z, 1),
-                float4(args.AABBMax, 1),
+                float4(aabbMin, 1),
+                float4(aabbMax.x, aabbMin.y, aabbMin.z, 1),
+                float4(aabbMin.x, aabbMax.y, aabbMin.z, 1),
+                float4(aabbMin.x, aabbMin.y, aabbMax.z, 1),
+                float4(aabbMax.x, aabbMax.y, aabbMin.z, 1),
+                float4(aabbMax.x, aabbMin.y, aabbMax.z, 1),
+                float4(aabbMin.x, aabbMax.y, aabbMax.z, 1),
+                float4(aabbMax, 1),
             };
             EightPointsAABB(aabbPoints, in viewMatrix, out float3 shadowMin, out float3 shadowMax);
             EightPointsAABB(args.FrustumEightCorners, in viewMatrix, out float3 frustumMin, out float3 frustumMax);

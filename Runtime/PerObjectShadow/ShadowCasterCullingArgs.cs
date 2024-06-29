@@ -27,9 +27,6 @@ namespace HSR.NPRShader.PerObjectShadow
 {
     internal unsafe struct ShadowCasterCullingArgs
     {
-        public float3 AABBMin;
-        public float3 AABBMax;
-
         public quaternion LightRotation;
         public ShadowUsage Usage;
 

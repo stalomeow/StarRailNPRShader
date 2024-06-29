@@ -108,7 +108,7 @@ namespace HSR.NPRShader.PerObjectShadow
             float4* frustumCorners = stackalloc float4[ShadowCasterCullingArgs.FrustumCornerCount];
             ShadowCasterCullingArgs.SetFrustumEightCorners(frustumCorners, camera);
 
-            var baseArgs = new ShadowCasterCullingArgs
+            var args = new ShadowCasterCullingArgs
             {
                 CameraPosition = camera.transform.position,
                 CameraNormalizedForward = camera.transform.forward,
@@ -120,33 +120,30 @@ namespace HSR.NPRShader.PerObjectShadow
 
             foreach (var caster in s_Casters)
             {
-                baseArgs.LightRotation = lightRotation;
-                baseArgs.Usage = ShadowUsage.Scene;
-                CullAndAppend(caster, ref baseArgs);
+                args.LightRotation = lightRotation;
+                args.Usage = ShadowUsage.Scene;
+                CullAndAppend(caster, in args);
 
-                baseArgs.LightRotation = viewRotation;
-                baseArgs.Usage = ShadowUsage.Self;
-                CullAndAppend(caster, ref baseArgs);
+                args.LightRotation = viewRotation;
+                args.Usage = ShadowUsage.Self;
+                CullAndAppend(caster, in args);
             }
         }
 
-        private void CullAndAppend(IShadowCaster caster, ref ShadowCasterCullingArgs baseArgs)
+        private void CullAndAppend(IShadowCaster caster, in ShadowCasterCullingArgs args)
         {
-            if (!caster.CanCastShadow(baseArgs.Usage))
+            if (!caster.CanCastShadow(args.Usage))
             {
                 return;
             }
 
             int rendererIndexInitialCount = m_CasterRendererIndexList.Count;
-            if (!caster.RendererList.TryGetWorldBounds(baseArgs.Usage, out Bounds bounds, m_CasterRendererIndexList))
+            if (!caster.RendererList.TryGetWorldBounds(args.Usage, out Bounds bounds, m_CasterRendererIndexList))
             {
                 return;
             }
 
-            baseArgs.AABBMin = bounds.min;
-            baseArgs.AABBMax = bounds.max;
-
-            bool visible = ShadowCasterUtility.Cull(in baseArgs,
+            bool visible = ShadowCasterUtility.Cull(bounds.min, bounds.max, in args,
                 out float4x4 viewMatrix, out float4x4 projectionMatrix,
                 out float priority, out float4 lightDirection);
 
@@ -155,7 +152,7 @@ namespace HSR.NPRShader.PerObjectShadow
                 return;
             }
 
-            GetCullResults(baseArgs.Usage).TryAppend(priority, new ShadowCasterCullingResult
+            GetCullResults(args.Usage).TryAppend(priority, new ShadowCasterCullingResult
             {
                 Caster = caster,
                 RendererIndexStartInclusive = rendererIndexInitialCount,
