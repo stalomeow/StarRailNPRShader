@@ -25,8 +25,8 @@ namespace HSR.NPRShader.PerObjectShadow
     {
         int Id { get; set; }
 
-        bool IsEnabled { get; }
-
         ShadowRendererList.ReadOnly RendererList { get; }
+
+        bool CanCastShadow(ShadowUsage usage);
     }
 }

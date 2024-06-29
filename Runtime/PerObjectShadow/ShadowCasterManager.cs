@@ -108,7 +108,7 @@ namespace HSR.NPRShader.PerObjectShadow
             float4* frustumCorners = stackalloc float4[ShadowCasterCullingArgs.FrustumCornerCount];
             ShadowCasterCullingArgs.SetFrustumEightCorners(frustumCorners, camera);
 
-            var args = new ShadowCasterCullingArgs
+            var baseArgs = new ShadowCasterCullingArgs
             {
                 CameraPosition = camera.transform.position,
                 CameraNormalizedForward = camera.transform.forward,
@@ -117,46 +117,37 @@ namespace HSR.NPRShader.PerObjectShadow
 
             quaternion lightRotation = mainLightRotation;
             quaternion viewRotation = math.slerp(mainLightRotation, camera.transform.rotation, 0.9f);
-            // Debug.DrawRay(Vector3.zero, -math.rotate(viewRotation, math.forward()) * 1000);
-            // Debug.Log(math.normalize(-math.rotate(viewRotation, math.forward())));
 
             foreach (var caster in s_Casters)
             {
-                if (!caster.IsEnabled)
-                {
-                    continue;
-                }
+                baseArgs.LightRotation = lightRotation;
+                baseArgs.Usage = ShadowUsage.Scene;
+                CullAndAppend(caster, ref baseArgs);
 
-                int rendererIndexInitialCount = m_CasterRendererIndexList.Count;
-                if (!caster.RendererList.TryGetWorldBounds(out Bounds bounds, m_CasterRendererIndexList))
-                {
-                    continue;
-                }
-
-                var baseResult = new ShadowCasterCullingResult
-                {
-                    Caster = caster,
-                    RendererIndexStartInclusive = rendererIndexInitialCount,
-                    RendererIndexEndExclusive = m_CasterRendererIndexList.Count,
-                };
-
-                args.AABBMin = bounds.min;
-                args.AABBMax = bounds.max;
-
-                args.LightRotation = lightRotation;
-                args.Usage = ShadowUsage.Scene;
-                CullAndAppend(m_SceneShadowCullResults, baseResult, in args);
-
-                args.LightRotation = viewRotation;
-                args.Usage = ShadowUsage.Self;
-                CullAndAppend(m_SelfShadowCullResults, baseResult, in args);
+                baseArgs.LightRotation = viewRotation;
+                baseArgs.Usage = ShadowUsage.Self;
+                CullAndAppend(caster, ref baseArgs);
             }
         }
 
-        private static void CullAndAppend(PriorityBuffer<float, ShadowCasterCullingResult> buffer,
-            ShadowCasterCullingResult baseResult, in ShadowCasterCullingArgs args)
+        private void CullAndAppend(IShadowCaster caster, ref ShadowCasterCullingArgs baseArgs)
         {
-            bool visible = ShadowCasterUtility.Cull(in args, out float4x4 viewMatrix, out float4x4 projectionMatrix,
+            if (!caster.CanCastShadow(baseArgs.Usage))
+            {
+                return;
+            }
+
+            int rendererIndexInitialCount = m_CasterRendererIndexList.Count;
+            if (!caster.RendererList.TryGetWorldBounds(baseArgs.Usage, out Bounds bounds, m_CasterRendererIndexList))
+            {
+                return;
+            }
+
+            baseArgs.AABBMin = bounds.min;
+            baseArgs.AABBMax = bounds.max;
+
+            bool visible = ShadowCasterUtility.Cull(in baseArgs,
+                out float4x4 viewMatrix, out float4x4 projectionMatrix,
                 out float priority, out float4 lightDirection);
 
             if (!visible)
@@ -164,10 +155,15 @@ namespace HSR.NPRShader.PerObjectShadow
                 return;
             }
 
-            baseResult.ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix);
-            baseResult.ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix);
-            baseResult.LightDirection = UnsafeUtility.As<float4, Vector4>(ref lightDirection);
-            buffer.TryAppend(priority, in baseResult);
+            GetCullResults(baseArgs.Usage).TryAppend(priority, new ShadowCasterCullingResult
+            {
+                Caster = caster,
+                RendererIndexStartInclusive = rendererIndexInitialCount,
+                RendererIndexEndExclusive = m_CasterRendererIndexList.Count,
+                ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix),
+                ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix),
+                LightDirection = UnsafeUtility.As<float4, Vector4>(ref lightDirection),
+            });
         }
     }
 }

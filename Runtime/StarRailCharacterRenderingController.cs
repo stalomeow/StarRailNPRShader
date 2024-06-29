@@ -55,8 +55,8 @@ namespace HSR.NPRShader
         [SerializeField] private TransformDirection m_MMDHeadBoneUp = TransformDirection.Up;
         [SerializeField] private TransformDirection m_MMDHeadBoneRight = TransformDirection.Right;
 
-        [NonSerialized] private readonly List<Renderer> m_Renderers = new();
         [NonSerialized] private int m_ShadowCasterId = -1;
+        [NonSerialized] private readonly List<Renderer> m_Renderers = new();
         [NonSerialized] private readonly ShadowRendererList m_ShadowRendererList = new();
         [NonSerialized] private readonly Lazy<MaterialPropertyBlock> m_PropertyBlock = new();
 
@@ -102,13 +102,13 @@ namespace HSR.NPRShader
             set => m_ShadowCasterId = value;
         }
 
-        bool IShadowCaster.IsEnabled => IsCastingShadow && isActiveAndEnabled;
+        bool IShadowCaster.CanCastShadow(ShadowUsage usage) => IsCastingShadow && isActiveAndEnabled;
 
         ShadowRendererList.ReadOnly IShadowCaster.RendererList => m_ShadowRendererList.AsReadOnly();
 
         private void OnEnable()
         {
-            UpdateRendererList();
+            UpdateRendererList(fullUpdate: true);
             ShadowCasterManager.Register(this);
         }
 
@@ -116,6 +116,7 @@ namespace HSR.NPRShader
         {
             ShadowCasterManager.Unregister(this);
 
+            m_Renderers.Clear();
             m_ShadowRendererList.Clear();
 
             if (m_PropertyBlock.IsValueCreated)
@@ -126,17 +127,17 @@ namespace HSR.NPRShader
 
         private void Update()
         {
-            UpdateMaterialProperties();
-
 #if UNITY_EDITOR
             // Editor 中 Shader 可以任意修改，所以每次都要更新
-            UpdateShadowRendererList();
+            UpdateRendererList(fullUpdate: !Application.isPlaying);
+#else
+            UpdateMaterialProperties();
 #endif
         }
 
         private void OnDrawGizmosSelected()
         {
-            if (!m_ShadowRendererList.TryGetWorldBounds(out Bounds bounds))
+            if (!m_ShadowRendererList.TryGetWorldBounds(ShadowUsage.Scene, out Bounds bounds))
             {
                 return;
             }
@@ -149,8 +150,16 @@ namespace HSR.NPRShader
 
         public void UpdateRendererList()
         {
-            m_Renderers.Clear();
-            GetComponentsInChildren(true, m_Renderers);
+            UpdateRendererList(true);
+        }
+
+        private void UpdateRendererList(bool fullUpdate)
+        {
+            if (fullUpdate)
+            {
+                m_Renderers.Clear();
+                GetComponentsInChildren(true, m_Renderers);
+            }
 
             // 因为 Build 之后需要实例化 Material，所以必须要先设置 MaterialProperties
             // 这样后面访问 SharedMaterial 时才能拿到正确的材质

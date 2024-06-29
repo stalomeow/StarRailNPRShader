@@ -40,28 +40,6 @@ namespace HSR.NPRShader.PerObjectShadow
                 DrawCallIndexStartInclusive = drawCallIndexStartInclusive;
                 DrawCallIndexEndExclusive = drawCallIndexEndExclusive;
             }
-
-            public bool IsEnabled
-            {
-                get
-                {
-                    if (DrawCallIndexEndExclusive - DrawCallIndexStartInclusive <= 0)
-                    {
-                        // 没有 draw call
-                        return false;
-                    }
-
-#if UNITY_EDITOR
-                    if (UnityEditor.SceneVisibilityManager.instance.IsHidden(Renderer.gameObject))
-                    {
-                        return false;
-                    }
-#endif
-
-                    return Renderer.enabled && Renderer.gameObject.activeInHierarchy &&
-                           Renderer.shadowCastingMode != ShadowCastingMode.Off;
-                }
-            }
         }
 
         private readonly struct DrawCallData
@@ -81,7 +59,7 @@ namespace HSR.NPRShader.PerObjectShadow
         private readonly List<RendererEntry> m_Renderers = new();
         private readonly List<DrawCallData> m_DrawCalls = new();
 
-        public bool TryGetWorldBounds(out Bounds worldBounds, ICollection<int> outAppendRendererIndices = null)
+        public bool TryGetWorldBounds(ShadowUsage usage, out Bounds worldBounds, ICollection<int> outAppendRendererIndices = null)
         {
             worldBounds = default;
             bool firstBounds = true;
@@ -90,7 +68,7 @@ namespace HSR.NPRShader.PerObjectShadow
             {
                 RendererEntry entry = m_Renderers[i];
 
-                if (!entry.IsEnabled)
+                if (!IsEntryEnabled(in entry, usage))
                 {
                     continue;
                 }
@@ -109,6 +87,31 @@ namespace HSR.NPRShader.PerObjectShadow
             }
 
             return !firstBounds;
+        }
+
+        private static bool IsEntryEnabled(in RendererEntry entry, ShadowUsage usage)
+        {
+            if (entry.DrawCallIndexEndExclusive - entry.DrawCallIndexStartInclusive <= 0)
+            {
+                // 没有 draw call
+                return false;
+            }
+
+#if UNITY_EDITOR
+            if (UnityEditor.SceneVisibilityManager.instance.IsHidden(entry.Renderer.gameObject))
+            {
+                return false;
+            }
+#endif
+
+            // 自阴影只打在自己身上，要是 renderer 不可见的话，没必要渲染
+            if (usage == ShadowUsage.Self && !entry.Renderer.isVisible)
+            {
+                return false;
+            }
+
+            return entry.Renderer.enabled && entry.Renderer.gameObject.activeInHierarchy &&
+                   entry.Renderer.shadowCastingMode != ShadowCastingMode.Off;
         }
 
         public void Draw(CommandBuffer cmd, int rendererIndex)
@@ -191,9 +194,9 @@ namespace HSR.NPRShader.PerObjectShadow
                 m_List = list;
             }
 
-            public bool TryGetWorldBounds(out Bounds worldBounds, ICollection<int> outAppendRendererIndices = null)
+            public bool TryGetWorldBounds(ShadowUsage usage, out Bounds worldBounds, ICollection<int> outAppendRendererIndices = null)
             {
-                return m_List.TryGetWorldBounds(out worldBounds, outAppendRendererIndices);
+                return m_List.TryGetWorldBounds(usage, out worldBounds, outAppendRendererIndices);
             }
 
             public void Draw(CommandBuffer cmd, int rendererIndex)

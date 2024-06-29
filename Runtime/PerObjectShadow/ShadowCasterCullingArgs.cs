@@ -29,6 +29,7 @@ namespace HSR.NPRShader.PerObjectShadow
     {
         public float3 AABBMin;
         public float3 AABBMax;
+
         public quaternion LightRotation;
         public ShadowUsage Usage;
 
