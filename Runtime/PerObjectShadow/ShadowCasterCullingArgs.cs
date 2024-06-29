@@ -19,7 +19,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Unity.Burst;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace HSR.NPRShader.PerObjectShadow
 {
@@ -28,10 +30,37 @@ namespace HSR.NPRShader.PerObjectShadow
         public float3 AABBMin;
         public float3 AABBMax;
         public quaternion LightRotation;
+        public ShadowUsage Usage;
 
         public float3 CameraPosition;
         public float3 CameraNormalizedForward;
-        public float4* FrustumCorners;
-        public int FrustumCornerCount;
+        [NoAlias] public float4* FrustumEightCorners;
+
+        public const int FrustumCornerCount = 8;
+        private static readonly Vector3[] s_FrustumCornerBuffer = new Vector3[4];
+
+        public static void SetFrustumEightCorners(float4* frustumEightCorners, Camera camera)
+        {
+            const Camera.MonoOrStereoscopicEye Eye = Camera.MonoOrStereoscopicEye.Mono;
+
+            var viewport = new Rect(0, 0, 1, 1);
+            Transform cameraTransform = camera.transform;
+
+            camera.CalculateFrustumCorners(viewport, camera.nearClipPlane, Eye, s_FrustumCornerBuffer);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 xyz = cameraTransform.TransformPoint(s_FrustumCornerBuffer[i]);
+                frustumEightCorners[i] = new float4(xyz, 1);
+            }
+
+            camera.CalculateFrustumCorners(viewport, camera.farClipPlane, Eye, s_FrustumCornerBuffer);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 xyz = cameraTransform.TransformPoint(s_FrustumCornerBuffer[i]);
+                frustumEightCorners[i + 4] = new float4(xyz, 1);
+            }
+        }
     }
 }

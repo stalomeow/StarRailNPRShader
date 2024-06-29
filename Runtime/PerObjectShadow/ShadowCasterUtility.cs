@@ -19,9 +19,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
-using UnityEngine;
 using static Unity.Mathematics.math;
 using float3 = Unity.Mathematics.float3;
 using float4x4 = Unity.Mathematics.float4x4;
@@ -32,32 +32,6 @@ namespace HSR.NPRShader.PerObjectShadow
     [BurstCompile]
     internal static class ShadowCasterUtility
     {
-        private static readonly Vector3[] s_FrustumCornerBuffer = new Vector3[4];
-
-        public static unsafe void CalculateFrustumEightCorners(Camera camera, float4* outCorners)
-        {
-            const Camera.MonoOrStereoscopicEye Eye = Camera.MonoOrStereoscopicEye.Mono;
-
-            var viewport = new Rect(0, 0, 1, 1);
-            Transform cameraTransform = camera.transform;
-
-            camera.CalculateFrustumCorners(viewport, camera.nearClipPlane, Eye, s_FrustumCornerBuffer);
-
-            for (int i = 0; i < 4; i++)
-            {
-                Vector3 xyz = cameraTransform.TransformPoint(s_FrustumCornerBuffer[i]);
-                outCorners[i] = new float4(xyz, 1);
-            }
-
-            camera.CalculateFrustumCorners(viewport, camera.farClipPlane, Eye, s_FrustumCornerBuffer);
-
-            for (int i = 0; i < 4; i++)
-            {
-                Vector3 xyz = cameraTransform.TransformPoint(s_FrustumCornerBuffer[i]);
-                outCorners[i + 4] = new float4(xyz, 1);
-            }
-        }
-
         private static readonly float4x4 s_FlipZMatrix = new(
             1, 0, 0, 0,
             0, 1, 0, 0,
@@ -66,7 +40,7 @@ namespace HSR.NPRShader.PerObjectShadow
         );
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        public static void Cull(in ShadowCasterCullingArgs args,
+        public static bool Cull(in ShadowCasterCullingArgs args,
             out float4x4 viewMatrix, out float4x4 projectionMatrix, out float priority, out float4 lightDirection)
         {
             float3 aabbCenter = (args.AABBMin + args.AABBMax) * 0.5f;
@@ -79,19 +53,18 @@ namespace HSR.NPRShader.PerObjectShadow
                 float cosAngle = dot(args.CameraNormalizedForward, normalizesafe(aabbCenter - args.CameraPosition));
                 priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f); // 越小越优先
                 lightDirection = float4(-rotate(args.LightRotation, forward()), 0);
+                return true;
             }
-            else
-            {
-                priority = default;
-                lightDirection = default;
-            }
+
+            priority = default;
+            lightDirection = default;
+            return false;
         }
 
-        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe bool GetProjectionMatrix(in ShadowCasterCullingArgs args, in float4x4 viewMatrix, out float4x4 projectionMatrix)
         {
-            const int AABBPointCount = 8;
-            float4* aabbPoints = stackalloc float4[AABBPointCount]
+            float4* aabbPoints = stackalloc float4[8]
             {
                 float4(args.AABBMin, 1),
                 float4(args.AABBMax.x, args.AABBMin.y, args.AABBMin.z, 1),
@@ -102,8 +75,8 @@ namespace HSR.NPRShader.PerObjectShadow
                 float4(args.AABBMin.x, args.AABBMax.y, args.AABBMax.z, 1),
                 float4(args.AABBMax, 1),
             };
-            CalculateAABB(aabbPoints, AABBPointCount, in viewMatrix, out float3 shadowMin, out float3 shadowMax);
-            CalculateAABB(args.FrustumCorners, args.FrustumCornerCount, in viewMatrix, out float3 frustumMin, out float3 frustumMax);
+            EightPointsAABB(aabbPoints, in viewMatrix, out float3 shadowMin, out float3 shadowMax);
+            EightPointsAABB(args.FrustumEightCorners, in viewMatrix, out float3 frustumMin, out float3 frustumMax);
 
             // 剔除一定不可见的阴影
             if (any(shadowMax < frustumMin) || any(shadowMin.xy > frustumMax.xy))
@@ -112,27 +85,40 @@ namespace HSR.NPRShader.PerObjectShadow
                 return false;
             }
 
+            if (args.Usage == ShadowUsage.Self)
+            {
+                // 自阴影只在自己身上，不会打到无穷远处，可以检查 z 方向进一步剔除
+                if (shadowMin.z > frustumMax.z)
+                {
+                    projectionMatrix = default;
+                    return false;
+                }
+            }
+            else
+            {
+                // 包住自己还有视锥体里所有物体
+                // 但包围盒太长的话深度都集中在 0 或者 1 处，精度不够，目前限制最多向后扩展 100 个单位
+                shadowMin.z = clamp(frustumMin.z, shadowMin.z - 100, shadowMin.z);
+            }
+
             // 计算投影矩阵
             float left = shadowMin.x;
             float right = shadowMax.x;
             float bottom = shadowMin.y;
             float top = shadowMax.y;
             float zNear = -shadowMax.z;
-
-            // 视锥体太长的话深度都集中在 0 或者 1 处，精度不够
-            float zFar = max(-shadowMin.z, min(-frustumMin.z, zNear + 50));
-
+            float zFar = -shadowMin.z;
             projectionMatrix = float4x4.OrthoOffCenter(left, right, bottom, top, zNear, zFar);
             return true;
         }
 
-        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        private static unsafe void CalculateAABB(float4* points, int count, in float4x4 transform, out float3 aabbMin, out float3 aabbMax)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void EightPointsAABB([NoAlias] float4* points, in float4x4 transform, out float3 aabbMin, out float3 aabbMax)
         {
             aabbMin = float3(float.PositiveInfinity);
             aabbMax = float3(float.NegativeInfinity);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < 8; i++)
             {
                 float3 p = mul(transform, points[i]).xyz;
                 aabbMin = min(aabbMin, p);

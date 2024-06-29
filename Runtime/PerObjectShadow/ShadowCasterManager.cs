@@ -105,20 +105,20 @@ namespace HSR.NPRShader.PerObjectShadow
                 return;
             }
 
-            const int FrustumCornerCount = 8;
-            float4* frustumCorners = stackalloc float4[FrustumCornerCount];
-            ShadowCasterUtility.CalculateFrustumEightCorners(camera, frustumCorners);
+            float4* frustumCorners = stackalloc float4[ShadowCasterCullingArgs.FrustumCornerCount];
+            ShadowCasterCullingArgs.SetFrustumEightCorners(frustumCorners, camera);
 
             var args = new ShadowCasterCullingArgs
             {
                 CameraPosition = camera.transform.position,
                 CameraNormalizedForward = camera.transform.forward,
-                FrustumCorners = frustumCorners,
-                FrustumCornerCount = FrustumCornerCount,
+                FrustumEightCorners = frustumCorners,
             };
 
             quaternion lightRotation = mainLightRotation;
-            quaternion viewRotation = math.slerp(mainLightRotation, camera.transform.rotation, 0.8f);
+            quaternion viewRotation = math.slerp(mainLightRotation, camera.transform.rotation, 0.9f);
+            // Debug.DrawRay(Vector3.zero, -math.rotate(viewRotation, math.forward()) * 1000);
+            // Debug.Log(math.normalize(-math.rotate(viewRotation, math.forward())));
 
             foreach (var caster in s_Casters)
             {
@@ -144,9 +144,11 @@ namespace HSR.NPRShader.PerObjectShadow
                 args.AABBMax = bounds.max;
 
                 args.LightRotation = lightRotation;
+                args.Usage = ShadowUsage.Scene;
                 CullAndAppend(m_SceneShadowCullResults, baseResult, in args);
 
                 args.LightRotation = viewRotation;
+                args.Usage = ShadowUsage.Self;
                 CullAndAppend(m_SelfShadowCullResults, baseResult, in args);
             }
         }
@@ -154,7 +156,14 @@ namespace HSR.NPRShader.PerObjectShadow
         private static void CullAndAppend(PriorityBuffer<float, ShadowCasterCullingResult> buffer,
             ShadowCasterCullingResult baseResult, in ShadowCasterCullingArgs args)
         {
-            ShadowCasterUtility.Cull(in args, out float4x4 viewMatrix, out float4x4 projectionMatrix, out float priority, out float4 lightDirection);
+            bool visible = ShadowCasterUtility.Cull(in args, out float4x4 viewMatrix, out float4x4 projectionMatrix,
+                out float priority, out float4 lightDirection);
+
+            if (!visible)
+            {
+                return;
+            }
+
             baseResult.ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix);
             baseResult.ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix);
             baseResult.LightDirection = UnsafeUtility.As<float4, Vector4>(ref lightDirection);

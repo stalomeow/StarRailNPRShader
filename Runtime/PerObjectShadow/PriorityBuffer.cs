@@ -55,13 +55,17 @@ namespace HSR.NPRShader.PerObjectShadow
 
         public bool TryAppend(TPriority priority, in TData data)
         {
+            if (Capacity <= 0)
+            {
+                return false;
+            }
+
             // 维护大顶堆
             int i;
 
             if (Count < Capacity)
             {
-                i = Count;
-                Count += 1;
+                i = Count++;
                 while (i > 0)
                 {
                     int parent = GetParentIndex(i);
@@ -83,10 +87,10 @@ namespace HSR.NPRShader.PerObjectShadow
                 }
 
                 i = 0;
-                while (i < Count)
+                while (GetChildIndex(i) < Count)
                 {
                     int child = GetChildIndex(i);
-                    if (m_Priorities[child].CompareTo(m_Priorities[child + 1]) < 0)
+                    if (child + 1 < Count && m_Priorities[child].CompareTo(m_Priorities[child + 1]) < 0)
                     {
                         child++;
                     }
