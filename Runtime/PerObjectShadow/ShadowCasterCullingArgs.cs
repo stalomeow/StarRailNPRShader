@@ -27,12 +27,11 @@ namespace HSR.NPRShader.PerObjectShadow
 {
     internal unsafe struct ShadowCasterCullingArgs
     {
+        public float3 CameraPosition;
+        public float3 CameraForward;
+        [NoAlias] public float4* FrustumEightCorners;
         public quaternion LightRotation;
         public ShadowUsage Usage;
-
-        public float3 CameraPosition;
-        public float3 CameraNormalizedForward;
-        [NoAlias] public float4* FrustumEightCorners;
 
         public const int FrustumCornerCount = 8;
         private static readonly Vector3[] s_FrustumCornerBuffer = new Vector3[4];

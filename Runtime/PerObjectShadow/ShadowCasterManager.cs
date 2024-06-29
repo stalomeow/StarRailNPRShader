@@ -25,6 +25,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace HSR.NPRShader.PerObjectShadow
 {
@@ -44,88 +45,62 @@ namespace HSR.NPRShader.PerObjectShadow
 
         public static void Unregister(IShadowCaster caster) => s_Casters.Remove(caster);
 
-        private readonly List<int> m_CasterRendererIndexList = new();
-        private readonly PriorityBuffer<float, ShadowCasterCullingResult> m_SceneShadowCullResults = new();
-        private readonly PriorityBuffer<float, ShadowCasterCullingResult> m_SelfShadowCullResults = new();
+        private readonly List<int> m_RendererIndexList = new();
+        private readonly PriorityBuffer<float, ShadowCasterCullingResult> m_CullResults = new();
 
-        public int GetCasterCount(ShadowUsage usage)
-        {
-            return GetCullResults(usage).Count;
-        }
+        public ShadowUsage Usage { get; }
 
-        public void GetMatrices(ShadowUsage usage, int index, out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix)
+        public ShadowCasterManager(ShadowUsage usage) => Usage = usage;
+
+        public int VisibleCount => m_CullResults.Count;
+
+        public int GetId(int index) => m_CullResults[index].Caster.Id;
+
+        public Vector4 GetLightDirection(int index) => m_CullResults[index].LightDirection;
+
+        public void GetMatrices(int index, out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix)
         {
-            ref ShadowCasterCullingResult result = ref GetCullResults(usage)[index];
+            ref ShadowCasterCullingResult result = ref m_CullResults[index];
             viewMatrix = result.ViewMatrix;
             projectionMatrix = result.ProjectionMatrix;
         }
 
-        public int GetCasterId(ShadowUsage usage, int index)
+        public void Draw(CommandBuffer cmd, int index)
         {
-            ref ShadowCasterCullingResult result = ref GetCullResults(usage)[index];
-            return result.Caster.Id;
-        }
-
-        public Vector4 GetLightDirection(ShadowUsage usage, int index)
-        {
-            return GetCullResults(usage)[index].LightDirection;
-        }
-
-        public void Draw(CommandBuffer cmd, ShadowUsage usage, int index)
-        {
-            ref ShadowCasterCullingResult result = ref GetCullResults(usage)[index];
+            ref ShadowCasterCullingResult result = ref m_CullResults[index];
             for (int i = result.RendererIndexStartInclusive; i < result.RendererIndexEndExclusive; i++)
             {
-                result.Caster.RendererList.Draw(cmd, m_CasterRendererIndexList[i]);
+                result.Caster.RendererList.Draw(cmd, m_RendererIndexList[i]);
             }
         }
 
-        private PriorityBuffer<float, ShadowCasterCullingResult> GetCullResults(ShadowUsage usage) => usage switch
+        public unsafe void Cull(in RenderingData renderingData, int maxCount)
         {
-            ShadowUsage.Scene => m_SceneShadowCullResults,
-            ShadowUsage.Self => m_SelfShadowCullResults,
-            _ => throw new NotImplementedException()
-        };
+            m_RendererIndexList.Clear();
+            m_CullResults.Reset(maxCount);
 
-        public void Clear()
-        {
-            m_CasterRendererIndexList.Clear();
-            m_SceneShadowCullResults.Reset();
-            m_SelfShadowCullResults.Reset();
-        }
-
-        public unsafe void Cull(Camera camera, Quaternion mainLightRotation, int maxCount)
-        {
-            m_CasterRendererIndexList.Clear();
-            m_SceneShadowCullResults.Reset(maxCount);
-            m_SelfShadowCullResults.Reset(maxCount);
-
-            if (s_Casters.Count <= 0)
+            if (s_Casters.Count <= 0 || !TryGetMainLight(in renderingData, out VisibleLight mainLight))
             {
                 return;
             }
+
+            Camera camera = renderingData.cameraData.camera;
+            Transform cameraTransform = camera.transform;
 
             float4* frustumCorners = stackalloc float4[ShadowCasterCullingArgs.FrustumCornerCount];
             ShadowCasterCullingArgs.SetFrustumEightCorners(frustumCorners, camera);
 
             var args = new ShadowCasterCullingArgs
             {
-                CameraPosition = camera.transform.position,
-                CameraNormalizedForward = camera.transform.forward,
+                CameraPosition = cameraTransform.position,
+                CameraForward = cameraTransform.forward,
                 FrustumEightCorners = frustumCorners,
+                LightRotation = GetLightRotation(in mainLight, cameraTransform),
+                Usage = Usage,
             };
-
-            quaternion lightRotation = mainLightRotation;
-            quaternion viewRotation = math.slerp(mainLightRotation, camera.transform.rotation, 0.9f);
 
             foreach (var caster in s_Casters)
             {
-                args.LightRotation = lightRotation;
-                args.Usage = ShadowUsage.Scene;
-                CullAndAppend(caster, in args);
-
-                args.LightRotation = viewRotation;
-                args.Usage = ShadowUsage.Self;
                 CullAndAppend(caster, in args);
             }
         }
@@ -137,8 +112,8 @@ namespace HSR.NPRShader.PerObjectShadow
                 return;
             }
 
-            int rendererIndexInitialCount = m_CasterRendererIndexList.Count;
-            if (!caster.RendererList.TryGetWorldBounds(args.Usage, out Bounds bounds, m_CasterRendererIndexList))
+            int rendererIndexInitialCount = m_RendererIndexList.Count;
+            if (!caster.RendererList.TryGetWorldBounds(args.Usage, out Bounds bounds, m_RendererIndexList))
             {
                 return;
             }
@@ -152,15 +127,53 @@ namespace HSR.NPRShader.PerObjectShadow
                 return;
             }
 
-            GetCullResults(args.Usage).TryAppend(priority, new ShadowCasterCullingResult
+            m_CullResults.TryAppend(priority, new ShadowCasterCullingResult
             {
                 Caster = caster,
                 RendererIndexStartInclusive = rendererIndexInitialCount,
-                RendererIndexEndExclusive = m_CasterRendererIndexList.Count,
+                RendererIndexEndExclusive = m_RendererIndexList.Count,
+                LightDirection = UnsafeUtility.As<float4, Vector4>(ref lightDirection),
                 ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix),
                 ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix),
-                LightDirection = UnsafeUtility.As<float4, Vector4>(ref lightDirection),
             });
+        }
+
+        private Quaternion GetLightRotation(in VisibleLight mainLight, Transform cameraTransform)
+        {
+            switch (Usage)
+            {
+                case ShadowUsage.Scene:
+                {
+                    return mainLight.localToWorldMatrix.rotation;
+                }
+                case ShadowUsage.Self:
+                {
+                    // 混合视角和主光源的方向，直接用向量插值，四元数插值会导致部分情况跳变
+                    // 以视角方向为主，减少背面 artifact
+                    Vector3 viewForward = cameraTransform.forward;
+                    Vector3 lightForward = mainLight.localToWorldMatrix.GetColumn(2);
+                    Vector3 forward = Vector3.Slerp(viewForward, lightForward, 0.2f);
+                    return Quaternion.LookRotation(forward, cameraTransform.up);
+                }
+                default:
+                {
+                    throw new NotSupportedException($"Unsupported shadow usage: {Usage}.");
+                }
+            }
+        }
+
+        private static bool TryGetMainLight(in RenderingData renderingData, out VisibleLight mainLight)
+        {
+            int mainLightIndex = renderingData.lightData.mainLightIndex;
+
+            if (mainLightIndex < 0)
+            {
+                mainLight = default;
+                return false;
+            }
+
+            mainLight = renderingData.lightData.visibleLights[mainLightIndex];
+            return mainLight.lightType == LightType.Directional;
         }
     }
 }

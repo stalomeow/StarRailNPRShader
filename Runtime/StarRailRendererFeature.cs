@@ -38,7 +38,8 @@ namespace HSR.NPRShader
         private const bool k_RequiresScreenSpaceShadowsKeyword = true;
 #endif
 
-        [NonSerialized] private ShadowCasterManager m_ShadowCasterManager;
+        [NonSerialized] private ShadowCasterManager m_SceneShadowCasterManager;
+        [NonSerialized] private ShadowCasterManager m_SelfShadowCasterManager;
 
         [NonSerialized] private PerObjectShadowCasterPass m_ScenePerObjShadowPass;
         [NonSerialized] private PerObjectShadowCasterPreviewPass m_ScenePerObjShadowPreviewPass;
@@ -56,7 +57,8 @@ namespace HSR.NPRShader
 
         public override void Create()
         {
-            m_ShadowCasterManager = new ShadowCasterManager();
+            m_SceneShadowCasterManager = new ShadowCasterManager(ShadowUsage.Scene);
+            m_SelfShadowCasterManager = new ShadowCasterManager(ShadowUsage.Self);
 
             m_ScenePerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSceneShadow", RenderPassEvent.AfterRenderingShadows);
             m_ScenePerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSceneShadow (Preview)", RenderPassEvent.AfterRenderingShadows);
@@ -109,33 +111,11 @@ namespace HSR.NPRShader
             // PreviewCamera 不会执行这部分代码！！！
             base.SetupRenderPasses(renderer, in renderingData);
 
-            if (TryGetMainLight(in renderingData, out VisibleLight mainLight))
-            {
-                Camera camera = renderingData.cameraData.camera;
-                Quaternion mainLightRotation = mainLight.localToWorldMatrix.rotation;
-                m_ShadowCasterManager.Cull(camera, mainLightRotation, PerObjectShadowCasterPass.MaxShadowCount);
-            }
-            else
-            {
-                m_ShadowCasterManager.Clear();
-            }
+            m_SceneShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
+            m_ScenePerObjShadowPass.Setup(m_SceneShadowCasterManager, 512);
 
-            m_ScenePerObjShadowPass.Setup(m_ShadowCasterManager, ShadowUsage.Scene, 512);
-            m_SelfPerObjShadowPass.Setup(m_ShadowCasterManager, ShadowUsage.Self, 1024);
-        }
-
-        private static bool TryGetMainLight(in RenderingData renderingData, out VisibleLight mainLight)
-        {
-            int mainLightIndex = renderingData.lightData.mainLightIndex;
-
-            if (mainLightIndex < 0)
-            {
-                mainLight = default;
-                return false;
-            }
-
-            mainLight = renderingData.lightData.visibleLights[mainLightIndex];
-            return mainLight.lightType == LightType.Directional;
+            m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
+            m_SelfPerObjShadowPass.Setup(m_SelfShadowCasterManager, 1024);
         }
 
         protected override void Dispose(bool disposing)

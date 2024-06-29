@@ -40,11 +40,6 @@ namespace HSR.NPRShader.PerObjectShadow
 
         public ref TData this[int index] => ref m_Data[index];
 
-        public void Reset()
-        {
-            Reset(Capacity);
-        }
-
         public void Reset(int capacity)
         {
             EnsureArraySizeAndReset(ref m_Priorities, capacity);

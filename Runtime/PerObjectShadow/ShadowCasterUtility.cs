@@ -50,7 +50,7 @@ namespace HSR.NPRShader.PerObjectShadow
             if (GetProjectionMatrix(in aabbMin, in aabbMax, in args, in viewMatrix, out projectionMatrix))
             {
                 float distSq = distancesq(aabbCenter, args.CameraPosition);
-                float cosAngle = dot(args.CameraNormalizedForward, normalizesafe(aabbCenter - args.CameraPosition));
+                float cosAngle = dot(args.CameraForward, normalizesafe(aabbCenter - args.CameraPosition));
                 priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f); // 越小越优先
                 lightDirection = float4(-rotate(args.LightRotation, forward()), 0);
                 return true;
