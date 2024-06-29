@@ -215,7 +215,7 @@ namespace HSR.NPRShader.Passes
             public static readonly string _CASTING_SELF_SHADOW = MemberNameHelpers.String();
         }
 
-        private static class PropertyIds
+        internal static class PropertyIds
         {
             public static readonly int _PerObjShadowMap = MemberNameHelpers.ShaderPropertyID();
             public static readonly int _PerObjShadowCount = MemberNameHelpers.ShaderPropertyID();

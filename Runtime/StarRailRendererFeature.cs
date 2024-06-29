@@ -41,10 +41,12 @@ namespace HSR.NPRShader
         [NonSerialized] private ShadowCasterManager m_ShadowCasterManager;
 
         [NonSerialized] private PerObjectShadowCasterPass m_ScenePerObjShadowPass;
+        [NonSerialized] private PerObjectShadowCasterPreviewPass m_ScenePerObjShadowPreviewPass;
         [NonSerialized] private RequestResourcePass m_ForceDepthPrepassPass;
         [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
         [NonSerialized] private PerObjectShadowCasterPass m_SelfPerObjShadowPass;
+        [NonSerialized] private PerObjectShadowCasterPreviewPass m_SelfPerObjShadowPreviewPass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward1Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward2Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward3Pass;
@@ -57,10 +59,12 @@ namespace HSR.NPRShader
             m_ShadowCasterManager = new ShadowCasterManager();
 
             m_ScenePerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSceneShadow", RenderPassEvent.AfterRenderingShadows);
+            m_ScenePerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSceneShadow (Preview)", RenderPassEvent.AfterRenderingShadows);
             m_ForceDepthPrepassPass = new RequestResourcePass(RenderPassEvent.AfterRenderingGbuffer, ScriptableRenderPassInput.Depth);
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
             m_SelfPerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSelfShadow", RenderPassEvent.AfterRenderingOpaques);
+            m_SelfPerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSelfShadow (Preview)", RenderPassEvent.AfterRenderingOpaques);
             m_DrawOpaqueForward1Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (1)", true,
                 new ShaderTagId("HSRForward1"));
             m_DrawOpaqueForward2Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (2)", true,
@@ -76,10 +80,10 @@ namespace HSR.NPRShader
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            // TODO preview camera
+            bool isPreviewCamera = renderingData.cameraData.isPreviewCamera;
 
             // AfterRenderingShadows
-            renderer.EnqueuePass(m_ScenePerObjShadowPass);
+            renderer.EnqueuePass(isPreviewCamera ? m_ScenePerObjShadowPreviewPass : m_ScenePerObjShadowPass);
 
             // AfterRenderingGbuffer
             renderer.EnqueuePass(m_ForceDepthPrepassPass); // 保证 RimLight、眼睛等需要深度图的效果正常工作
@@ -87,7 +91,7 @@ namespace HSR.NPRShader
 
             // AfterRenderingOpaques
             renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
-            renderer.EnqueuePass(m_SelfPerObjShadowPass);
+            renderer.EnqueuePass(isPreviewCamera ? m_SelfPerObjShadowPreviewPass : m_SelfPerObjShadowPass);
             renderer.EnqueuePass(m_DrawOpaqueForward1Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
@@ -103,13 +107,7 @@ namespace HSR.NPRShader
         public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
         {
             // PreviewCamera 不会执行这部分代码！！！
-
             base.SetupRenderPasses(renderer, in renderingData);
-
-            if (renderingData.cameraData.cameraType is (CameraType.Preview or CameraType.Reflection))
-            {
-                return;
-            }
 
             if (TryGetMainLight(in renderingData, out VisibleLight mainLight))
             {
