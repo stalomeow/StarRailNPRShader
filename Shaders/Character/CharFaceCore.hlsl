@@ -31,6 +31,7 @@
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
 #include "Shared/CharMotionVectors.hlsl"
+#include "Shared/DeclareCharHairDepthTexture.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_FaceMap); SAMPLER(sampler_FaceMap);
@@ -48,6 +49,7 @@ CBUFFER_START(UnityPerMaterial)
 
     float _SelfShadowDepthBias;
     float _SelfShadowNormalBias;
+    float _HairShadowDistance;
 
     float4 _EmissionColor;
     float _EmissionThreshold;
@@ -111,6 +113,34 @@ float3 GetFaceOrEyeDiffuse(
     return baseColor * light.color * (lerp(faceShadow, eyeShadow, faceMap.r) * light.distanceAttenuation);
 }
 
+float GetHairShadow(float4 svPosition, Directions dirWS)
+{
+    float depth = GetLinearEyeDepthAnyProjection(svPosition);
+    float2 width = _HairShadowDistance * 0.02;
+
+    if (IsPerspectiveProjection())
+    {
+        // unity_CameraProjection._m11: cot(FOV / 2)
+        // 2.414 是 FOV 为 45 度时的值
+        width *= unity_CameraProjection._m11 / 2.414; // FOV 越小，角色越大，偏移量越大
+    }
+    else
+    {
+        // unity_CameraProjection._m11: (1 / Size)
+        // 1.5996 纯 Magic Number
+        width *= unity_CameraProjection._m11 / 1.5996; // Size 越小，角色越大，偏移量越大
+    }
+
+    width *= rcp(depth / _ModelScale); // 近大远小
+    // 纵向分辨率越大，角色横向占有的像素越多，横向偏移量越大。纵向占有的像素始终不变
+    width.x *= log10(_ScaledScreenParams.y) / 3.33; // 3.33=log10(2160)，4K 分辨率高度
+
+    float3 dir = TransformWorldToViewDir(dirWS.L, true);
+    float2 depthUV = svPosition.xy / _ScaledScreenParams.xy + dir.xy * width;
+    float offsetDepth = GetLinearEyeDepthAnyProjection(SampleCharHairDepth(depthUV));
+    return step(depth, offsetDepth);
+}
+
 void FaceOpaqueAndZFragment(
     CharCoreVaryings i,
     out float4 colorTarget : SV_Target0)
@@ -132,6 +162,11 @@ void FaceOpaqueAndZFragment(
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
     HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
+
+    // 刘海阴影
+    #if defined(_RECEIVE_HAIR_SHADOW_ON)
+        light.shadowAttenuation = min(light.shadowAttenuation, GetHairShadow(i.positionHCS, dirWS));
+    #endif
 
     // Nose Line
     float3 FdotV = pow(abs(dot(headDirWS.forward, dirWS.V)), _NoseLinePower);

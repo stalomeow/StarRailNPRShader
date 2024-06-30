@@ -43,6 +43,7 @@ namespace HSR.NPRShader
 
         [NonSerialized] private PerObjectShadowCasterPass m_ScenePerObjShadowPass;
         [NonSerialized] private PerObjectShadowCasterPreviewPass m_ScenePerObjShadowPreviewPass;
+        [NonSerialized] private HairDepthOnlyPass m_HairDepthOnlyPass;
         [NonSerialized] private RequestResourcePass m_ForceDepthPrepassPass;
         [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
@@ -62,6 +63,7 @@ namespace HSR.NPRShader
 
             m_ScenePerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSceneShadow", RenderPassEvent.AfterRenderingShadows);
             m_ScenePerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSceneShadow (Preview)", RenderPassEvent.AfterRenderingShadows);
+            m_HairDepthOnlyPass = new HairDepthOnlyPass();
             m_ForceDepthPrepassPass = new RequestResourcePass(RenderPassEvent.AfterRenderingGbuffer, ScriptableRenderPassInput.Depth);
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
@@ -86,6 +88,9 @@ namespace HSR.NPRShader
 
             // AfterRenderingShadows
             renderer.EnqueuePass(isPreviewCamera ? m_ScenePerObjShadowPreviewPass : m_ScenePerObjShadowPass);
+
+            // AfterRenderingPrePasses
+            renderer.EnqueuePass(m_HairDepthOnlyPass);
 
             // AfterRenderingGbuffer
             renderer.EnqueuePass(m_ForceDepthPrepassPass); // 保证 RimLight、眼睛等需要深度图的效果正常工作

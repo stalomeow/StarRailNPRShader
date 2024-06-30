@@ -320,6 +320,32 @@ Shader "Honkai Star Rail/Character/Hair"
 
         Pass
         {
+            Name "HairDepthOnlyHSR"
+
+            Tags
+            {
+                "LightMode" = "HSRHairDepthOnly"
+            }
+
+            Cull [_Cull]
+            ZWrite On
+            ColorMask R
+
+            HLSLPROGRAM
+
+            #pragma vertex HairDepthOnlyVertex
+            #pragma fragment HairDepthOnlyFragment
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+
+            #include "CharHairCore.hlsl"
+
+            ENDHLSL
+        }
+
+        Pass
+        {
             Name "HairDepthNormals"
 
             Tags
