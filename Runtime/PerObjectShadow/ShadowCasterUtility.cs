@@ -41,16 +41,16 @@ namespace HSR.NPRShader.PerObjectShadow
         );
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        public static bool Cull(in float3 aabbMin, in float3 aabbMax, in ShadowCasterCullingArgs args,
+        public static bool Cull(in ShadowCasterCullingArgs args,
             out float4x4 viewMatrix, out float4x4 projectionMatrix, out float priority, out float4 lightDirection)
         {
-            float3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
-            GetLightRotationAndDirection(aabbCenter, in args, out quaternion lightRotation, out lightDirection);
+            float3 aabbCenter = (args.AABBMin + args.AABBMax) * 0.5f;
+            GetLightRotationAndDirection(in aabbCenter, in args, out quaternion lightRotation, out lightDirection);
 
             viewMatrix = float4x4.TRS(-aabbCenter, inverse(lightRotation), 1);
             viewMatrix = mul(s_FlipZMatrix, viewMatrix); // 翻转 z 轴
 
-            if (GetProjectionMatrix(in aabbMin, in aabbMax, in args, in viewMatrix, out projectionMatrix))
+            if (GetProjectionMatrix(in args, in viewMatrix, out projectionMatrix))
             {
                 float3 cameraForward = args.CameraLocalToWorldMatrix.c2.xyz;
                 float3 cameraPosition = args.CameraLocalToWorldMatrix.c3.xyz;
@@ -66,7 +66,7 @@ namespace HSR.NPRShader.PerObjectShadow
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void GetLightRotationAndDirection(float3 aabbCenter, in ShadowCasterCullingArgs args,
+        private static void GetLightRotationAndDirection(in float3 aabbCenter, in ShadowCasterCullingArgs args,
             out quaternion lightRotation, out float4 lightDirection)
         {
             switch (args.Usage)
@@ -87,7 +87,12 @@ namespace HSR.NPRShader.PerObjectShadow
                     // 以视角方向为主，减少背面 artifact
                     float3 viewForward = normalizesafe(aabbCenter - cameraPosition);
                     float3 lightForward = args.MainLightLocalToWorldMatrix.c2.xyz;
-                    float3 forward = lerp(viewForward, lightForward, 0.2f);
+                    float3 forward = normalize(lerp(viewForward, lightForward, 0.2f));
+
+                    // 超低角度观察会出现不该有的阴影
+                    float cosAngle = dot(forward, args.CasterUpVector);
+                    float cosAngleClamped = clamp(cosAngle, -0.866f, 0); // 限制在 90° ~ 150° 之间
+                    forward = normalize(forward + (cosAngleClamped - cosAngle) * args.CasterUpVector);
 
                     lightRotation = quaternion.LookRotation(forward, cameraUp);
                     lightDirection = float4(-forward, 0);
@@ -104,19 +109,19 @@ namespace HSR.NPRShader.PerObjectShadow
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe bool GetProjectionMatrix(in float3 aabbMin, in float3 aabbMax, in ShadowCasterCullingArgs args,
+        private static unsafe bool GetProjectionMatrix(in ShadowCasterCullingArgs args,
             in float4x4 viewMatrix, out float4x4 projectionMatrix)
         {
             float4* aabbPoints = stackalloc float4[8]
             {
-                float4(aabbMin, 1),
-                float4(aabbMax.x, aabbMin.y, aabbMin.z, 1),
-                float4(aabbMin.x, aabbMax.y, aabbMin.z, 1),
-                float4(aabbMin.x, aabbMin.y, aabbMax.z, 1),
-                float4(aabbMax.x, aabbMax.y, aabbMin.z, 1),
-                float4(aabbMax.x, aabbMin.y, aabbMax.z, 1),
-                float4(aabbMin.x, aabbMax.y, aabbMax.z, 1),
-                float4(aabbMax, 1),
+                float4(args.AABBMin, 1),
+                float4(args.AABBMax.x, args.AABBMin.y, args.AABBMin.z, 1),
+                float4(args.AABBMin.x, args.AABBMax.y, args.AABBMin.z, 1),
+                float4(args.AABBMin.x, args.AABBMin.y, args.AABBMax.z, 1),
+                float4(args.AABBMax.x, args.AABBMax.y, args.AABBMin.z, 1),
+                float4(args.AABBMax.x, args.AABBMin.y, args.AABBMax.z, 1),
+                float4(args.AABBMin.x, args.AABBMax.y, args.AABBMax.z, 1),
+                float4(args.AABBMax, 1),
             };
             EightPointsAABB(aabbPoints, in viewMatrix, out float3 shadowMin, out float3 shadowMax);
             EightPointsAABB(args.FrustumEightCorners, in viewMatrix, out float3 frustumMin, out float3 frustumMax);

@@ -32,6 +32,10 @@ namespace HSR.NPRShader.PerObjectShadow
         public float4x4 CameraLocalToWorldMatrix;
         public float4x4 MainLightLocalToWorldMatrix;
 
+        public float3 AABBMin;
+        public float3 AABBMax;
+        public float3 CasterUpVector;
+
         public const int FrustumCornerCount = 8;
         private static readonly Vector3[] s_FrustumCornerBuffer = new Vector3[4];
 

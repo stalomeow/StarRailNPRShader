@@ -89,7 +89,7 @@ namespace HSR.NPRShader.PerObjectShadow
             float4* frustumCorners = stackalloc float4[ShadowCasterCullingArgs.FrustumCornerCount];
             ShadowCasterCullingArgs.SetFrustumEightCorners(frustumCorners, camera);
 
-            var args = new ShadowCasterCullingArgs
+            var baseArgs = new ShadowCasterCullingArgs
             {
                 Usage = Usage,
                 FrustumEightCorners = frustumCorners,
@@ -99,26 +99,28 @@ namespace HSR.NPRShader.PerObjectShadow
 
             foreach (var caster in s_Casters)
             {
-                CullAndAppend(caster, in args);
+                CullAndAppend(caster, ref baseArgs);
             }
         }
 
-        private void CullAndAppend(IShadowCaster caster, in ShadowCasterCullingArgs args)
+        private void CullAndAppend(IShadowCaster caster, ref ShadowCasterCullingArgs baseArgs)
         {
-            if (!caster.CanCastShadow(args.Usage))
+            if (!caster.CanCastShadow(baseArgs.Usage))
             {
                 return;
             }
 
             int rendererIndexInitialCount = m_RendererIndexList.Count;
-            if (!caster.RendererList.TryGetWorldBounds(args.Usage, out Bounds bounds, m_RendererIndexList))
+            if (!caster.RendererList.TryGetWorldBounds(baseArgs.Usage, out Bounds bounds, m_RendererIndexList))
             {
                 return;
             }
 
-            bool visible = ShadowCasterUtility.Cull(bounds.min, bounds.max, in args,
-                out float4x4 viewMatrix, out float4x4 projectionMatrix,
-                out float priority, out float4 lightDirection);
+            baseArgs.AABBMin = bounds.min;
+            baseArgs.AABBMax = bounds.max;
+            baseArgs.CasterUpVector = caster.Transform.up;
+            bool visible = ShadowCasterUtility.Cull(in baseArgs, out float4x4 viewMatrix,
+                out float4x4 projectionMatrix, out float priority, out float4 lightDirection);
 
             if (!visible)
             {

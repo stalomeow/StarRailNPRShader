@@ -19,6 +19,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using UnityEngine;
+
 namespace HSR.NPRShader.PerObjectShadow
 {
     public interface IShadowCaster
@@ -26,6 +28,8 @@ namespace HSR.NPRShader.PerObjectShadow
         int Id { get; set; }
 
         ShadowRendererList.ReadOnly RendererList { get; }
+
+        Transform Transform { get; }
 
         bool CanCastShadow(ShadowUsage usage);
     }

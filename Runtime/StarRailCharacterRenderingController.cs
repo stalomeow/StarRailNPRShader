@@ -104,6 +104,8 @@ namespace HSR.NPRShader
 
         ShadowRendererList.ReadOnly IShadowCaster.RendererList => m_ShadowRendererList.AsReadOnly();
 
+        Transform IShadowCaster.Transform => transform;
+
         bool IShadowCaster.CanCastShadow(ShadowUsage usage)
         {
             if (!isActiveAndEnabled)
