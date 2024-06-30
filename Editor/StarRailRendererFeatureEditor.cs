@@ -29,7 +29,7 @@ namespace HSR.NPRShader.Editor
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(StarRailRendererFeature))]
-    public class StarRailRendererFeatureEditor : UnityEditor.Editor
+    internal class StarRailRendererFeatureEditor : UnityEditor.Editor
     {
         public const string GitHubLink = "https://github.com/stalomeow/StarRailNPRShader";
         public const string ScreenSpaceShadowsTypeName = "UnityEngine.Rendering.Universal.ScreenSpaceShadows";

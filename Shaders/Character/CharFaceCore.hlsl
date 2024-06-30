@@ -31,7 +31,7 @@
 #include "Shared/CharOutline.hlsl"
 #include "Shared/CharShadow.hlsl"
 #include "Shared/CharMotionVectors.hlsl"
-#include "Shared/DeclareCharHairDepthTexture.hlsl"
+#include "Shared/CharHairDepthTexture.hlsl"
 
 TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 TEXTURE2D(_FaceMap); SAMPLER(sampler_FaceMap);
@@ -115,8 +115,7 @@ float3 GetFaceOrEyeDiffuse(
 
 float GetHairShadow(float4 svPosition, Directions dirWS)
 {
-    float depth = GetLinearEyeDepthAnyProjection(svPosition);
-    float2 width = _HairShadowDistance * 0.02;
+    float2 width = _HairShadowDistance * 0.04;
 
     if (IsPerspectiveProjection())
     {
@@ -131,13 +130,15 @@ float GetHairShadow(float4 svPosition, Directions dirWS)
         width *= unity_CameraProjection._m11 / 1.5996; // Size 越小，角色越大，偏移量越大
     }
 
+    float depth = GetLinearEyeDepthAnyProjection(svPosition);
     width *= rcp(depth / _ModelScale); // 近大远小
-    // 纵向分辨率越大，角色横向占有的像素越多，横向偏移量越大。纵向占有的像素始终不变
+
+    // 纵向分辨率越大，角色横向占有的 uv 越多，横向偏移量越大。纵向占有的 uv 始终不变
     width.x *= log10(_ScaledScreenParams.y) / 3.33; // 3.33=log10(2160)，4K 分辨率高度
 
-    float3 dir = TransformWorldToViewDir(dirWS.L, true);
-    float2 depthUV = svPosition.xy / _ScaledScreenParams.xy + dir.xy * width;
-    float offsetDepth = GetLinearEyeDepthAnyProjection(SampleCharHairDepth(depthUV));
+    float3 offsetDir = TransformWorldToViewDir(dirWS.L, true);
+    float2 offsetUV = (svPosition.xy / _ScaledScreenParams.xy) + (offsetDir.xy * width);
+    float offsetDepth = GetLinearEyeDepthAnyProjection(SampleCharHairDepth(offsetUV));
     return step(depth, offsetDepth);
 }
 
@@ -251,7 +252,7 @@ CharOutlineVaryings FaceOutlineVertex(CharOutlineAttributes i)
         // 当嘴从侧面看在脸外面时再启用描边
         float3 viewDirWS = normalize(GetWorldSpaceViewDir(vertexInputs.positionWS));
         float FdotV = pow(max(0, dot(headDirWS.forward, viewDirWS)), 0.8);
-        outlineData.width *= smoothstep(-0.05, 0, 1 - FdotV - i.color.b);
+        outlineData.width *= smoothstep(-0.02, 0, 1 - FdotV - i.color.b);
 
         // TODO: Fix 脸颊的描边。大概是用 vertexColor.g
     #endif

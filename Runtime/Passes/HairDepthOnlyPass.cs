@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -27,7 +28,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace HSR.NPRShader.Passes
 {
-    public class HairDepthOnlyPass : ScriptableRenderPass
+    public class HairDepthOnlyPass : ScriptableRenderPass, IDisposable
     {
         private static readonly ShaderTagId s_ShaderTagId = new("HSRHairDepthOnly");
 
@@ -37,9 +38,14 @@ namespace HSR.NPRShader.Passes
         public HairDepthOnlyPass()
         {
             renderPassEvent = RenderPassEvent.AfterRenderingPrePasses;
-            profilingSampler = new ProfilingSampler("DepthOnly (Hair)");
+            profilingSampler = new ProfilingSampler("StarRailHairDepthPrepass");
 
             m_FilteringSettings = new FilteringSettings(RenderQueueRange.opaque);
+        }
+
+        public void Dispose()
+        {
+            m_DepthRT?.Release();
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)

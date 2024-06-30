@@ -19,8 +19,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _DECLARE_CHAR_HAIR_DEPTH_TEXTURE_INCLUDED
-#define _DECLARE_CHAR_HAIR_DEPTH_TEXTURE_INCLUDED
+#ifndef _CHAR_HAIR_DEPTH_TEXTURE_INCLUDED
+#define _CHAR_HAIR_DEPTH_TEXTURE_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 

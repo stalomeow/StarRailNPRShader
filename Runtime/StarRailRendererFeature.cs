@@ -126,6 +126,7 @@ namespace HSR.NPRShader
         protected override void Dispose(bool disposing)
         {
             m_ScenePerObjShadowPass.Dispose();
+            m_HairDepthOnlyPass.Dispose();
             m_ScreenSpaceShadowPass.Dispose();
             m_SelfPerObjShadowPass.Dispose();
             m_PostProcessPass.Dispose();

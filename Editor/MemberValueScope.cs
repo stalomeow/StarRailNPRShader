@@ -25,7 +25,7 @@ using System.Reflection;
 
 namespace HSR.NPRShader.Editor
 {
-    public readonly ref struct MemberValueScope<T>
+    internal readonly ref struct MemberValueScope<T>
     {
         private readonly MemberInfo m_Member;
         private readonly object m_TargetObj;
