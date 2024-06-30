@@ -102,9 +102,17 @@ namespace HSR.NPRShader
             set => m_ShadowCasterId = value;
         }
 
-        bool IShadowCaster.CanCastShadow(ShadowUsage usage) => IsCastingShadow && isActiveAndEnabled;
-
         ShadowRendererList.ReadOnly IShadowCaster.RendererList => m_ShadowRendererList.AsReadOnly();
+
+        bool IShadowCaster.CanCastShadow(ShadowUsage usage)
+        {
+            if (!isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            return usage != ShadowUsage.Scene || IsCastingShadow;
+        }
 
         private void OnEnable()
         {
