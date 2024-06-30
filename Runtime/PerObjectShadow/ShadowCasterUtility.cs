@@ -22,6 +22,7 @@
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
+using UnityEngine;
 using static Unity.Mathematics.math;
 using float3 = Unity.Mathematics.float3;
 using float4x4 = Unity.Mathematics.float4x4;
@@ -44,21 +45,62 @@ namespace HSR.NPRShader.PerObjectShadow
             out float4x4 viewMatrix, out float4x4 projectionMatrix, out float priority, out float4 lightDirection)
         {
             float3 aabbCenter = (aabbMin + aabbMax) * 0.5f;
-            quaternion lightRotationInv = inverse(args.LightRotation);
-            viewMatrix = mul(s_FlipZMatrix, float4x4.TRS(-aabbCenter, lightRotationInv, 1));
+            GetLightRotationAndDirection(aabbCenter, in args, out quaternion lightRotation, out lightDirection);
+
+            viewMatrix = float4x4.TRS(-aabbCenter, inverse(lightRotation), 1);
+            viewMatrix = mul(s_FlipZMatrix, viewMatrix); // 翻转 z 轴
 
             if (GetProjectionMatrix(in aabbMin, in aabbMax, in args, in viewMatrix, out projectionMatrix))
             {
-                float distSq = distancesq(aabbCenter, args.CameraPosition);
-                float cosAngle = dot(args.CameraForward, normalizesafe(aabbCenter - args.CameraPosition));
+                float3 cameraForward = args.CameraLocalToWorldMatrix.c2.xyz;
+                float3 cameraPosition = args.CameraLocalToWorldMatrix.c3.xyz;
+
+                float distSq = distancesq(aabbCenter, cameraPosition);
+                float cosAngle = dot(cameraForward, normalizesafe(aabbCenter - cameraPosition));
                 priority = saturate(distSq / 1e4f) + mad(-cosAngle, 0.5f, 0.5f); // 越小越优先
-                lightDirection = float4(-rotate(args.LightRotation, forward()), 0);
                 return true;
             }
 
             priority = default;
-            lightDirection = default;
             return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void GetLightRotationAndDirection(float3 aabbCenter, in ShadowCasterCullingArgs args,
+            out quaternion lightRotation, out float4 lightDirection)
+        {
+            switch (args.Usage)
+            {
+                case ShadowUsage.Scene:
+                {
+                    lightRotation = quaternion(args.MainLightLocalToWorldMatrix);
+                    lightDirection = float4(-args.MainLightLocalToWorldMatrix.c2.xyz, 0);
+                    break;
+                }
+                case ShadowUsage.Self:
+                {
+                    float3 cameraPosition = args.CameraLocalToWorldMatrix.c3.xyz;
+                    float3 cameraUp = args.CameraLocalToWorldMatrix.c1.xyz;
+
+                    // 混合视角和主光源的方向，视角方向不用 camera forward，避免转动视角时阴影方向变化
+                    // 直接用向量插值，四元数插值会导致部分情况跳变
+                    // 以视角方向为主，减少背面 artifact
+                    float3 viewForward = normalizesafe(aabbCenter - cameraPosition);
+                    float3 lightForward = args.MainLightLocalToWorldMatrix.c2.xyz;
+                    float3 forward = lerp(viewForward, lightForward, 0.2f);
+
+                    lightRotation = quaternion.LookRotation(forward, cameraUp);
+                    lightDirection = float4(-forward, 0);
+                    break;
+                }
+                default:
+                {
+                    Debug.LogError("Unknown shadow usage.");
+                    lightRotation = default;
+                    lightDirection = default;
+                    break;
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

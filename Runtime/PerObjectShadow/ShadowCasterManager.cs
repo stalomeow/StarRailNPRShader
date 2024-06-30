@@ -19,7 +19,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -92,11 +91,10 @@ namespace HSR.NPRShader.PerObjectShadow
 
             var args = new ShadowCasterCullingArgs
             {
-                CameraPosition = cameraTransform.position,
-                CameraForward = cameraTransform.forward,
-                FrustumEightCorners = frustumCorners,
-                LightRotation = GetLightRotation(in mainLight, cameraTransform),
                 Usage = Usage,
+                FrustumEightCorners = frustumCorners,
+                CameraLocalToWorldMatrix = cameraTransform.localToWorldMatrix,
+                MainLightLocalToWorldMatrix = mainLight.localToWorldMatrix,
             };
 
             foreach (var caster in s_Casters)
@@ -136,30 +134,6 @@ namespace HSR.NPRShader.PerObjectShadow
                 ViewMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref viewMatrix),
                 ProjectionMatrix = UnsafeUtility.As<float4x4, Matrix4x4>(ref projectionMatrix),
             });
-        }
-
-        private Quaternion GetLightRotation(in VisibleLight mainLight, Transform cameraTransform)
-        {
-            switch (Usage)
-            {
-                case ShadowUsage.Scene:
-                {
-                    return mainLight.localToWorldMatrix.rotation;
-                }
-                case ShadowUsage.Self:
-                {
-                    // 混合视角和主光源的方向，直接用向量插值，四元数插值会导致部分情况跳变
-                    // 以视角方向为主，减少背面 artifact
-                    Vector3 viewForward = cameraTransform.forward;
-                    Vector3 lightForward = mainLight.localToWorldMatrix.GetColumn(2);
-                    Vector3 forward = Vector3.Slerp(viewForward, lightForward, 0.2f);
-                    return Quaternion.LookRotation(forward, cameraTransform.up);
-                }
-                default:
-                {
-                    throw new NotSupportedException($"Unsupported shadow usage: {Usage}.");
-                }
-            }
         }
 
         private static bool TryGetMainLight(in RenderingData renderingData, out VisibleLight mainLight)
