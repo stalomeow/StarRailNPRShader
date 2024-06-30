@@ -362,7 +362,8 @@ namespace HSR.NPRShader.Passes
                     material.EnableKeyword(KeywordNames._BLOOM);
                     CoreUtils.SetKeyword(material, KeywordNames._BLOOM_USE_RGBM, m_UseRGBM);
 
-                    material.SetFloat(PropertyIds._BloomIntensity, m_BloomConfig.Intensity.value);
+                    float bloomIntensity = m_BloomConfig.Intensity.value * 0.6f; // 稍微压低一点
+                    material.SetFloat(PropertyIds._BloomIntensity, bloomIntensity);
                     material.SetColor(PropertyIds._BloomTint, m_BloomConfig.Tint.value);
                     material.SetTexture(PropertyIds._BloomTexture, GetBiggestBlurRTHandle());
                 }
