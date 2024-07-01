@@ -39,18 +39,26 @@ namespace HSR.NPRShader
         private const bool k_RequiresScreenSpaceShadowsKeyword = true;
 #endif
 
-        [SerializeField] private bool m_EnableTransparentFrontHair = true;
         [SerializeField] private DepthBits m_SceneShadowDepthBits = DepthBits.Depth16;
         [SerializeField] private ShadowTileResolution m_SceneShadowTileResolution = ShadowTileResolution._512;
+
         [SerializeField] private bool m_EnableSelfShadow = true;
         [SerializeField] private DepthBits m_SelfShadowDepthBits = DepthBits.Depth16;
         [SerializeField] private ShadowTileResolution m_SelfShadowTileResolution = ShadowTileResolution._1024;
+
+        [SerializeField] private bool m_EnableFrontHairShadow = true;
+        [SerializeField] private HairDepthOnlyPass.DownscaleMode m_FrontHairShadowDownscale = HairDepthOnlyPass.DownscaleMode.Half;
+        [SerializeField] private DepthBits m_FrontHairShadowDepthBits = DepthBits.Depth16;
+
+        [SerializeField] private bool m_EnableTransparentFrontHair = true;
 
         [NonSerialized] private ShadowCasterManager m_SceneShadowCasterManager;
         [NonSerialized] private ShadowCasterManager m_SelfShadowCasterManager;
 
         [NonSerialized] private SetKeywordPass m_EnableSelfShadowPass;
         [NonSerialized] private SetKeywordPass m_DisableSelfShadowPass;
+        [NonSerialized] private SetKeywordPass m_EnableFrontHairShadowPass;
+        [NonSerialized] private SetKeywordPass m_DisableFrontHairShadowPass;
         [NonSerialized] private PerObjectShadowCasterPass m_ScenePerObjShadowPass;
         [NonSerialized] private PerObjectShadowCasterPreviewPass m_ScenePerObjShadowPreviewPass;
         [NonSerialized] private HairDepthOnlyPass m_HairDepthOnlyPass;
@@ -75,6 +83,8 @@ namespace HSR.NPRShader
 
             m_EnableSelfShadowPass = new SetKeywordPass(KeywordNames._MAIN_LIGHT_SELF_SHADOWS, true, RenderPassEvent.BeforeRendering);
             m_DisableSelfShadowPass = new SetKeywordPass(KeywordNames._MAIN_LIGHT_SELF_SHADOWS, false, RenderPassEvent.BeforeRendering);
+            m_EnableFrontHairShadowPass = new SetKeywordPass(KeywordNames._MAIN_LIGHT_FRONT_HAIR_SHADOWS, true, RenderPassEvent.BeforeRendering);
+            m_DisableFrontHairShadowPass = new SetKeywordPass(KeywordNames._MAIN_LIGHT_FRONT_HAIR_SHADOWS, false, RenderPassEvent.BeforeRendering);
             m_ScenePerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSceneShadow", RenderPassEvent.AfterRenderingShadows);
             m_ScenePerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSceneShadow (Preview)", RenderPassEvent.AfterRenderingShadows);
             m_HairDepthOnlyPass = new HairDepthOnlyPass();
@@ -106,12 +116,13 @@ namespace HSR.NPRShader
 
             // BeforeRendering
             renderer.EnqueuePass(m_EnableSelfShadow ? m_EnableSelfShadowPass : m_DisableSelfShadowPass);
+            renderer.EnqueuePass(m_EnableFrontHairShadow ? m_EnableFrontHairShadowPass : m_DisableFrontHairShadowPass);
 
             // AfterRenderingShadows
             renderer.EnqueuePass(isPreviewCamera ? m_ScenePerObjShadowPreviewPass : m_ScenePerObjShadowPass);
 
             // AfterRenderingPrePasses
-            if (m_EnableSelfShadow)
+            if (m_EnableFrontHairShadow)
             {
                 renderer.EnqueuePass(m_HairDepthOnlyPass);
             }
@@ -154,6 +165,11 @@ namespace HSR.NPRShader
                 m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
                 m_SelfPerObjShadowPass.Setup(m_SelfShadowCasterManager, m_SelfShadowTileResolution, m_SelfShadowDepthBits);
             }
+
+            if (m_EnableFrontHairShadow)
+            {
+                m_HairDepthOnlyPass.Setup(m_FrontHairShadowDownscale, m_FrontHairShadowDepthBits);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -170,6 +186,7 @@ namespace HSR.NPRShader
         private static class KeywordNames
         {
             public static readonly string _MAIN_LIGHT_SELF_SHADOWS = MemberNameHelpers.String();
+            public static readonly string _MAIN_LIGHT_FRONT_HAIR_SHADOWS = MemberNameHelpers.String();
         }
     }
 }

@@ -30,9 +30,18 @@ namespace HSR.NPRShader.Passes
 {
     public class HairDepthOnlyPass : ScriptableRenderPass, IDisposable
     {
+        public enum DownscaleMode
+        {
+            None = 1,
+            Half = 2,
+            Quarter = 4,
+        }
+
         private static readonly ShaderTagId s_ShaderTagId = new("HSRHairDepthOnly");
 
         private FilteringSettings m_FilteringSettings;
+        private DownscaleMode m_DownscaleMode;
+        private DepthBits m_DepthBits;
         private RTHandle m_DepthRT;
 
         public HairDepthOnlyPass()
@@ -48,19 +57,24 @@ namespace HSR.NPRShader.Passes
             m_DepthRT?.Release();
         }
 
+        public void Setup(DownscaleMode downscaleMode, DepthBits depthBits)
+        {
+            m_DownscaleMode = downscaleMode;
+            m_DepthBits = depthBits;
+        }
+
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             base.Configure(cmd, cameraTextureDescriptor);
 
             RenderTextureDescriptor depthDesc = cameraTextureDescriptor;
-            depthDesc.width /= 2;
-            depthDesc.height /= 2;
+            depthDesc.width /= (int)m_DownscaleMode;
+            depthDesc.height /= (int)m_DownscaleMode;
             depthDesc.graphicsFormat = GraphicsFormat.None;
-            depthDesc.depthStencilFormat = GraphicsFormat.D16_UNorm;
-            depthDesc.depthBufferBits = 16;
+            depthDesc.depthStencilFormat = GraphicsFormatUtility.GetDepthStencilFormat((int)m_DepthBits, 0);
             depthDesc.msaaSamples = 1;
-            RenderingUtils.ReAllocateIfNeeded(ref m_DepthRT, in depthDesc,
-                FilterMode.Point, TextureWrapMode.Clamp, name: "_HairDepthTexture");
+            RenderingUtils.ReAllocateIfNeeded(ref m_DepthRT, in depthDesc, FilterMode.Point, TextureWrapMode.Clamp,
+                name: "_HairDepthTexture");
 
             ConfigureTarget(m_DepthRT);
             ConfigureClear(ClearFlag.All, Color.black);

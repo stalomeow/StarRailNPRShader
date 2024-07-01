@@ -33,34 +33,32 @@ namespace HSR.NPRShader.Editor
     {
         public const string ScreenSpaceShadowsTypeName = "UnityEngine.Rendering.Universal.ScreenSpaceShadows";
 
-        private SerializedProperty m_EnableTransparentFrontHair;
         private SerializedProperty m_SceneShadowDepthBits;
         private SerializedProperty m_SceneShadowTileResolution;
         private SerializedProperty m_EnableSelfShadow;
         private SerializedProperty m_SelfShadowDepthBits;
         private SerializedProperty m_SelfShadowTileResolution;
+        private SerializedProperty m_EnableFrontHairShadow;
+        private SerializedProperty m_FrontHairShadowDownscale;
+        private SerializedProperty m_FrontHairShadowDepthBits;
+        private SerializedProperty m_EnableTransparentFrontHair;
 
         private void OnEnable()
         {
-            m_EnableTransparentFrontHair = serializedObject.FindProperty(nameof(m_EnableTransparentFrontHair));
             m_SceneShadowDepthBits = serializedObject.FindProperty(nameof(m_SceneShadowDepthBits));
             m_SceneShadowTileResolution = serializedObject.FindProperty(nameof(m_SceneShadowTileResolution));
             m_EnableSelfShadow = serializedObject.FindProperty(nameof(m_EnableSelfShadow));
             m_SelfShadowDepthBits = serializedObject.FindProperty(nameof(m_SelfShadowDepthBits));
             m_SelfShadowTileResolution = serializedObject.FindProperty(nameof(m_SelfShadowTileResolution));
+            m_EnableFrontHairShadow = serializedObject.FindProperty(nameof(m_EnableFrontHairShadow));
+            m_FrontHairShadowDownscale = serializedObject.FindProperty(nameof(m_FrontHairShadowDownscale));
+            m_FrontHairShadowDepthBits = serializedObject.FindProperty(nameof(m_FrontHairShadowDepthBits));
+            m_EnableTransparentFrontHair = serializedObject.FindProperty(nameof(m_EnableTransparentFrontHair));
         }
 
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.LabelField("Transparent Front Hair", EditorStyles.boldLabel);
-
-            using (new EditorGUI.IndentLevelScope())
-            {
-                EditorGUILayout.PropertyField(m_EnableTransparentFrontHair, EditorGUIUtility.TrTextContent("Enable"));
-            }
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Scene Shadow", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Per-Object Scene Shadow", EditorStyles.boldLabel);
 
             using (new EditorGUI.IndentLevelScope())
             {
@@ -69,13 +67,31 @@ namespace HSR.NPRShader.Editor
             }
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Self Shadow", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Per-Object Self Shadow", EditorStyles.boldLabel);
 
             using (new EditorGUI.IndentLevelScope())
             {
                 EditorGUILayout.PropertyField(m_EnableSelfShadow, EditorGUIUtility.TrTextContent("Enable"));
                 EditorGUILayout.PropertyField(m_SelfShadowTileResolution, EditorGUIUtility.TrTextContent("Tile Resolution"));
                 EditorGUILayout.PropertyField(m_SelfShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Front Hair Shadow", EditorStyles.boldLabel);
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(m_EnableFrontHairShadow, EditorGUIUtility.TrTextContent("Enable"));
+                EditorGUILayout.PropertyField(m_FrontHairShadowDownscale, EditorGUIUtility.TrTextContent("Downscale"));
+                EditorGUILayout.PropertyField(m_FrontHairShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Transparent Front Hair", EditorStyles.boldLabel);
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(m_EnableTransparentFrontHair, EditorGUIUtility.TrTextContent("Enable"));
             }
 
             ShowErrors();
