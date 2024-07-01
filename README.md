@@ -4,10 +4,6 @@
 
 Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail.
 
----
-
-基于 Unity URP 的仿星穹铁道渲染 Shader。
-
 ## Documentation | 文档
 
 [https://srshader.stalomeow.com](https://srshader.stalomeow.com)
