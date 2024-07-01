@@ -54,6 +54,9 @@ Shader "Honkai Star Rail/Character/Face"
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
         _EmissionThreshold("Threshold", Range(0, 1)) = 0.1
         _EmissionIntensity("Intensity", Float) = 0.3
+        [Header(Eye Emission)][Space(5)]
+        _EyeEmissionColor("Color", Color) = (1, 1, 1, 1)
+        _EyeEmissionIntensity("Intensity", Float) = 0
 
         [HeaderFoldout(Bloom)]
         _mmBloomIntensity0("Intensity", Float) = 0

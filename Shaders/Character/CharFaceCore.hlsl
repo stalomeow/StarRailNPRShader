@@ -53,6 +53,8 @@ CBUFFER_START(UnityPerMaterial)
     float4 _EmissionColor;
     float _EmissionThreshold;
     float _EmissionIntensity;
+    float4 _EyeEmissionColor;
+    float _EyeEmissionIntensity;
 
     float _mmBloomIntensity0;
     float4 _BloomColor0;
@@ -190,8 +192,12 @@ void FaceOpaqueAndZFragment(
     emissionData.threshold = _EmissionThreshold;
     emissionData.intensity = _EmissionIntensity;
 
-    // 眼睛的高亮
+    // 自发光
     float3 emission = GetEmission(emissionData, texColor.rgb);
+
+    // 眼睛额外高亮
+    float eyeMask = step(0.1, faceMap.r) - step(0.8, faceMap.r);
+    float3 eyeEmission = texColor.rgb * _EyeEmissionColor.rgb * max(0, eyeMask * _EyeEmissionIntensity);
 
     // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
 
@@ -203,7 +209,7 @@ void FaceOpaqueAndZFragment(
     #endif
 
     // Output
-    colorTarget = float4(diffuse + emission, texColor.a);
+    colorTarget = float4(diffuse + emission + eyeEmission, texColor.a);
     colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor0.rgb, _mmBloomIntensity0);
 
     // Fog
