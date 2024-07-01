@@ -27,7 +27,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         _ModelScale("Model Scale", Float) = 1
         [HSRMaterialIDSelector] _SingleMaterialID("Material ID", Float) = -1
 
-        [HeaderFoldout(Shader Options)]
+        [HeaderFoldout(Options)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 0                       // 默认 Off
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendColor("Src Blend (RGB)", Float) = 5  // 默认 SrcAlpha
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendColor("Dst Blend (RGB)", Float) = 10 // 默认 OneMinusSrcAlpha
@@ -39,14 +39,12 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HideInInspector] _Color("Color", Color) = (1, 1, 1, 1)
         [SingleLineTextureNoScaleOffset] _LightMap("Light Map", 2D) = "white" {}
         [TextureScaleOffset] _Maps_ST("Maps Scale Offset", Vector) = (1, 1, 0, 0)
+        [Header(Ramps)] [Space(5)]
+        [RampTexture] _RampMapCool("Cool", 2D) = "white" {}
+        [RampTexture] _RampMapWarm("Warm", 2D) = "white" {}
         [Header(Overrides)] [Space(5)]
         [If(_MODEL_GAME)] _BackColor("Back Face Color", Color) = (1, 1, 1, 1)
         [If(_MODEL_GAME)] [Toggle] _BackFaceUV2("Back Face Use UV2", Float) = 0
-
-        [HeaderFoldout(Diffuse)]
-        [RampTexture] _RampMapCool("Ramp (Cool)", 2D) = "white" {}
-        [RampTexture] _RampMapWarm("Ramp (Warm)", 2D) = "white" {}
-        _RampCoolWarmLerpFactor("Cool / Warm", Range(0, 1)) = 1
 
         [HeaderFoldout(Specular)]
         [HSRMaterialIDFoldout] _SpecularColor("Color", Float) = 0
@@ -85,10 +83,6 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HSRMaterialIDProperty(_SpecularRoughness, 5)] _SpecularRoughness5("Specular Roughness", Range(0, 1)) = 0.02
         [HSRMaterialIDProperty(_SpecularRoughness, 6)] _SpecularRoughness6("Specular Roughness", Range(0, 1)) = 0.02
         [HSRMaterialIDProperty(_SpecularRoughness, 7)] _SpecularRoughness7("Specular Roughness", Range(0, 1)) = 0.02
-
-        [HeaderFoldout(Self Shadow)]
-        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
-        _SelfShadowNormalBias("Normal Bias", Float) = 0
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
@@ -161,9 +155,12 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         [HSRMaterialIDProperty(_OutlineColor, 6)] _OutlineColor6("Outline Color", Color) = (0, 0, 0, 1)
         [HSRMaterialIDProperty(_OutlineColor, 7)] _OutlineColor7("Outline Color", Color) = (0, 0, 0, 1)
 
-        [HeaderFoldout(Dither)]
-        _DitherAlpha("Alpha", Range(0, 1)) = 1
+        [HeaderFoldout(Self Shadow Caster)]
+        _SelfShadowDepthBias("Depth Bias", Float) = -0.01
+        _SelfShadowNormalBias("Normal Bias", Float) = 0
 
+        [HideInInspector] _RampCoolWarmLerpFactor("Cool / Warm", Range(0, 1)) = 1
+        [HideInInspector] _DitherAlpha("Alpha", Range(0, 1)) = 1
         [HideInInspector] _PerObjShadowCasterId("Per Object Shadow Caster Id", Float) = -1
     }
 

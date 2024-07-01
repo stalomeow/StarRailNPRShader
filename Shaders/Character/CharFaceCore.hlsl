@@ -46,10 +46,9 @@ CBUFFER_START(UnityPerMaterial)
 
     float4 _ShadowColor;
     float4 _EyeShadowColor;
-
-    float _SelfShadowDepthBias;
-    float _SelfShadowNormalBias;
     float _HairShadowDistance;
+
+    float _MaxEyeHairDistance;
 
     float4 _EmissionColor;
     float _EmissionThreshold;
@@ -58,25 +57,24 @@ CBUFFER_START(UnityPerMaterial)
     float _mmBloomIntensity0;
     float4 _BloomColor0;
 
+    float4 _ExCheekColor;
+    float4 _ExShyColor;
+    float4 _ExShadowColor;
+    float4 _ExEyeColor;
+
     float _OutlineWidth;
     float _OutlineZOffset;
     float4 _OutlineColor0;
-
     float4 _NoseLineColor;
     float _NoseLinePower;
 
-    float _MaxEyeHairDistance;
+    float _SelfShadowDepthBias;
+    float _SelfShadowNormalBias;
 
-    float4 _ExCheekColor;
     float _ExCheekIntensity;
-    float4 _ExShyColor;
     float _ExShyIntensity;
-    float4 _ExShadowColor;
-    float4 _ExEyeColor;
     float _ExShadowIntensity;
-
     float _DitherAlpha;
-
     float4 _MMDHeadBoneForward;
     float4 _MMDHeadBoneUp;
     float4 _MMDHeadBoneRight;

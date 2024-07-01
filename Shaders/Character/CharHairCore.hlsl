@@ -45,15 +45,12 @@ CBUFFER_START(UnityPerMaterial)
     float4 _BackColor;
     float4 _Maps_ST;
 
-    float _RampCoolWarmLerpFactor;
+    float _HairBlendAlpha;
 
     float4 _SpecularColor0;
     float _SpecularShininess0;
     float _SpecularIntensity0;
     float _SpecularRoughness0;
-
-    float _SelfShadowDepthBias;
-    float _SelfShadowNormalBias;
 
     float4 _EmissionColor;
     float _EmissionThreshold;
@@ -82,10 +79,11 @@ CBUFFER_START(UnityPerMaterial)
     float _OutlineZOffset;
     float4 _OutlineColor0;
 
-    float _HairBlendAlpha;
+    float _SelfShadowDepthBias;
+    float _SelfShadowNormalBias;
 
+    float _RampCoolWarmLerpFactor;
     float _DitherAlpha;
-
     float4 _MMDHeadBoneForward;
     float4 _MMDHeadBoneUp;
     float4 _MMDHeadBoneRight;

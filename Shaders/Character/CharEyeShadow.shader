@@ -26,7 +26,7 @@ Shader "Honkai Star Rail/Character/EyeShadow"
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha("Src Blend (A)", Float) = 0 // 默认 Zero
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendAlpha("Dst Blend (A)", Float) = 0 // 默认 Zero
         _Color("Color", Color) = (0.6770648, 0.7038123, 0.8018868, 0.7647059)
-        _DitherAlpha("Dither Alpha", Range(0, 1)) = 1
+        [HideInInspector] _DitherAlpha("Dither Alpha", Range(0, 1)) = 1
     }
 
     SubShader

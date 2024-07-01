@@ -25,12 +25,11 @@ Shader "Honkai Star Rail/Character/FaceMask"
     {
         _Color("Color", Color) = (1, 1, 1, 1)
 
-        [HeaderFoldout(Self Shadow)]
+        [HeaderFoldout(Self Shadow Caster)]
         _SelfShadowDepthBias("Depth Bias", Float) = -0.01
         _SelfShadowNormalBias("Normal Bias", Float) = 0
 
-        [HeaderFoldout(Dither)]
-        _DitherAlpha("Alpha", Range(0, 1)) = 1
+        [HideInInspector] _DitherAlpha("Alpha", Range(0, 1)) = 1
     }
 
     SubShader

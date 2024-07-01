@@ -44,26 +44,20 @@ TEXTURE2D(_RampMapWarm); SAMPLER(sampler_RampMapWarm);
 
 CBUFFER_START(UnityPerMaterial)
     float _ModelScale;
+    float _SingleMaterialID;
 
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float _AlphaTestThreshold;
 #endif
 
-    float _SingleMaterialID;
-
     float4 _Color;
     float4 _BackColor;
     float4 _Maps_ST;
-
-    float _RampCoolWarmLerpFactor;
 
     DEF_CHAR_MAT_PROP(float4, _SpecularColor);
     DEF_CHAR_MAT_PROP(float, _SpecularShininess);
     DEF_CHAR_MAT_PROP(float, _SpecularIntensity);
     DEF_CHAR_MAT_PROP(float, _SpecularRoughness);
-
-    float _SelfShadowDepthBias;
-    float _SelfShadowNormalBias;
 
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
     float4 _StockingsMap_ST;
@@ -105,8 +99,11 @@ CBUFFER_START(UnityPerMaterial)
     float _OutlineZOffset;
     DEF_CHAR_MAT_PROP(float4, _OutlineColor);
 
-    float _DitherAlpha;
+    float _SelfShadowDepthBias;
+    float _SelfShadowNormalBias;
 
+    float _RampCoolWarmLerpFactor;
+    float _DitherAlpha;
     float _PerObjShadowCasterId;
 CBUFFER_END
 
