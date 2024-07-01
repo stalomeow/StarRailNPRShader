@@ -31,7 +31,6 @@ namespace HSR.NPRShader.Passes
     public class PerObjectShadowCasterPass : ScriptableRenderPass, IDisposable
     {
         public const int MaxShadowCount = 16;
-        private const int ShadowMapBufferBits = 16;
 
         private readonly Matrix4x4[] m_ShadowMatrixArray;
         private readonly Vector4[] m_ShadowMapRectArray;
@@ -56,10 +55,10 @@ namespace HSR.NPRShader.Passes
             m_ShadowMap?.Release();
         }
 
-        public void Setup(ShadowCasterManager casterManager, int tileResolution)
+        public void Setup(ShadowCasterManager casterManager, ShadowTileResolution tileResolution, DepthBits depthBits)
         {
             m_CasterManager = casterManager;
-            m_TileResolution = tileResolution;
+            m_TileResolution = (int)tileResolution;
 
             if (casterManager.VisibleCount <= 0)
             {
@@ -68,8 +67,9 @@ namespace HSR.NPRShader.Passes
 
             // 保证 shadow map 是正方形
             m_ShadowMapSizeInTile = Mathf.CeilToInt(Mathf.Sqrt(casterManager.VisibleCount));
-            int shadowRTSize = m_ShadowMapSizeInTile * tileResolution;
-            ShadowUtils.ShadowRTReAllocateIfNeeded(ref m_ShadowMap, shadowRTSize, shadowRTSize, ShadowMapBufferBits);
+            int shadowRTSize = m_ShadowMapSizeInTile * m_TileResolution;
+            int shadowRTDepthBits = Mathf.Max((int)depthBits, (int)DepthBits.Depth8);
+            ShadowUtils.ShadowRTReAllocateIfNeeded(ref m_ShadowMap, shadowRTSize, shadowRTSize, shadowRTDepthBits);
 
             ConfigureTarget(m_ShadowMap);
             ConfigureClear(ClearFlag.All, Color.black);

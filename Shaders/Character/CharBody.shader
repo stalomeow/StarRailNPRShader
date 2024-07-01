@@ -92,7 +92,6 @@ Shader "Honkai Star Rail/Character/Body"
         [HeaderFoldout(Self Shadow)]
         _SelfShadowDepthBias("Depth Bias", Float) = -0.01
         _SelfShadowNormalBias("Normal Bias", Float) = 0
-        [Toggle(_RECEIVE_SELF_SHADOW_ON)] _ReceiveSelfShadow("Receive Self Shadow", Float) = 1
 
         [HeaderFoldout(Stockings)]
         [PostHelpBox(Warning, DO NOT forget to set the Tiling.)]
@@ -270,11 +269,11 @@ Shader "Honkai Star Rail/Character/Body"
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _SINGLEMATERIAL_ON
             #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
-            #pragma shader_feature_local_fragment _ _RECEIVE_SELF_SHADOW_ON
 
             #pragma multi_compile_fog
 
             #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _MAIN_LIGHT_SELF_SHADOWS
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT

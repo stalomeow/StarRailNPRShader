@@ -165,7 +165,7 @@ void FaceOpaqueAndZFragment(
     HeadDirections headDirWS = WORLD_SPACE_CHAR_HEAD_DIRECTIONS();
 
     // 刘海阴影
-    #if defined(_RECEIVE_HAIR_SHADOW_ON)
+    #if defined(_MAIN_LIGHT_SELF_SHADOWS)
         light.shadowAttenuation = min(light.shadowAttenuation, GetHairShadow(i.positionHCS, dirWS));
     #endif
 

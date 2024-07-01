@@ -22,6 +22,7 @@
 using System;
 using HSR.NPRShader.Passes;
 using HSR.NPRShader.PerObjectShadow;
+using HSR.NPRShader.Utils;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -38,9 +39,18 @@ namespace HSR.NPRShader
         private const bool k_RequiresScreenSpaceShadowsKeyword = true;
 #endif
 
+        [SerializeField] private bool m_EnableTransparentFrontHair = true;
+        [SerializeField] private DepthBits m_SceneShadowDepthBits = DepthBits.Depth16;
+        [SerializeField] private ShadowTileResolution m_SceneShadowTileResolution = ShadowTileResolution._512;
+        [SerializeField] private bool m_EnableSelfShadow = true;
+        [SerializeField] private DepthBits m_SelfShadowDepthBits = DepthBits.Depth16;
+        [SerializeField] private ShadowTileResolution m_SelfShadowTileResolution = ShadowTileResolution._1024;
+
         [NonSerialized] private ShadowCasterManager m_SceneShadowCasterManager;
         [NonSerialized] private ShadowCasterManager m_SelfShadowCasterManager;
 
+        [NonSerialized] private SetKeywordPass m_EnableSelfShadowPass;
+        [NonSerialized] private SetKeywordPass m_DisableSelfShadowPass;
         [NonSerialized] private PerObjectShadowCasterPass m_ScenePerObjShadowPass;
         [NonSerialized] private PerObjectShadowCasterPreviewPass m_ScenePerObjShadowPreviewPass;
         [NonSerialized] private HairDepthOnlyPass m_HairDepthOnlyPass;
@@ -51,6 +61,8 @@ namespace HSR.NPRShader
         [NonSerialized] private PerObjectShadowCasterPreviewPass m_SelfPerObjShadowPreviewPass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward1Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward2Pass;
+        [NonSerialized] private ForwardDrawObjectsPass m_DrawSimpleHairPass;
+        [NonSerialized] private ForwardDrawObjectsPass m_DrawTransparentHairPass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward3Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueOutlinePass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawTransparentPass;
@@ -61,6 +73,8 @@ namespace HSR.NPRShader
             m_SceneShadowCasterManager = new ShadowCasterManager(ShadowUsage.Scene);
             m_SelfShadowCasterManager = new ShadowCasterManager(ShadowUsage.Self);
 
+            m_EnableSelfShadowPass = new SetKeywordPass(KeywordNames._MAIN_LIGHT_SELF_SHADOWS, true, RenderPassEvent.BeforeRendering);
+            m_DisableSelfShadowPass = new SetKeywordPass(KeywordNames._MAIN_LIGHT_SELF_SHADOWS, false, RenderPassEvent.BeforeRendering);
             m_ScenePerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSceneShadow", RenderPassEvent.AfterRenderingShadows);
             m_ScenePerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSceneShadow (Preview)", RenderPassEvent.AfterRenderingShadows);
             m_HairDepthOnlyPass = new HairDepthOnlyPass();
@@ -73,9 +87,13 @@ namespace HSR.NPRShader
                 new ShaderTagId("HSRForward1"));
             m_DrawOpaqueForward2Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (2)", true,
                 new ShaderTagId("HSRForward2"));
+            m_DrawSimpleHairPass = new ForwardDrawObjectsPass("DrawStarRailHair", true,
+                new ShaderTagId("HSRHair"));
+            m_DrawTransparentHairPass = new ForwardDrawObjectsPass("DrawStarRailHair", true,
+                new ShaderTagId("HSRHairPreserveEye"), new ShaderTagId("HSRHairFakeTransparent"));
             m_DrawOpaqueForward3Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (3)", true,
                 new ShaderTagId("HSRForward3"));
-            m_DrawOpaqueOutlinePass = new ForwardDrawObjectsPass("DrawStarRailOpaque (Outline)", true,
+            m_DrawOpaqueOutlinePass = new ForwardDrawObjectsPass("DrawStarRailOpaqueOutline", true,
                 new ShaderTagId("HSROutline"));
             m_DrawTransparentPass = new ForwardDrawObjectsPass("DrawStarRailTransparent", false,
                 new ShaderTagId("HSRTransparent"), new ShaderTagId("HSROutline"));
@@ -86,11 +104,17 @@ namespace HSR.NPRShader
         {
             bool isPreviewCamera = renderingData.cameraData.isPreviewCamera;
 
+            // BeforeRendering
+            renderer.EnqueuePass(m_EnableSelfShadow ? m_EnableSelfShadowPass : m_DisableSelfShadowPass);
+
             // AfterRenderingShadows
             renderer.EnqueuePass(isPreviewCamera ? m_ScenePerObjShadowPreviewPass : m_ScenePerObjShadowPass);
 
             // AfterRenderingPrePasses
-            renderer.EnqueuePass(m_HairDepthOnlyPass);
+            if (m_EnableSelfShadow)
+            {
+                renderer.EnqueuePass(m_HairDepthOnlyPass);
+            }
 
             // AfterRenderingGbuffer
             renderer.EnqueuePass(m_ForceDepthPrepassPass); // 保证 RimLight、眼睛等需要深度图的效果正常工作
@@ -98,9 +122,15 @@ namespace HSR.NPRShader
 
             // AfterRenderingOpaques
             renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
-            renderer.EnqueuePass(isPreviewCamera ? m_SelfPerObjShadowPreviewPass : m_SelfPerObjShadowPass);
+
+            if (m_EnableSelfShadow)
+            {
+                renderer.EnqueuePass(isPreviewCamera ? m_SelfPerObjShadowPreviewPass : m_SelfPerObjShadowPass);
+            }
+
             renderer.EnqueuePass(m_DrawOpaqueForward1Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
+            renderer.EnqueuePass(m_EnableTransparentFrontHair ? m_DrawTransparentHairPass : m_DrawSimpleHairPass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
             renderer.EnqueuePass(m_DrawOpaqueOutlinePass);
 
@@ -117,10 +147,13 @@ namespace HSR.NPRShader
             base.SetupRenderPasses(renderer, in renderingData);
 
             m_SceneShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
-            m_ScenePerObjShadowPass.Setup(m_SceneShadowCasterManager, 512);
+            m_ScenePerObjShadowPass.Setup(m_SceneShadowCasterManager, m_SceneShadowTileResolution, m_SceneShadowDepthBits);
 
-            m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
-            m_SelfPerObjShadowPass.Setup(m_SelfShadowCasterManager, 1024);
+            if (m_EnableSelfShadow)
+            {
+                m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
+                m_SelfPerObjShadowPass.Setup(m_SelfShadowCasterManager, m_SelfShadowTileResolution, m_SelfShadowDepthBits);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -132,6 +165,11 @@ namespace HSR.NPRShader
             m_PostProcessPass.Dispose();
 
             base.Dispose(disposing);
+        }
+
+        private static class KeywordNames
+        {
+            public static readonly string _MAIN_LIGHT_SELF_SHADOWS = MemberNameHelpers.String();
         }
     }
 }

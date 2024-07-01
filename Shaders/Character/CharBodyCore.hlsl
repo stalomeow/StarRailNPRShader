@@ -193,7 +193,7 @@ void BodyColorFragment(
     Light light = GetCharacterMainLight(i.shadowCoord, i.positionWS);
     Directions dirWS = GetWorldSpaceDirections(light, i.positionWS, i.normalWS);
 
-    #if defined(_RECEIVE_SELF_SHADOW_ON)
+    #if defined(_MAIN_LIGHT_SELF_SHADOWS)
         float selfShadow = MainLightPerObjectShadow(i.positionWS, _PerObjShadowCasterId);
         light.shadowAttenuation = min(light.shadowAttenuation, selfShadow);
     #endif

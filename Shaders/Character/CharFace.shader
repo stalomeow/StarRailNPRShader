@@ -52,7 +52,6 @@ Shader "Honkai Star Rail/Character/Face"
 
         [HeaderFoldout(Hair Shadow)]
         _HairShadowDistance("Distance", Range(0, 1)) = 0.2
-        [Toggle(_RECEIVE_HAIR_SHADOW_ON)] _ReceiveHairShadow("Receive Hair Shadow", Float) = 1
 
         [HeaderFoldout(Emission, Use Albedo.a as emission map)]
         _EmissionColor("Color", Color) = (1, 1, 1, 1)
@@ -140,11 +139,11 @@ Shader "Honkai Star Rail/Character/Face"
             #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
             #pragma shader_feature_local_fragment _ _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ _FACEMAPUV2_ON
-            #pragma shader_feature_local_fragment _ _RECEIVE_HAIR_SHADOW_ON
 
             #pragma multi_compile_fog
 
             #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _MAIN_LIGHT_SELF_SHADOWS
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT

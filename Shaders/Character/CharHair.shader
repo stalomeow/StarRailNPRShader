@@ -119,17 +119,66 @@ Shader "Honkai Star Rail/Character/Hair"
 
             Tags
             {
-                "LightMode" = "HSRForward2"
+                "LightMode" = "HSRHair"
+            }
+
+            Stencil
+            {
+                Ref 3
+                ReadMask 2   // 眼睛位
+                WriteMask 1  // 角色
+                Comp Always  // 不管眼睛
+                Pass Replace // 写入角色位
+                Fail Keep
+            }
+
+            Cull [_Cull]
+            ZWrite On
+
+            Blend 0 One Zero, [_SrcBlendAlpha] [_DstBlendAlpha]
+
+            ColorMask RGBA 0
+
+            HLSLPROGRAM
+
+            #pragma vertex HairVertex
+            #pragma fragment HairOpaqueFragment
+
+            #pragma shader_feature_local _MODEL_GAME _MODEL_MMD
+            #pragma shader_feature_local_fragment _ _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _ _BACKFACEUV2_ON
+
+            #pragma multi_compile_fog
+
+            #pragma multi_compile _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _LIGHT_LAYERS
+            #pragma multi_compile _ _FORWARD_PLUS
+
+            #include "CharHairCore.hlsl"
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "HairOpaque"
+
+            Tags
+            {
+                "LightMode" = "HSRHairPreserveEye"
             }
 
             // 没有遮住眼睛的部分
             Stencil
             {
                 Ref 3
-                ReadMask 2   // 眼睛位
-                WriteMask 1  // 角色
-                Comp NotEqual
-                Pass Replace // 写入角色位
+                ReadMask 2    // 眼睛位
+                WriteMask 1   // 角色
+                Comp NotEqual // 排除眼睛
+                Pass Replace  // 写入角色位
                 Fail Keep
             }
 
@@ -169,7 +218,7 @@ Shader "Honkai Star Rail/Character/Hair"
 
             Tags
             {
-                "LightMode" = "HSRForward3"
+                "LightMode" = "HSRHairFakeTransparent"
             }
 
             // 遮住眼睛的部分
