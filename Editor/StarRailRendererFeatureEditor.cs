@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Rendering.Universal;
 using UnityEditor;
+using UnityEditor.AnimatedValues;
 using UnityEngine;
 
 namespace HSR.NPRShader.Editor
@@ -43,6 +44,9 @@ namespace HSR.NPRShader.Editor
         private SerializedProperty m_FrontHairShadowDepthBits;
         private SerializedProperty m_EnableTransparentFrontHair;
 
+        private AnimBool m_SelfShadowAnim;
+        private AnimBool m_FrontHairShadowAnim;
+
         private void OnEnable()
         {
             m_SceneShadowDepthBits = serializedObject.FindProperty(nameof(m_SceneShadowDepthBits));
@@ -54,9 +58,22 @@ namespace HSR.NPRShader.Editor
             m_FrontHairShadowDownscale = serializedObject.FindProperty(nameof(m_FrontHairShadowDownscale));
             m_FrontHairShadowDepthBits = serializedObject.FindProperty(nameof(m_FrontHairShadowDepthBits));
             m_EnableTransparentFrontHair = serializedObject.FindProperty(nameof(m_EnableTransparentFrontHair));
+
+            m_SelfShadowAnim = new AnimBool(m_EnableSelfShadow.boolValue, Repaint);
+            m_FrontHairShadowAnim = new AnimBool(m_EnableFrontHairShadow.boolValue, Repaint);
         }
 
         public override void OnInspectorGUI()
+        {
+            serializedObject.UpdateIfRequiredOrScript();
+
+            DrawFields();
+            ShowErrors();
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawFields()
         {
             EditorGUILayout.LabelField("Per-Object Scene Shadow", EditorStyles.boldLabel);
 
@@ -72,8 +89,14 @@ namespace HSR.NPRShader.Editor
             using (new EditorGUI.IndentLevelScope())
             {
                 EditorGUILayout.PropertyField(m_EnableSelfShadow, EditorGUIUtility.TrTextContent("Enable"));
-                EditorGUILayout.PropertyField(m_SelfShadowTileResolution, EditorGUIUtility.TrTextContent("Tile Resolution"));
-                EditorGUILayout.PropertyField(m_SelfShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+                m_SelfShadowAnim.target = m_EnableSelfShadow.boolValue;
+
+                if (EditorGUILayout.BeginFadeGroup(m_SelfShadowAnim.faded))
+                {
+                    EditorGUILayout.PropertyField(m_SelfShadowTileResolution, EditorGUIUtility.TrTextContent("Tile Resolution"));
+                    EditorGUILayout.PropertyField(m_SelfShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+                }
+                EditorGUILayout.EndFadeGroup();
             }
 
             EditorGUILayout.Space();
@@ -82,8 +105,14 @@ namespace HSR.NPRShader.Editor
             using (new EditorGUI.IndentLevelScope())
             {
                 EditorGUILayout.PropertyField(m_EnableFrontHairShadow, EditorGUIUtility.TrTextContent("Enable"));
-                EditorGUILayout.PropertyField(m_FrontHairShadowDownscale, EditorGUIUtility.TrTextContent("Downscale"));
-                EditorGUILayout.PropertyField(m_FrontHairShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+                m_FrontHairShadowAnim.target = m_EnableFrontHairShadow.boolValue;
+
+                if (EditorGUILayout.BeginFadeGroup(m_FrontHairShadowAnim.faded))
+                {
+                    EditorGUILayout.PropertyField(m_FrontHairShadowDownscale, EditorGUIUtility.TrTextContent("Downscale"));
+                    EditorGUILayout.PropertyField(m_FrontHairShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+                }
+                EditorGUILayout.EndFadeGroup();
             }
 
             EditorGUILayout.Space();
@@ -93,8 +122,6 @@ namespace HSR.NPRShader.Editor
             {
                 EditorGUILayout.PropertyField(m_EnableTransparentFrontHair, EditorGUIUtility.TrTextContent("Enable"));
             }
-
-            ShowErrors();
         }
 
         private void ShowErrors()

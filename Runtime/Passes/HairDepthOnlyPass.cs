@@ -70,9 +70,12 @@ namespace HSR.NPRShader.Passes
             RenderTextureDescriptor depthDesc = cameraTextureDescriptor;
             depthDesc.width /= (int)m_DownscaleMode;
             depthDesc.height /= (int)m_DownscaleMode;
-            depthDesc.graphicsFormat = GraphicsFormat.None;
-            depthDesc.depthStencilFormat = GraphicsFormatUtility.GetDepthStencilFormat((int)m_DepthBits, 0);
             depthDesc.msaaSamples = 1;
+            depthDesc.graphicsFormat = GraphicsFormat.None;
+
+            int depthBits = Mathf.Max((int)m_DepthBits, (int)DepthBits.Depth8);
+            depthDesc.depthStencilFormat = GraphicsFormatUtility.GetDepthStencilFormat(depthBits, 0);
+
             RenderingUtils.ReAllocateIfNeeded(ref m_DepthRT, in depthDesc, FilterMode.Point, TextureWrapMode.Clamp,
                 name: "_HairDepthTexture");
 
