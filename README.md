@@ -2,54 +2,37 @@
 
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub Release Date" src="https://img.shields.io/github/release-date/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub License" src="https://img.shields.io/github/license/stalomeow/StarRailNPRShader?style=for-the-badge">
 
-[Documentation](Documentation~/en-us/README.md) | [简体中文](README_CN.md)
+Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail.
 
-Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail. The shaders are not 100% accurate because this project is not a reverse engineering - what I do is to replicate the in-game looks to the best of my ability.
+---
 
-|Sparkle|Firefly|
-|:-:|:-:|
-|![sparkle](Documentation~/_img/sparkle.png)|![firefly](Documentation~/_img/firefly.png)|
+基于 Unity URP 的仿星穹铁道渲染 Shader。
 
-## Features
+## Documentation | 文档
 
-### Character Shaders
+[https://srshader.stalomeow.com](https://srshader.stalomeow.com)
 
-- Honkai Star Rail/Character/Body
-- Honkai Star Rail/Character/Body (Transparent)
-- Honkai Star Rail/Character/EyeShadow
-- Honkai Star Rail/Character/Face
-- Honkai Star Rail/Character/FaceMask
-- Honkai Star Rail/Character/Hair
+## Core Features | 核心特点
 
-### Rendering
+- Supports both ripped model and MMD model.
+- Supports Forward and Forward+ rendering paths.
+- Supports transparent front hair.
+- Supports self shadow and per-object shadow, up to 16 on the same screen.
+- Custom Bloom and Tonemapping.
+- Custom material editor.
+- Automated workflow (smoothing normals, setting up textures, generating materials, building), integrated with Unity Preset system.
+- Verified on Windows and Android.
 
-- Both Game model and MMD model.
-- Support `Forward` and `Forward+` rendering paths.
-- A single `RendererFeature` to manage all custom passes.
-- Provide C# API to control some rendering behavior.
-- Characters receive only scene shadows and ignore self-shadows.
-- Per-object shadow, supporting up to 16 shadows on the same screen.
-- Custom bloom using the method shared by Jack He in Unite 2018.
-- Custom ACES tonemapping. The formula is
+---
 
-    $$f(x)=\frac{x(ax+b)}{x(cx+d)+e}$$
-
-    where $a,b,c,d,e$ are all parameters.
-
-### Editor
-
-- Customized material editor.
-- Configurable asset processor integrated with Unity preset system.
-- Automatically smooth normal.
-- Automatic material setup.
-- Build processor and Shader stripper.
-- `material.json` inspector.
-
-## Special Thanks
-
-- miHoYo / HoYoverse
-- Razmoth
-- °Nya°222
+- 支持解包模型和 MMD 模型。
+- 支持 Forward 和 Forward+ 渲染路径。
+- 支持半透明刘海。
+- 支持自阴影和逐物体阴影，同屏最多 16 个。
+- 定制的 Bloom 和 Tonemapping。
+- 定制的材质编辑器。
+- 自动化流程（平滑模型法线、设置贴图、生成材质、构建），集成 Unity Preset 系统。
+- 在 Windows 和 Android 上经过验证。
 
 ## Star History
 
