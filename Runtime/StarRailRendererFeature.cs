@@ -66,7 +66,6 @@ namespace HSR.NPRShader
         [NonSerialized] private ScreenSpaceShadowsPass m_ScreenSpaceShadowPass;
         [NonSerialized] private ScreenSpaceShadowsPostPass m_ScreenSpaceShadowPostPass;
         [NonSerialized] private PerObjectShadowCasterPass m_SelfPerObjShadowPass;
-        [NonSerialized] private PerObjectShadowCasterPreviewPass m_SelfPerObjShadowPreviewPass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward1Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawOpaqueForward2Pass;
         [NonSerialized] private ForwardDrawObjectsPass m_DrawSimpleHairPass;
@@ -92,7 +91,6 @@ namespace HSR.NPRShader
             m_ScreenSpaceShadowPass = new ScreenSpaceShadowsPass();
             m_ScreenSpaceShadowPostPass = new ScreenSpaceShadowsPostPass();
             m_SelfPerObjShadowPass = new PerObjectShadowCasterPass("MainLightPerObjectSelfShadow", RenderPassEvent.AfterRenderingOpaques);
-            m_SelfPerObjShadowPreviewPass = new PerObjectShadowCasterPreviewPass("MainLightPerObjectSelfShadow (Preview)", RenderPassEvent.AfterRenderingOpaques);
             m_DrawOpaqueForward1Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (1)", true,
                 new ShaderTagId("HSRForward1"));
             m_DrawOpaqueForward2Pass = new ForwardDrawObjectsPass("DrawStarRailOpaque (2)", true,
@@ -113,16 +111,20 @@ namespace HSR.NPRShader
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             bool isPreviewCamera = renderingData.cameraData.isPreviewCamera;
+            bool enableSceneShadow = !isPreviewCamera;
+            bool enableSelfShadow = m_EnableSelfShadow && !isPreviewCamera;
+            bool enableFrontHairShadow = m_EnableFrontHairShadow && !isPreviewCamera;
+            bool enableTransparentFrontHair = m_EnableTransparentFrontHair;
 
             // BeforeRendering
-            renderer.EnqueuePass(m_EnableSelfShadow ? m_EnableSelfShadowPass : m_DisableSelfShadowPass);
-            renderer.EnqueuePass(m_EnableFrontHairShadow ? m_EnableFrontHairShadowPass : m_DisableFrontHairShadowPass);
+            renderer.EnqueuePass(enableSelfShadow ? m_EnableSelfShadowPass : m_DisableSelfShadowPass);
+            renderer.EnqueuePass(enableFrontHairShadow ? m_EnableFrontHairShadowPass : m_DisableFrontHairShadowPass);
 
             // AfterRenderingShadows
-            renderer.EnqueuePass(isPreviewCamera ? m_ScenePerObjShadowPreviewPass : m_ScenePerObjShadowPass);
+            renderer.EnqueuePass(enableSceneShadow ? m_ScenePerObjShadowPass : m_ScenePerObjShadowPreviewPass);
 
             // AfterRenderingPrePasses
-            if (m_EnableFrontHairShadow)
+            if (enableFrontHairShadow)
             {
                 renderer.EnqueuePass(m_HairDepthOnlyPass);
             }
@@ -134,14 +136,14 @@ namespace HSR.NPRShader
             // AfterRenderingOpaques
             renderer.EnqueuePass(m_ScreenSpaceShadowPostPass);
 
-            if (m_EnableSelfShadow)
+            if (enableSelfShadow)
             {
-                renderer.EnqueuePass(isPreviewCamera ? m_SelfPerObjShadowPreviewPass : m_SelfPerObjShadowPass);
+                renderer.EnqueuePass(m_SelfPerObjShadowPass);
             }
 
             renderer.EnqueuePass(m_DrawOpaqueForward1Pass);
             renderer.EnqueuePass(m_DrawOpaqueForward2Pass);
-            renderer.EnqueuePass(m_EnableTransparentFrontHair ? m_DrawTransparentHairPass : m_DrawSimpleHairPass);
+            renderer.EnqueuePass(enableTransparentFrontHair ? m_DrawTransparentHairPass : m_DrawSimpleHairPass);
             renderer.EnqueuePass(m_DrawOpaqueForward3Pass);
             renderer.EnqueuePass(m_DrawOpaqueOutlinePass);
 
