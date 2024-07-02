@@ -46,6 +46,7 @@ CBUFFER_START(UnityPerMaterial)
 
     float4 _ShadowColor;
     float4 _EyeShadowColor;
+    float _EyeAlwaysLit;
     float _HairShadowDistance;
 
     float _MaxEyeHairDistance;
@@ -53,8 +54,6 @@ CBUFFER_START(UnityPerMaterial)
     float4 _EmissionColor;
     float _EmissionThreshold;
     float _EmissionIntensity;
-    float4 _EyeEmissionColor;
-    float _EyeEmissionIntensity;
 
     float _mmBloomIntensity0;
     float4 _BloomColor0;
@@ -110,7 +109,11 @@ float3 GetFaceOrEyeDiffuse(
     // 被阴影挡住时没有伦勃朗光
     float3 faceShadow = lerp(_ShadowColor.rgb, 1, step(1 - threshold, FoL01) * light.shadowAttenuation); // SDF Shadow
     float3 eyeShadow = lerp(_EyeShadowColor.rgb, 1, smoothstep(0.3, 0.5, FoL01) * light.shadowAttenuation);
-    return baseColor * light.color * (lerp(faceShadow, eyeShadow, faceMap.r) * light.distanceAttenuation);
+    float3 shadow = lerp(faceShadow, eyeShadow, faceMap.r);
+
+    // 眼睛的遮罩，没有眼白和白色高光的部分
+    float eyeMask = step(0.1, faceMap.r) - step(0.8, faceMap.r);
+    return baseColor * lerp(shadow * light.color * light.distanceAttenuation, 1, eyeMask * _EyeAlwaysLit);
 }
 
 float GetHairShadow(float4 svPosition, Directions dirWS)
@@ -195,10 +198,6 @@ void FaceOpaqueAndZFragment(
     // 自发光
     float3 emission = GetEmission(emissionData, texColor.rgb);
 
-    // 眼睛额外高亮
-    float eyeMask = step(0.1, faceMap.r) - step(0.8, faceMap.r);
-    float3 eyeEmission = texColor.rgb * _EyeEmissionColor.rgb * max(0, eyeMask * _EyeEmissionIntensity);
-
     // TODO: 嘴唇 Outline: 0.5 < faceMap.g < 0.95
 
     #if defined(_ADDITIONAL_LIGHTS)
@@ -209,7 +208,7 @@ void FaceOpaqueAndZFragment(
     #endif
 
     // Output
-    colorTarget = float4(diffuse + emission + eyeEmission, texColor.a);
+    colorTarget = float4(diffuse + emission, texColor.a);
     colorTarget.rgb = MixBloomColor(colorTarget.rgb, _BloomColor0.rgb, _mmBloomIntensity0);
 
     // Fog
