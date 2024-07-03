@@ -46,7 +46,7 @@ Shader "Honkai Star Rail/Character/Body"
         [RampTexture] _RampMapWarm("Warm", 2D) = "white" {}
         [Header(Overrides)] [Space(5)]
         [If(_MODEL_GAME)] _BackColor("Back Face Color", Color) = (1, 1, 1, 1)
-        [If(_MODEL_GAME)] [Toggle] _BackFaceUV2("Back Face Use UV2", Float) = 0
+        [If(_MODEL_GAME)] [Toggle] _BackFaceUV2("Back Face Use UV2", Float) = 1
 
         [HeaderFoldout(Specular)]
         [HSRMaterialIDFoldout] _SpecularColor("Color", Float) = 0

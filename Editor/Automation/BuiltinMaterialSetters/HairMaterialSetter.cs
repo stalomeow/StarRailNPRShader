@@ -41,7 +41,7 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 
         protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
-            yield return ("_Cull", floats["_CullMode"]);
+            // yield return ("_Cull", floats["_CullMode"]);
 
             yield return ("_AlphaTest", floats["_EnableAlphaCutoff"]);
             yield return ("_AlphaTestThreshold", floats["_AlphaCutoff"]);

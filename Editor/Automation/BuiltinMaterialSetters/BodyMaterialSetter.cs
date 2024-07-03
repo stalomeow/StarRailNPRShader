@@ -44,7 +44,7 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 
         protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
-            yield return ("_Cull", floats["_CullMode"]);
+            // yield return ("_Cull", floats["_CullMode"]);
 
             // TODO Float 某些值不准，比如 _SrcBlend 和 _DstBlend
             // yield return ("_SrcBlendColor", floats["_SrcBlend"]);
