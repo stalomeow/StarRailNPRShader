@@ -2,6 +2,8 @@
 
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub Release Date" src="https://img.shields.io/github/release-date/stalomeow/StarRailNPRShader?style=for-the-badge"> <img alt="GitHub License" src="https://img.shields.io/github/license/stalomeow/StarRailNPRShader?style=for-the-badge">
 
+![Preview](https://raw.githubusercontent.com/stalomeow/StarRailNPRShaderDocs/main/docs/assets/banners/en.png)
+
 Fan-made shaders for Unity URP attempting to replicate the shading of Honkai: Star Rail.
 
 ## Documentation | 文档
