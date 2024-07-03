@@ -27,80 +27,125 @@
 
 #define MAX_PER_OBJECT_SHADOW_COUNT 16
 
-TEXTURE2D_SHADOW(_PerObjShadowMap);
-SAMPLER_CMP(sampler_PerObjShadowMap);
-
-int _PerObjShadowCount;
-float4x4 _PerObjShadowMatrices[MAX_PER_OBJECT_SHADOW_COUNT];
-float4 _PerObjShadowMapRects[MAX_PER_OBJECT_SHADOW_COUNT];
-float _PerObjShadowCasterIds[MAX_PER_OBJECT_SHADOW_COUNT];
-
-float4 _PerObjShadowOffset0;
-float4 _PerObjShadowOffset1;
-float4 _PerObjShadowMapSize;
-
-float4 TransformWorldToPerObjectShadowCoord(int index, float3 positionWS)
+float4 TransformWorldToPerObjectShadowCoord(float4x4 shadowMatrix, float3 positionWS)
 {
-    return mul(_PerObjShadowMatrices[index], float4(positionWS, 1));
+    return mul(shadowMatrix, float4(positionWS, 1));
 }
 
-float PerObjectShadow(int index, float4 shadowCoord, ShadowSamplingData shadowSamplingData, half4 shadowParams)
+float PerObjectShadow(
+    TEXTURE2D_SHADOW_PARAM(shadowMap, sampler_shadowMap),
+    float4 shadowMapRects,
+    float4 shadowCoord,
+    ShadowSamplingData shadowSamplingData,
+    half4 shadowParams,
+    bool isPerspectiveProjection)
 {
-    float4 rects = _PerObjShadowMapRects[index];
-    if (shadowCoord.x < rects.x || shadowCoord.x > rects.y || shadowCoord.y < rects.z || shadowCoord.y > rects.w)
+    if (shadowCoord.x < shadowMapRects.x ||
+        shadowCoord.x > shadowMapRects.y ||
+        shadowCoord.y < shadowMapRects.z ||
+        shadowCoord.y > shadowMapRects.w)
     {
         return 1; // 超出阴影图范围，当作没有阴影
     }
 
-    return SampleShadowmap(TEXTURE2D_SHADOW_ARGS(_PerObjShadowMap, sampler_PerObjShadowMap),
-            shadowCoord, shadowSamplingData, shadowParams, false);
+    return SampleShadowmap(TEXTURE2D_SHADOW_ARGS(shadowMap, sampler_shadowMap),
+            shadowCoord, shadowSamplingData, shadowParams, isPerspectiveProjection);
 }
 
-ShadowSamplingData GetMainLightPerObjectShadowSamplingData()
+// ---------------------------------------------------------
+// Scene
+// ---------------------------------------------------------
+
+TEXTURE2D_SHADOW(_PerObjSceneShadowMap);
+SAMPLER_CMP(sampler_PerObjSceneShadowMap);
+
+int _PerObjSceneShadowCount;
+float4x4 _PerObjSceneShadowMatrices[MAX_PER_OBJECT_SHADOW_COUNT];
+float4 _PerObjSceneShadowMapRects[MAX_PER_OBJECT_SHADOW_COUNT];
+float _PerObjSceneShadowCasterIds[MAX_PER_OBJECT_SHADOW_COUNT];
+
+float4 _PerObjSceneShadowOffset0;
+float4 _PerObjSceneShadowOffset1;
+float4 _PerObjSceneShadowMapSize;
+
+ShadowSamplingData GetMainLightPerObjectSceneShadowSamplingData()
 {
     ShadowSamplingData shadowSamplingData;
 
     // shadowOffsets are used in SampleShadowmapFiltered for low quality soft shadows.
-    shadowSamplingData.shadowOffset0 = _PerObjShadowOffset0;
-    shadowSamplingData.shadowOffset1 = _PerObjShadowOffset1;
+    shadowSamplingData.shadowOffset0 = _PerObjSceneShadowOffset0;
+    shadowSamplingData.shadowOffset1 = _PerObjSceneShadowOffset1;
 
     // shadowmapSize is used in SampleShadowmapFiltered otherwise
-    shadowSamplingData.shadowmapSize = _PerObjShadowMapSize;
+    shadowSamplingData.shadowmapSize = _PerObjSceneShadowMapSize;
     shadowSamplingData.softShadowQuality = _MainLightShadowParams.y;
 
     return shadowSamplingData;
 }
 
-float MainLightPerObjectShadow(float3 positionWS, float casterId)
+float MainLightPerObjectSceneShadow(float3 positionWS)
 {
-    ShadowSamplingData shadowSamplingData = GetMainLightPerObjectShadowSamplingData();
+    ShadowSamplingData shadowSamplingData = GetMainLightPerObjectSceneShadowSamplingData();
+    half4 shadowParams = GetMainLightShadowParams();
+    float shadow = 1;
+
+    for (int i = 0; i < _PerObjSceneShadowCount; i++)
+    {
+        float4 shadowCoord = TransformWorldToPerObjectShadowCoord(_PerObjSceneShadowMatrices[i], positionWS);
+        shadow = min(shadow, PerObjectShadow(TEXTURE2D_SHADOW_ARGS(_PerObjSceneShadowMap, sampler_PerObjSceneShadowMap),
+            _PerObjSceneShadowMapRects[i], shadowCoord, shadowSamplingData, shadowParams, false));
+    }
+
+    return shadow;
+}
+
+// ---------------------------------------------------------
+// Self
+// ---------------------------------------------------------
+
+TEXTURE2D_SHADOW(_PerObjSelfShadowMap);
+SAMPLER_CMP(sampler_PerObjSelfShadowMap);
+
+int _PerObjSelfShadowCount;
+float4x4 _PerObjSelfShadowMatrices[MAX_PER_OBJECT_SHADOW_COUNT];
+float4 _PerObjSelfShadowMapRects[MAX_PER_OBJECT_SHADOW_COUNT];
+float _PerObjSelfShadowCasterIds[MAX_PER_OBJECT_SHADOW_COUNT];
+
+float4 _PerObjSelfShadowOffset0;
+float4 _PerObjSelfShadowOffset1;
+float4 _PerObjSelfShadowMapSize;
+
+ShadowSamplingData GetMainLightPerObjectSelfShadowSamplingData()
+{
+    ShadowSamplingData shadowSamplingData;
+
+    // shadowOffsets are used in SampleShadowmapFiltered for low quality soft shadows.
+    shadowSamplingData.shadowOffset0 = _PerObjSelfShadowOffset0;
+    shadowSamplingData.shadowOffset1 = _PerObjSelfShadowOffset1;
+
+    // shadowmapSize is used in SampleShadowmapFiltered otherwise
+    shadowSamplingData.shadowmapSize = _PerObjSelfShadowMapSize;
+    shadowSamplingData.softShadowQuality = _MainLightShadowParams.y;
+
+    return shadowSamplingData;
+}
+
+float MainLightPerObjectSelfShadow(float3 positionWS, float casterId)
+{
+    ShadowSamplingData shadowSamplingData = GetMainLightPerObjectSelfShadowSamplingData();
     half4 shadowParams = GetMainLightShadowParams();
 
-    for (int i = 0; i < _PerObjShadowCount; i++)
+    for (int i = 0; i < _PerObjSelfShadowCount; i++)
     {
-        if (abs(_PerObjShadowCasterIds[i] - casterId) <= 0.001)
+        if (abs(_PerObjSelfShadowCasterIds[i] - casterId) <= 0.001)
         {
-            float4 shadowCoord = TransformWorldToPerObjectShadowCoord(i, positionWS);
-            return PerObjectShadow(i, shadowCoord, shadowSamplingData, shadowParams);
+            float4 shadowCoord = TransformWorldToPerObjectShadowCoord(_PerObjSelfShadowMatrices[i], positionWS);
+            return PerObjectShadow(TEXTURE2D_SHADOW_ARGS(_PerObjSelfShadowMap, sampler_PerObjSelfShadowMap),
+            _PerObjSelfShadowMapRects[i], shadowCoord, shadowSamplingData, shadowParams, false);
         }
     }
 
     return 1;
-}
-
-float MainLightPerObjectShadow(float3 positionWS)
-{
-    ShadowSamplingData shadowSamplingData = GetMainLightPerObjectShadowSamplingData();
-    half4 shadowParams = GetMainLightShadowParams();
-    float shadow = 1;
-
-    for (int i = 0; i < _PerObjShadowCount; i++)
-    {
-        float4 shadowCoord = TransformWorldToPerObjectShadowCoord(i, positionWS);
-        shadow = min(shadow, PerObjectShadow(i, shadowCoord, shadowSamplingData, shadowParams));
-    }
-
-    return shadow;
 }
 
 #endif

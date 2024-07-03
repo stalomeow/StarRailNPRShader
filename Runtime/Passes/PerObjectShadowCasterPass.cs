@@ -40,9 +40,9 @@ namespace HSR.NPRShader.Passes
         private int m_ShadowMapSizeInTile; // 一行/一列有多少个 tile
         private RTHandle m_ShadowMap;
 
-        public PerObjectShadowCasterPass(string profilerTag, RenderPassEvent evt)
+        public PerObjectShadowCasterPass(string profilerTag)
         {
-            renderPassEvent = evt;
+            renderPassEvent = RenderPassEvent.AfterRenderingShadows;
             profilingSampler = new ProfilingSampler(profilerTag);
 
             m_ShadowMatrixArray = new Matrix4x4[MaxShadowCount];
@@ -85,15 +85,10 @@ namespace HSR.NPRShader.Passes
                 {
                     RenderShadowMap(cmd, ref renderingData);
                     SetShadowSamplingData(cmd);
-
-                    if (renderPassEvent > RenderPassEvent.AfterRenderingShadows)
-                    {
-                        ScriptableRenderer.SetCameraMatrices(cmd, ref renderingData.cameraData, true);
-                    }
                 }
                 else
                 {
-                    cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, 0);
+                    cmd.SetGlobalInt(PropertyIds.ShadowCount(m_CasterManager.Usage), 0);
                 }
             }
 
@@ -139,11 +134,11 @@ namespace HSR.NPRShader.Passes
             cmd.SetGlobalDepthBias(0.0f, 0.0f); // Restore previous depth bias values
             CoreUtils.SetKeyword(cmd, KeywordNames._CASTING_SELF_SHADOW, false);
 
-            cmd.SetGlobalTexture(PropertyIds._PerObjShadowMap, m_ShadowMap);
-            cmd.SetGlobalInt(PropertyIds._PerObjShadowCount, m_CasterManager.VisibleCount);
-            cmd.SetGlobalMatrixArray(PropertyIds._PerObjShadowMatrices, m_ShadowMatrixArray);
-            cmd.SetGlobalVectorArray(PropertyIds._PerObjShadowMapRects, m_ShadowMapRectArray);
-            cmd.SetGlobalFloatArray(PropertyIds._PerObjShadowCasterIds, m_ShadowCasterIdArray);
+            cmd.SetGlobalTexture(PropertyIds.ShadowMap(m_CasterManager.Usage), m_ShadowMap);
+            cmd.SetGlobalInt(PropertyIds.ShadowCount(m_CasterManager.Usage), m_CasterManager.VisibleCount);
+            cmd.SetGlobalMatrixArray(PropertyIds.ShadowMatrices(m_CasterManager.Usage), m_ShadowMatrixArray);
+            cmd.SetGlobalVectorArray(PropertyIds.ShadowMapRects(m_CasterManager.Usage), m_ShadowMapRectArray);
+            cmd.SetGlobalFloatArray(PropertyIds.ShadowCasterIds(m_CasterManager.Usage), m_ShadowCasterIdArray);
         }
 
         private void SetShadowSamplingData(CommandBuffer cmd)
@@ -155,11 +150,11 @@ namespace HSR.NPRShader.Passes
             float invHalfShadowAtlasWidth = 0.5f * invShadowAtlasWidth;
             float invHalfShadowAtlasHeight = 0.5f * invShadowAtlasHeight;
 
-            cmd.SetGlobalVector(PropertyIds._PerObjShadowOffset0,
+            cmd.SetGlobalVector(PropertyIds.ShadowOffset0(m_CasterManager.Usage),
                 new Vector4(-invHalfShadowAtlasWidth, -invHalfShadowAtlasHeight, invHalfShadowAtlasWidth, -invHalfShadowAtlasHeight));
-            cmd.SetGlobalVector(PropertyIds._PerObjShadowOffset1,
+            cmd.SetGlobalVector(PropertyIds.ShadowOffset1(m_CasterManager.Usage),
                 new Vector4(-invHalfShadowAtlasWidth, invHalfShadowAtlasHeight, invHalfShadowAtlasWidth, invHalfShadowAtlasHeight));
-            cmd.SetGlobalVector(PropertyIds._PerObjShadowMapSize,
+            cmd.SetGlobalVector(PropertyIds.ShadowMapSize(m_CasterManager.Usage),
                 new Vector4(invShadowAtlasWidth, invShadowAtlasHeight, renderTargetWidth, renderTargetHeight));
         }
 
@@ -215,15 +210,81 @@ namespace HSR.NPRShader.Passes
 
         internal static class PropertyIds
         {
-            public static readonly int _PerObjShadowMap = MemberNameHelpers.ShaderPropertyID();
-            public static readonly int _PerObjShadowCount = MemberNameHelpers.ShaderPropertyID();
-            public static readonly int _PerObjShadowMatrices = MemberNameHelpers.ShaderPropertyID();
-            public static readonly int _PerObjShadowMapRects = MemberNameHelpers.ShaderPropertyID();
-            public static readonly int _PerObjShadowCasterIds = MemberNameHelpers.ShaderPropertyID();
+            // Scene
+            private static readonly int _PerObjSceneShadowMap = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowCount = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowMatrices = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowMapRects = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowCasterIds = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowOffset0 = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowOffset1 = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSceneShadowMapSize = MemberNameHelpers.ShaderPropertyID();
 
-            public static readonly int _PerObjShadowOffset0 = MemberNameHelpers.ShaderPropertyID();
-            public static readonly int _PerObjShadowOffset1 = MemberNameHelpers.ShaderPropertyID();
-            public static readonly int _PerObjShadowMapSize = MemberNameHelpers.ShaderPropertyID();
+            // Self
+            private static readonly int _PerObjSelfShadowMap = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowCount = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowMatrices = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowMapRects = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowCasterIds = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowOffset0 = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowOffset1 = MemberNameHelpers.ShaderPropertyID();
+            private static readonly int _PerObjSelfShadowMapSize = MemberNameHelpers.ShaderPropertyID();
+
+            public static int ShadowMap(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowMap,
+                ShadowUsage.Self => _PerObjSelfShadowMap,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowCount(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowCount,
+                ShadowUsage.Self => _PerObjSelfShadowCount,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowMatrices(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowMatrices,
+                ShadowUsage.Self => _PerObjSelfShadowMatrices,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowMapRects(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowMapRects,
+                ShadowUsage.Self => _PerObjSelfShadowMapRects,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowCasterIds(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowCasterIds,
+                ShadowUsage.Self => _PerObjSelfShadowCasterIds,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowOffset0(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowOffset0,
+                ShadowUsage.Self => _PerObjSelfShadowOffset0,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowOffset1(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowOffset1,
+                ShadowUsage.Self => _PerObjSelfShadowOffset1,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
+
+            public static int ShadowMapSize(ShadowUsage usage) => usage switch
+            {
+                ShadowUsage.Scene => _PerObjSceneShadowMapSize,
+                ShadowUsage.Self => _PerObjSelfShadowMapSize,
+                _ => throw new NotSupportedException($"Unsupported shadow usage: {usage}.")
+            };
         }
     }
 }

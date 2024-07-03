@@ -74,7 +74,7 @@ Shader "Hidden/Honkai Star Rail/Shadow/ScreenSpaceShadows"
 
                 // Screenspace shadowmap is only used for directional lights which use orthogonal projection.
                 half realtimeShadow = MainLightRealtimeShadow(TransformWorldToShadowCoord(positionWS));
-                float perObjShadow = MainLightPerObjectShadow(positionWS);
+                float perObjShadow = MainLightPerObjectSceneShadow(positionWS);
                 return min(realtimeShadow, perObjShadow);
             }
             ENDHLSL

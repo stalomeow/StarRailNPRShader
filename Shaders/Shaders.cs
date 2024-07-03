@@ -19,6 +19,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Shaders folder need an Assembly Definition files to create a .cs project
+// Shaders folder need an Assembly Definition file to create a .cs project
 // This is a dummy shader file so the Shaders assembly is not empty.
 class ShadersDummy { }

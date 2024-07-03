@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using HSR.NPRShader.PerObjectShadow;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -26,10 +27,14 @@ namespace HSR.NPRShader.Passes
 {
     public class PerObjectShadowCasterPreviewPass : ScriptableRenderPass
     {
-        public PerObjectShadowCasterPreviewPass(string profilerTag, RenderPassEvent evt)
+        private readonly ShadowUsage m_Usage;
+
+        public PerObjectShadowCasterPreviewPass(string profilerTag, ShadowUsage usage)
         {
-            renderPassEvent = evt;
+            renderPassEvent = RenderPassEvent.AfterRenderingShadows;
             profilingSampler = new ProfilingSampler(profilerTag);
+
+            m_Usage = usage;
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -38,7 +43,7 @@ namespace HSR.NPRShader.Passes
 
             using (new ProfilingScope(cmd, profilingSampler))
             {
-                cmd.SetGlobalInt(PerObjectShadowCasterPass.PropertyIds._PerObjShadowCount, 0);
+                cmd.SetGlobalInt(PerObjectShadowCasterPass.PropertyIds.ShadowCount(m_Usage), 0);
             }
 
             context.ExecuteCommandBuffer(cmd);
