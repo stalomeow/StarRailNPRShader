@@ -24,7 +24,6 @@ Shader "Honkai Star Rail/Character/Hair"
     Properties
     {
         [KeywordEnum(Game, MMD)] _Model("Model Type", Float) = 0
-        _ModelScale("Model Scale", Float) = 1
 
         [HeaderFoldout(Options)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 0                    // 默认 Off
@@ -91,6 +90,7 @@ Shader "Honkai Star Rail/Character/Hair"
         _SelfShadowDepthBias("Depth Bias", Float) = -0.01
         _SelfShadowNormalBias("Normal Bias", Float) = 0
 
+        [HideInInspector] _ModelScale("Model Scale", Float) = 1
         [HideInInspector] _RampCoolWarmLerpFactor("Cool / Warm", Range(0, 1)) = 1
         [HideInInspector] _DitherAlpha("Alpha", Range(0, 1)) = 1
         [HideInInspector] _MMDHeadBoneForward("MMD Head Bone Forward", Vector) = (0, 0, 1, 0)

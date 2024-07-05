@@ -43,7 +43,6 @@ TEXTURE2D(_RampMapWarm); SAMPLER(sampler_RampMapWarm);
 #endif
 
 CBUFFER_START(UnityPerMaterial)
-    float _ModelScale;
     float _SingleMaterialID;
 
 #if !defined(CHAR_BODY_SHADER_TRANSPARENT)
@@ -102,6 +101,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SelfShadowDepthBias;
     float _SelfShadowNormalBias;
 
+    float _ModelScale;
     float _RampCoolWarmLerpFactor;
     float _DitherAlpha;
     float _PerObjShadowCasterId;

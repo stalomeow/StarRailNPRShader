@@ -38,7 +38,6 @@ TEXTURE2D(_FaceMap); SAMPLER(sampler_FaceMap);
 TEXTURE2D(_ExpressionMap); SAMPLER(sampler_ExpressionMap);
 
 CBUFFER_START(UnityPerMaterial)
-    float _ModelScale;
     float _AlphaTestThreshold;
 
     float4 _Color;
@@ -72,6 +71,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SelfShadowDepthBias;
     float _SelfShadowNormalBias;
 
+    float _ModelScale;
     float _ExCheekIntensity;
     float _ExShyIntensity;
     float _ExShadowIntensity;

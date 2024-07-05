@@ -38,7 +38,6 @@ TEXTURE2D(_RampMapCool); SAMPLER(sampler_RampMapCool);
 TEXTURE2D(_RampMapWarm); SAMPLER(sampler_RampMapWarm);
 
 CBUFFER_START(UnityPerMaterial)
-    float _ModelScale;
     float _AlphaTestThreshold;
 
     float4 _Color;
@@ -82,6 +81,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SelfShadowDepthBias;
     float _SelfShadowNormalBias;
 
+    float _ModelScale;
     float _RampCoolWarmLerpFactor;
     float _DitherAlpha;
     float4 _MMDHeadBoneForward;

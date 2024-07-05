@@ -24,7 +24,6 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
     Properties
     {
         [KeywordEnum(Game, MMD)] _Model("Model Type", Float) = 0
-        _ModelScale("Model Scale", Float) = 1
         [HSRMaterialIDSelector] _SingleMaterialID("Material ID", Float) = -1
 
         [HeaderFoldout(Options)]
@@ -159,6 +158,7 @@ Shader "Honkai Star Rail/Character/Body (Transparent)"
         _SelfShadowDepthBias("Depth Bias", Float) = -0.01
         _SelfShadowNormalBias("Normal Bias", Float) = 0
 
+        [HideInInspector] _ModelScale("Model Scale", Float) = 1
         [HideInInspector] _RampCoolWarmLerpFactor("Cool / Warm", Range(0, 1)) = 1
         [HideInInspector] _DitherAlpha("Alpha", Range(0, 1)) = 1
         [HideInInspector] _PerObjShadowCasterId("Per Object Shadow Caster Id", Float) = -1

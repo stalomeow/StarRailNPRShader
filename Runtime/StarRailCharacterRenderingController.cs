@@ -184,6 +184,7 @@ namespace HSR.NPRShader
 
             try
             {
+                floats.Add((PropertyIds._ModelScale, 1)); // placeholder
                 floats.Add((PropertyIds._RampCoolWarmLerpFactor, m_RampCoolWarmMix));
                 floats.Add((PropertyIds._DitherAlpha, m_DitherAlpha));
                 floats.Add((PropertyIds._ExCheekIntensity, m_ExCheekIntensity));
@@ -202,7 +203,16 @@ namespace HSR.NPRShader
                     vectors.Add((PropertyIds._MMDHeadBoneRight, right));
                 }
 
-                RendererUtility.SetMaterialPropertiesPerRenderer(m_Renderers, m_PropertyBlock, floats, vectors);
+                foreach (Renderer r in m_Renderers)
+                {
+                    Vector3 scale = r.transform.lossyScale;
+                    float modelScale = Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
+                    modelScale *= 0.66667f; // magic number，为了向后兼容
+
+                    // skinned mesh 的 scale 是 bake 进顶点的，所以没法在 shader 里直接获取，只能 C# 传进去
+                    floats[0] = (PropertyIds._ModelScale, modelScale);
+                    RendererUtility.SetMaterialProperties(r, m_PropertyBlock, floats, vectors);
+                }
             }
             finally
             {
@@ -236,6 +246,7 @@ namespace HSR.NPRShader
 
         private static class PropertyIds
         {
+            public static readonly int _ModelScale = MemberNameHelpers.ShaderPropertyID();
             public static readonly int _RampCoolWarmLerpFactor = MemberNameHelpers.ShaderPropertyID();
             public static readonly int _DitherAlpha = MemberNameHelpers.ShaderPropertyID();
             public static readonly int _ExCheekIntensity = MemberNameHelpers.ShaderPropertyID();

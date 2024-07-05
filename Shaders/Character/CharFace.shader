@@ -24,7 +24,6 @@ Shader "Honkai Star Rail/Character/Face"
     Properties
     {
         [KeywordEnum(Game, MMD)] _Model("Model Type", Float) = 0
-        _ModelScale("Model Scale", Float) = 1
 
         [HeaderFoldout(Options)]
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha("Src Blend (A)", Float) = 0   // 默认 Zero
@@ -79,6 +78,7 @@ Shader "Honkai Star Rail/Character/Face"
         _SelfShadowDepthBias("Depth Bias", Float) = -0.01
         _SelfShadowNormalBias("Normal Bias", Float) = 0
 
+        [HideInInspector] _ModelScale("Model Scale", Float) = 1
         [HideInInspector] _ExCheekIntensity("Cheek Intensity", Range(0, 1)) = 0
         [HideInInspector] _ExShyIntensity("Shy Intensity", Range(0, 1)) = 0
         [HideInInspector] _ExShadowIntensity("Shadow Intensity", Range(0, 1)) = 0
