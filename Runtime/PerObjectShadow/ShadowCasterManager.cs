@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -73,7 +74,7 @@ namespace HSR.NPRShader.PerObjectShadow
             }
         }
 
-        public unsafe void Cull(in RenderingData renderingData, int maxCount)
+        public unsafe void Cull(in RenderingData renderingData, int maxCount, bool debugMode)
         {
             m_RendererIndexList.Clear();
             m_CullResults.Reset(maxCount);
@@ -83,7 +84,18 @@ namespace HSR.NPRShader.PerObjectShadow
                 return;
             }
 
-            Camera camera = renderingData.cameraData.camera;
+            Camera camera;
+
+            if (debugMode)
+            {
+                // 方便在 SceneView 里看清楚 Gizmos
+                camera = Camera.main ?? throw new NullReferenceException("Main camera not found");
+            }
+            else
+            {
+                camera = renderingData.cameraData.camera;
+            }
+
             Transform cameraTransform = camera.transform;
 
             float4* frustumCorners = stackalloc float4[ShadowCasterCullingArgs.FrustumCornerCount];
@@ -91,6 +103,7 @@ namespace HSR.NPRShader.PerObjectShadow
 
             var baseArgs = new ShadowCasterCullingArgs
             {
+                DebugMode = debugMode ? 1 : 0,
                 Usage = Usage,
                 FrustumEightCorners = frustumCorners,
                 CameraLocalToWorldMatrix = cameraTransform.localToWorldMatrix,

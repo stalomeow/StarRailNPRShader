@@ -41,10 +41,12 @@ namespace HSR.NPRShader
 
         [SerializeField] private DepthBits m_SceneShadowDepthBits = DepthBits.Depth16;
         [SerializeField] private ShadowTileResolution m_SceneShadowTileResolution = ShadowTileResolution._512;
+        [SerializeField] private bool m_SceneShadowDebugMode = false;
 
         [SerializeField] private bool m_EnableSelfShadow = true;
         [SerializeField] private DepthBits m_SelfShadowDepthBits = DepthBits.Depth16;
         [SerializeField] private ShadowTileResolution m_SelfShadowTileResolution = ShadowTileResolution._1024;
+        [SerializeField] private bool m_SelfShadowDebugMode = false;
 
         [SerializeField] private bool m_EnableFrontHairShadow = true;
         [SerializeField] private HairDepthOnlyPass.DownscaleMode m_FrontHairShadowDownscale = HairDepthOnlyPass.DownscaleMode.Half;
@@ -152,12 +154,12 @@ namespace HSR.NPRShader
             // PreviewCamera 不会执行这部分代码！！！
             base.SetupRenderPasses(renderer, in renderingData);
 
-            m_SceneShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
+            m_SceneShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount, m_SceneShadowDebugMode);
             m_ScenePerObjShadowPass.Setup(m_SceneShadowCasterManager, m_SceneShadowTileResolution, m_SceneShadowDepthBits);
 
             if (m_EnableSelfShadow)
             {
-                m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount);
+                m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount, m_SelfShadowDebugMode);
                 m_SelfPerObjShadowPass.Setup(m_SelfShadowCasterManager, m_SelfShadowTileResolution, m_SelfShadowDepthBits);
             }
 

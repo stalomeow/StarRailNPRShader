@@ -36,30 +36,38 @@ namespace HSR.NPRShader.Editor
 
         private SerializedProperty m_SceneShadowDepthBits;
         private SerializedProperty m_SceneShadowTileResolution;
+        private SerializedProperty m_SceneShadowDebugMode;
         private SerializedProperty m_EnableSelfShadow;
         private SerializedProperty m_SelfShadowDepthBits;
         private SerializedProperty m_SelfShadowTileResolution;
+        private SerializedProperty m_SelfShadowDebugMode;
         private SerializedProperty m_EnableFrontHairShadow;
         private SerializedProperty m_FrontHairShadowDownscale;
         private SerializedProperty m_FrontHairShadowDepthBits;
         private SerializedProperty m_EnableTransparentFrontHair;
 
+        private AnimBool m_SceneShadowDebugModeAnim;
         private AnimBool m_SelfShadowAnim;
+        private AnimBool m_SelfShadowDebugModeAnim;
         private AnimBool m_FrontHairShadowAnim;
 
         private void OnEnable()
         {
             m_SceneShadowDepthBits = serializedObject.FindProperty(nameof(m_SceneShadowDepthBits));
             m_SceneShadowTileResolution = serializedObject.FindProperty(nameof(m_SceneShadowTileResolution));
+            m_SceneShadowDebugMode = serializedObject.FindProperty(nameof(m_SceneShadowDebugMode));
             m_EnableSelfShadow = serializedObject.FindProperty(nameof(m_EnableSelfShadow));
             m_SelfShadowDepthBits = serializedObject.FindProperty(nameof(m_SelfShadowDepthBits));
             m_SelfShadowTileResolution = serializedObject.FindProperty(nameof(m_SelfShadowTileResolution));
+            m_SelfShadowDebugMode = serializedObject.FindProperty(nameof(m_SelfShadowDebugMode));
             m_EnableFrontHairShadow = serializedObject.FindProperty(nameof(m_EnableFrontHairShadow));
             m_FrontHairShadowDownscale = serializedObject.FindProperty(nameof(m_FrontHairShadowDownscale));
             m_FrontHairShadowDepthBits = serializedObject.FindProperty(nameof(m_FrontHairShadowDepthBits));
             m_EnableTransparentFrontHair = serializedObject.FindProperty(nameof(m_EnableTransparentFrontHair));
 
+            m_SceneShadowDebugModeAnim = new AnimBool(m_SceneShadowDebugMode.boolValue, Repaint);
             m_SelfShadowAnim = new AnimBool(m_EnableSelfShadow.boolValue, Repaint);
+            m_SelfShadowDebugModeAnim = new AnimBool(m_SelfShadowDebugMode.boolValue, Repaint);
             m_FrontHairShadowAnim = new AnimBool(m_EnableFrontHairShadow.boolValue, Repaint);
         }
 
@@ -81,6 +89,14 @@ namespace HSR.NPRShader.Editor
             {
                 EditorGUILayout.PropertyField(m_SceneShadowTileResolution, EditorGUIUtility.TrTextContent("Tile Resolution"));
                 EditorGUILayout.PropertyField(m_SceneShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+                EditorGUILayout.PropertyField(m_SceneShadowDebugMode, EditorGUIUtility.TrTextContent("Debug"));
+                m_SceneShadowDebugModeAnim.target = m_SceneShadowDebugMode.boolValue;
+
+                if (EditorGUILayout.BeginFadeGroup(m_SceneShadowDebugModeAnim.faded))
+                {
+                    ShowPerObjectShadowDebugInfo();
+                }
+                EditorGUILayout.EndFadeGroup();
             }
 
             EditorGUILayout.Space();
@@ -95,6 +111,14 @@ namespace HSR.NPRShader.Editor
                 {
                     EditorGUILayout.PropertyField(m_SelfShadowTileResolution, EditorGUIUtility.TrTextContent("Tile Resolution"));
                     EditorGUILayout.PropertyField(m_SelfShadowDepthBits, EditorGUIUtility.TrTextContent("Depth Bits"));
+                    EditorGUILayout.PropertyField(m_SelfShadowDebugMode, EditorGUIUtility.TrTextContent("Debug"));
+                    m_SelfShadowDebugModeAnim.target = m_SelfShadowDebugMode.boolValue;
+
+                    if (EditorGUILayout.BeginFadeGroup(m_SelfShadowDebugModeAnim.faded))
+                    {
+                        ShowPerObjectShadowDebugInfo();
+                    }
+                    EditorGUILayout.EndFadeGroup();
                 }
                 EditorGUILayout.EndFadeGroup();
             }
@@ -122,6 +146,14 @@ namespace HSR.NPRShader.Editor
             {
                 EditorGUILayout.PropertyField(m_EnableTransparentFrontHair, EditorGUIUtility.TrTextContent("Enable"));
             }
+        }
+
+        private static void ShowPerObjectShadowDebugInfo()
+        {
+            EditorGUILayout.HelpBox("Debug mode is enabled. " +
+                                    "The scene view will only display shadows visible to the main camera. " +
+                                    "The blue box is the frustum of the main light. " +
+                                    "The red triangles form the frustum of the main camera after culling.", MessageType.Info);
         }
 
         private void ShowErrors()

@@ -27,6 +27,10 @@ namespace HSR.NPRShader.PerObjectShadow
 {
     internal unsafe struct ShadowCasterCullingArgs
     {
+        /// <summary>
+        /// 非零表示启用调试模式。
+        /// </summary>
+        public int DebugMode; // bool 不是 blittable 类型，所以不能直接用 bool
         public ShadowUsage Usage;
         [NoAlias] public float4* FrustumEightCorners;
         public float4x4 CameraLocalToWorldMatrix;

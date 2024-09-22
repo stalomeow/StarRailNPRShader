@@ -19,9 +19,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// #define DEBUG_SCENE_SHADOW
-// #define DEBUG_SELF_SHADOW
-
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
@@ -121,7 +118,7 @@ namespace HSR.NPRShader.PerObjectShadow
 
             if (AdjustViewSpaceShadowAABB(in args, in viewMatrix, ref shadowMin, ref shadowMax))
             {
-                DebugDrawViewSpaceAABB(args.Usage, in shadowMin, in shadowMax, in viewMatrix, Color.blue);
+                DebugDrawViewSpaceAABB(in args, in shadowMin, in shadowMax, in viewMatrix, Color.blue);
 
                 float width = shadowMax.x * 2;
                 float height = shadowMax.y * 2;
@@ -217,7 +214,7 @@ namespace HSR.NPRShader.PerObjectShadow
                 new() { ComponentIndex = 1, Value = shadowMax.y, Type = EdgeType.Max },
             };
 
-            // 最坏情况，被拆成 2**4 = 16 个三角形
+            // 最坏情况：1 个三角形被拆成 2**4 = 16 个三角形
             TriangleData* triangles = stackalloc TriangleData[16];
 
             bool isVisibleXY = false;
@@ -249,7 +246,7 @@ namespace HSR.NPRShader.PerObjectShadow
                         continue;
                     }
 
-                    DebugDrawViewSpaceTriangle(args.Usage, in tri, in viewMatrix, Color.red);
+                    DebugDrawViewSpaceTriangle(in args, in tri, in viewMatrix, Color.red);
 
                     isVisibleXY = true;
                     minZ = min(minZ, min(tri.P0.z, min(tri.P1.z, tri.P2.z)));
@@ -357,12 +354,11 @@ namespace HSR.NPRShader.PerObjectShadow
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void Swap(ref float3 a, ref float3 b) => (a, b) = (b, a);
 
-        [Conditional("DEBUG_SCENE_SHADOW")]
-        [Conditional("DEBUG_SELF_SHADOW")]
-        private static unsafe void DebugDrawViewSpaceAABB(ShadowUsage usage, in float3 aabbMin, in float3 aabbMax,
+        [Conditional("UNITY_EDITOR")]
+        private static unsafe void DebugDrawViewSpaceAABB(in ShadowCasterCullingArgs args, in float3 aabbMin, in float3 aabbMax,
             in float4x4 viewMatrix, Color color)
         {
-            if (!IsValidDebugCall(usage))
+            if (args.DebugMode == 0)
             {
                 return;
             }
@@ -401,12 +397,11 @@ namespace HSR.NPRShader.PerObjectShadow
             Debug.DrawLine(points[6], points[7], color);
         }
 
-        [Conditional("DEBUG_SCENE_SHADOW")]
-        [Conditional("DEBUG_SELF_SHADOW")]
-        private static void DebugDrawViewSpaceTriangle(ShadowUsage usage, in TriangleData triangle,
+        [Conditional("UNITY_EDITOR")]
+        private static void DebugDrawViewSpaceTriangle(in ShadowCasterCullingArgs args, in TriangleData triangle,
             in float4x4 viewMatrix, Color color)
         {
-            if (!IsValidDebugCall(usage))
+            if (args.DebugMode == 0)
             {
                 return;
             }
@@ -419,21 +414,6 @@ namespace HSR.NPRShader.PerObjectShadow
             Debug.DrawLine(w0, w1, color);
             Debug.DrawLine(w0, w2, color);
             Debug.DrawLine(w1, w2, color);
-        }
-
-        private static bool IsValidDebugCall(ShadowUsage usage)
-        {
-            bool valid = false;
-
-#if DEBUG_SCENE_SHADOW
-            valid |= (usage == ShadowUsage.Scene);
-#endif
-
-#if DEBUG_SELF_SHADOW
-            valid |= (usage == ShadowUsage.Self);
-#endif
-
-            return valid;
         }
     }
 }
