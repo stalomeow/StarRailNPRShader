@@ -39,9 +39,35 @@ namespace HSR.NPRShader.PerObjectShadow
         public const int FrustumCornerCount = 8;
         private static readonly Vector3[] s_FrustumCornerBuffer = new Vector3[4];
 
+        public const int FrustumTriangleCount = 12;
+
+        /// <summary>
+        /// 将视锥体的每个面都拆成两个三角形，得到 12 个三角形。
+        /// 按照该数组的顺序遍历 <see cref="FrustumEightCorners"/> 可得到这些三角形。
+        /// </summary>
+        /// <remarks>该数组的正确性依赖于 <see cref="SetFrustumEightCorners"/></remarks>
+        public static readonly int[] FrustumTriangleIndices = new int[FrustumTriangleCount * 3]
+        {
+            0, 3, 1,
+            1, 3, 2,
+            2, 3, 7,
+            2, 7, 6,
+            0, 5, 4,
+            0, 1, 5,
+            1, 2, 5,
+            2, 6, 5,
+            0, 7, 3,
+            0, 4, 7,
+            4, 7, 5,
+            5, 7, 6,
+        };
+
         public static void SetFrustumEightCorners(float4* frustumEightCorners, Camera camera)
         {
             const Camera.MonoOrStereoscopicEye Eye = Camera.MonoOrStereoscopicEye.Mono;
+
+            // https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Camera.CalculateFrustumCorners.html
+            // The order of the corners is lower left, upper left, upper right, lower right.
 
             var viewport = new Rect(0, 0, 1, 1);
             Transform cameraTransform = camera.transform;
