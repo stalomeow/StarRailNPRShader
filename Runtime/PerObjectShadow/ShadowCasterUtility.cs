@@ -163,7 +163,7 @@ namespace HSR.NPRShader.PerObjectShadow
             {
                 // 理论上场景阴影可以打到无穷远处，但包围盒太长的话深度都集中在 0 或者 1 处，精度不够
                 // 目前限制最多向后扩展 100 个单位
-                shadowMin.z -= 100;
+                shadowMin.z = min(shadowMin.z, shadowMax.z - 100);
             }
 
             // 浪费分辨率，暂时不改成正方形
