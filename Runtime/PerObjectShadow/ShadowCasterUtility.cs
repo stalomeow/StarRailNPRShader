@@ -165,13 +165,6 @@ namespace HSR.NPRShader.PerObjectShadow
                 // 目前限制最多向后扩展 100 个单位
                 shadowMin.z = min(shadowMin.z, shadowMax.z - 100);
             }
-
-            // 浪费分辨率，暂时不改成正方形
-            // // viewMatrix 可以保证 shadowMax.xy + shadowMin.xy 基本上等于 0
-            // // 由于 shadowMap 是正方形的，所以下面将 shadowMax.xy - shadowMin.xy 也变成正方形
-            // float halfSize = cmax(shadowMax.xy);
-            // shadowMin.xy = -halfSize;
-            // shadowMax.xy = +halfSize;
         }
 
         private ref struct TriangleData
