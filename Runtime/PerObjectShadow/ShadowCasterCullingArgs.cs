@@ -19,6 +19,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
 using UnityEngine;
@@ -68,29 +69,61 @@ namespace HSR.NPRShader.PerObjectShadow
 
         public static void SetFrustumEightCorners(float4* frustumEightCorners, Camera camera)
         {
-            const Camera.MonoOrStereoscopicEye Eye = Camera.MonoOrStereoscopicEye.Mono;
+            Transform transform = camera.transform;
+            float near = camera.nearClipPlane;
+            float far = camera.farClipPlane;
 
-            // https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Camera.CalculateFrustumCorners.html
-            // The order of the corners is lower left, upper left, upper right, lower right.
-
-            var viewport = new Rect(0, 0, 1, 1);
-            Transform cameraTransform = camera.transform;
-
-            camera.CalculateFrustumCorners(viewport, camera.nearClipPlane, Eye, s_FrustumCornerBuffer);
-
-            for (int i = 0; i < 4; i++)
+            if (camera.orthographic)
             {
-                Vector3 xyz = cameraTransform.TransformPoint(s_FrustumCornerBuffer[i]);
-                frustumEightCorners[i] = new float4(xyz, 1);
+                // Camera.CalculateFrustumCorners 不支持正交投影
+
+                // The orthographicSize is half the size of the vertical viewing volume.
+                // The horizontal size of the viewing volume depends on the aspect ratio.
+                float top = camera.orthographicSize;
+                float right = top * camera.aspect;
+
+                // 顺序要和下一个分支里的一致
+                frustumEightCorners[0] = TransformPoint(transform, -right, -top, near);
+                frustumEightCorners[1] = TransformPoint(transform, -right, +top, near);
+                frustumEightCorners[2] = TransformPoint(transform, +right, +top, near);
+                frustumEightCorners[3] = TransformPoint(transform, +right, -top, near);
+                frustumEightCorners[4] = TransformPoint(transform, -right, -top, far);
+                frustumEightCorners[5] = TransformPoint(transform, -right, +top, far);
+                frustumEightCorners[6] = TransformPoint(transform, +right, +top, far);
+                frustumEightCorners[7] = TransformPoint(transform, +right, -top, far);
             }
-
-            camera.CalculateFrustumCorners(viewport, camera.farClipPlane, Eye, s_FrustumCornerBuffer);
-
-            for (int i = 0; i < 4; i++)
+            else
             {
-                Vector3 xyz = cameraTransform.TransformPoint(s_FrustumCornerBuffer[i]);
-                frustumEightCorners[i + 4] = new float4(xyz, 1);
+                // https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Camera.CalculateFrustumCorners.html
+                // The order of the corners is lower left, upper left, upper right, lower right.
+
+                Rect viewport = new Rect(0, 0, 1, 1);
+                const Camera.MonoOrStereoscopicEye eye = Camera.MonoOrStereoscopicEye.Mono;
+
+                camera.CalculateFrustumCorners(viewport, near, eye, s_FrustumCornerBuffer);
+                for (int i = 0; i < 4; i++)
+                {
+                    frustumEightCorners[i] = TransformPoint(transform, s_FrustumCornerBuffer[i]);
+                }
+
+                camera.CalculateFrustumCorners(viewport, far, eye, s_FrustumCornerBuffer);
+                for (int i = 0; i < 4; i++)
+                {
+                    frustumEightCorners[i + 4] = TransformPoint(transform, s_FrustumCornerBuffer[i]);
+                }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 TransformPoint(Transform transform, float x, float y, float z)
+        {
+            return TransformPoint(transform, new Vector3(x, y, z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 TransformPoint(Transform transform, Vector3 point)
+        {
+            return new float4(transform.TransformPoint(point), 1);
         }
     }
 }
