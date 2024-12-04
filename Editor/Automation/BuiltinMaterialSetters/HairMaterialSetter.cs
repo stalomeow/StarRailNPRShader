@@ -33,47 +33,47 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 
         protected override IEnumerable<(string, TextureJsonData)> ApplyTextures(IReadOnlyDictionary<string, TextureJsonData> textures)
         {
-            yield return ("_MainTex", textures["_MainTex"]);
-            yield return ("_LightMap", textures["_LightMap"]);
-            yield return ("_RampMapWarm", textures["_DiffuseRampMultiTex"]);
-            yield return ("_RampMapCool", textures["_DiffuseCoolRampMultiTex"]);
+            yield return MakeProperty("_MainTex", textures);
+            yield return MakeProperty("_LightMap", textures);
+            yield return MakeProperty("_RampMapWarm", textures, "_DiffuseRampMultiTex");
+            yield return MakeProperty("_RampMapCool", textures, "_DiffuseCoolRampMultiTex");
         }
 
         protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
-            // yield return ("_Cull", floats["_CullMode"]);
+            // yield return MakeProperty("_Cull", floats, "_CullMode");
 
-            yield return ("_AlphaTest", floats["_EnableAlphaCutoff"]);
-            yield return ("_AlphaTestThreshold", floats["_AlphaCutoff"]);
+            yield return MakeProperty("_AlphaTest", floats, "_EnableAlphaCutoff");
+            yield return MakeProperty("_AlphaTestThreshold", floats, "_AlphaCutoff");
 
-            yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
-            yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
+            yield return MakeProperty("_EmissionThreshold", floats);
+            yield return MakeProperty("_EmissionIntensity", floats);
 
-            yield return ("_RimShadowCt", floats["_RimShadowCt"]);
-            yield return ("_RimShadowIntensity", floats["_RimShadowIntensity"]);
-            yield return ("_RimShadowWidth0", floats["_RimShadowWidth0"]);
-            yield return ("_RimShadowFeather0", floats["_RimShadowFeather0"]);
+            yield return MakeProperty("_RimShadowCt", floats);
+            yield return MakeProperty("_RimShadowIntensity", floats);
+            yield return MakeProperty("_RimShadowWidth0", floats);
+            yield return MakeProperty("_RimShadowFeather0", floats);
 
-            yield return ("_SpecularIntensity0", floats["_SpecularIntensity0"]);
-            yield return ("_SpecularShininess0", floats["_SpecularShininess0"]);
-            yield return ("_SpecularRoughness0", floats["_SpecularRoughness0"]);
+            yield return MakeProperty("_SpecularIntensity0", floats);
+            yield return MakeProperty("_SpecularShininess0", floats);
+            yield return MakeProperty("_SpecularRoughness0", floats);
 
-            yield return ("_mmBloomIntensity0", floats["_mBloomIntensity0"]);
+            yield return MakeProperty("_mmBloomIntensity0", floats, "_mBloomIntensity0");
         }
 
         protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
-            yield return ("_Color", colors["_Color"]);
-            yield return ("_BackColor", colors["_BackColor"]);
-            yield return ("_SpecularColor0", colors["_SpecularColor0"]);
-            yield return ("_RimColor0", colors["_RimColor0"]);
-            yield return ("_OutlineColor0", colors["_OutlineColor0"]);
+            yield return MakeProperty("_Color", colors);
+            yield return MakeProperty("_BackColor", colors);
+            yield return MakeProperty("_SpecularColor0", colors);
+            yield return MakeProperty("_RimColor0", colors);
+            yield return MakeProperty("_OutlineColor0", colors);
 
-            yield return ("_RimShadowOffset", colors["_RimShadowOffset"]);
-            yield return ("_RimShadowColor0", colors["_RimShadowColor0"]);
+            yield return MakeProperty("_RimShadowOffset", colors);
+            yield return MakeProperty("_RimShadowColor0", colors);
 
             // Texture Scale Offset
-            yield return ("_Maps_ST", colors["_MainMaps_ST"]);
+            yield return MakeProperty("_Maps_ST", colors, "_MainMaps_ST");
         }
     }
 }

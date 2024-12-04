@@ -33,7 +33,7 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 
         protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
-            yield return ("_Color", colors["_Color"]);
+            yield return MakeProperty("_Color", colors);
         }
     }
 }

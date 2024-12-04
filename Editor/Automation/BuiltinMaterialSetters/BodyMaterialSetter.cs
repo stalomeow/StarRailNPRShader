@@ -34,77 +34,73 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 
         protected override IEnumerable<(string, TextureJsonData)> ApplyTextures(IReadOnlyDictionary<string, TextureJsonData> textures)
         {
-            yield return ("_MainTex", textures["_MainTex"]);
-            yield return ("_LightMap", textures["_LightMap"]);
-            yield return ("_RampMapWarm", textures["_DiffuseRampMultiTex"]);
-            yield return ("_RampMapCool", textures["_DiffuseCoolRampMultiTex"]);
+            yield return MakeProperty("_MainTex", textures);
+            yield return MakeProperty("_LightMap", textures);
+            yield return MakeProperty("_RampMapWarm", textures, "_DiffuseRampMultiTex");
+            yield return MakeProperty("_RampMapCool", textures, "_DiffuseCoolRampMultiTex");
 
-            yield return ("_StockingsMap", textures["_StockRangeTex"]);
+            yield return MakeProperty("_StockingsMap", textures, "_StockRangeTex");
         }
 
         protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
-            // yield return ("_Cull", floats["_CullMode"]);
+            // yield return MakeProperty("_Cull", floats, "_CullMode");
 
             // TODO Float 某些值不准，比如 _SrcBlend 和 _DstBlend
-            // yield return ("_SrcBlendColor", floats["_SrcBlend"]);
-            // yield return ("_DstBlendColor", floats["_DstBlend"]);
+            // yield return MakeProperty("_SrcBlendColor", floats, "_SrcBlend");
+            // yield return MakeProperty("_DstBlendColor", floats, "_DstBlend");
 
-            yield return ("_AlphaTest", floats["_EnableAlphaCutoff"]);
-            yield return ("_AlphaTestThreshold", floats["_AlphaCutoff"]);
+            yield return MakeProperty("_AlphaTest", floats, "_EnableAlphaCutoff");
+            yield return MakeProperty("_AlphaTestThreshold", floats, "_AlphaCutoff");
 
-            yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
-            yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
+            yield return MakeProperty("_EmissionThreshold", floats);
+            yield return MakeProperty("_EmissionIntensity", floats);
 
-            yield return ("_RimShadowCt", floats["_RimShadowCt"]);
-            yield return ("_RimShadowIntensity", floats["_RimShadowIntensity"]);
+            yield return MakeProperty("_RimShadowCt", floats);
+            yield return MakeProperty("_RimShadowIntensity", floats);
 
             for (int i = 0; i <= 7; i++)
             {
-                yield return ($"_SpecularIntensity{i}", floats[$"_SpecularIntensity{i}"]);
-                yield return ($"_SpecularShininess{i}", floats[$"_SpecularShininess{i}"]);
-                yield return ($"_SpecularRoughness{i}", floats[$"_SpecularRoughness{i}"]);
+                yield return MakeProperty($"_SpecularIntensity{i}", floats);
+                yield return MakeProperty($"_SpecularShininess{i}", floats);
+                yield return MakeProperty($"_SpecularRoughness{i}", floats);
 
-                yield return ($"_RimShadowWidth{i}", floats[$"_RimShadowWidth{i}"]);
-                yield return ($"_RimShadowFeather{i}", floats[$"_RimShadowFeather{i}"]);
+                yield return MakeProperty($"_RimShadowWidth{i}", floats);
+                yield return MakeProperty($"_RimShadowFeather{i}", floats);
 
-                yield return ($"_mmBloomIntensity{i}", floats[$"_mBloomIntensity{i}"]);
+                yield return MakeProperty($"_mmBloomIntensity{i}", floats, $"_mBloomIntensity{i}");
             }
 
             // Stockings
-            yield return ("_StockingsDarkWidth", floats["_StockDarkWidth"]);
-            yield return ("_StockingsPower", floats["_Stockpower"]);
-            yield return ("_StockingsLightedWidth", floats["_Stockpower1"]);
-            yield return ("_StockingsLightedIntensity", floats["_StockSP"]);
-            yield return ("_StockingsRoughness", floats["_StockRoughness"]);
+            yield return MakeProperty("_StockingsDarkWidth", floats, "_StockDarkWidth");
+            yield return MakeProperty("_StockingsPower", floats, "_Stockpower");
+            yield return MakeProperty("_StockingsLightedWidth", floats, "_Stockpower1");
+            yield return MakeProperty("_StockingsLightedIntensity", floats, "_StockSP");
+            yield return MakeProperty("_StockingsRoughness", floats, "_StockRoughness");
         }
 
         protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
-            yield return ("_Color", colors["_Color"]);
-            yield return ("_BackColor", colors["_BackColor"]);
-            yield return ("_EmissionColor", colors["_EmissionTintColor"]);
-            yield return ("_RimShadowOffset", colors["_RimShadowOffset"]);
+            yield return MakeProperty("_Color", colors);
+            yield return MakeProperty("_BackColor", colors);
+            yield return MakeProperty("_EmissionColor", colors, "_EmissionTintColor");
+            yield return MakeProperty("_RimShadowOffset", colors);
 
             for (int i = 0; i <= 7; i++)
             {
-                yield return ($"_SpecularColor{i}", colors[$"_SpecularColor{i}"]);
-                yield return ($"_RimColor{i}", colors[$"_RimColor{i}"]);
-                yield return ($"_RimShadowColor{i}", colors[$"_RimShadowColor{i}"]);
-                yield return ($"_OutlineColor{i}", colors[$"_OutlineColor{i}"]);
-
-                if (colors.TryGetValue($"_mBloomColor{i}", out Color bloomColor))
-                {
-                    yield return ($"_BloomColor{i}", bloomColor);
-                }
+                yield return MakeProperty($"_SpecularColor{i}", colors);
+                yield return MakeProperty($"_RimColor{i}", colors);
+                yield return MakeProperty($"_RimShadowColor{i}", colors);
+                yield return MakeProperty($"_OutlineColor{i}", colors);
+                yield return MakeProperty($"_BloomColor{i}", colors, $"_mBloomColor{i}");
             }
 
             // Texture Scale Offset
-            yield return ("_Maps_ST", colors["_MainMaps_ST"]);
+            yield return MakeProperty("_Maps_ST", colors, "_MainMaps_ST");
 
             // Stockings
-            yield return ("_StockingsColor", colors["_Stockcolor"]);
-            yield return ("_StockingsColorDark", colors["_StockDarkcolor"]);
+            yield return MakeProperty("_StockingsColor", colors, "_Stockcolor");
+            yield return MakeProperty("_StockingsColorDark", colors, "_StockDarkcolor");
         }
     }
 }

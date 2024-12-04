@@ -33,43 +33,40 @@ namespace HSR.NPRShader.Editor.Automation.BuiltinMaterialSetters
 
         protected override IEnumerable<(string, TextureJsonData)> ApplyTextures(IReadOnlyDictionary<string, TextureJsonData> textures)
         {
-            yield return ("_MainTex", textures["_MainTex"]);
-            yield return ("_FaceMap", textures["_FaceMap"]);
-            yield return ("_ExpressionMap", textures["_FaceExpression"]);
+            yield return MakeProperty("_MainTex", textures);
+            yield return MakeProperty("_FaceMap", textures);
+            yield return MakeProperty("_ExpressionMap", textures, "_FaceExpression");
         }
 
         protected override IEnumerable<(string, float)> ApplyFloats(IReadOnlyDictionary<string, float> floats)
         {
-            if (floats.TryGetValue("_UseUVChannel2", out float useUV2))
-            {
-                yield return ("_FaceMapUV2", useUV2);
-            }
+            yield return MakeProperty("_FaceMapUV2", floats, "_UseUVChannel2");
 
-            yield return ("_EmissionThreshold", floats["_EmissionThreshold"]);
-            yield return ("_EmissionIntensity", floats["_EmissionIntensity"]);
+            yield return MakeProperty("_EmissionThreshold", floats);
+            yield return MakeProperty("_EmissionIntensity", floats);
 
-            yield return ("_NoseLinePower", floats["_NoseLinePower"]);
+            yield return MakeProperty("_NoseLinePower", floats);
 
-            yield return ("_mmBloomIntensity0", floats["_mBloomIntensity0"]);
+            yield return MakeProperty("_mmBloomIntensity0", floats, "_mBloomIntensity0");
         }
 
         protected override IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
-            yield return ("_Color", colors["_Color"]);
-            yield return ("_ShadowColor", colors["_ShadowColor"]);
-            yield return ("_EyeShadowColor", colors["_EyeShadowColor"]);
-            yield return ("_EmissionColor", Color.white); // 眼睛高亮
-            yield return ("_OutlineColor0", colors["_OutlineColor"]);
-            yield return ("_NoseLineColor", colors["_NoseLineColor"]);
+            yield return MakeProperty("_Color", colors);
+            yield return MakeProperty("_ShadowColor", colors);
+            yield return MakeProperty("_EyeShadowColor", colors);
+            yield return MakeProperty("_EmissionColor", Color.white); // 眼睛高亮
+            yield return MakeProperty("_OutlineColor0", colors, "_OutlineColor");
+            yield return MakeProperty("_NoseLineColor", colors);
 
             // Texture Scale Offset
-            yield return ("_Maps_ST", colors["_MainMaps_ST"]);
+            yield return MakeProperty("_Maps_ST", colors, "_MainMaps_ST");
 
             // Expression
-            yield return ("_ExCheekColor", colors["_ExCheekColor"]);
-            yield return ("_ExShyColor", colors["_ExShyColor"]);
-            yield return ("_ExShadowColor", colors["_ExShadowColor"]);
-            yield return ("_ExEyeColor", colors["_ExEyeColor"]);
+            yield return MakeProperty("_ExCheekColor", colors);
+            yield return MakeProperty("_ExShyColor", colors);
+            yield return MakeProperty("_ExShadowColor", colors);
+            yield return MakeProperty("_ExEyeColor", colors);
         }
     }
 }

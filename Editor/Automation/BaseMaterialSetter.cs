@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 
@@ -58,6 +59,11 @@ namespace HSR.NPRShader.Editor.Automation
         {
             foreach (var (key, value) in ApplyTextures(EntriesToDict(matJsonData.Textures)))
             {
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
                 if (value.IsNull)
                 {
                     material.SetTexture(key, null);
@@ -84,16 +90,31 @@ namespace HSR.NPRShader.Editor.Automation
 
             foreach (var (key, value) in ApplyInts(EntriesToDict(matJsonData.Ints)))
             {
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
                 material.SetInt(key, value);
             }
 
             foreach (var (key, value) in ApplyFloats(EntriesToDict(matJsonData.Floats)))
             {
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
                 material.SetFloat(key, value);
             }
 
             foreach (var (key, value) in ApplyColors(EntriesToDict(matJsonData.Colors)))
             {
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
                 material.SetColor(key, value);
             }
         }
@@ -151,6 +172,22 @@ namespace HSR.NPRShader.Editor.Automation
         protected virtual IEnumerable<(string, Color)> ApplyColors(IReadOnlyDictionary<string, Color> colors)
         {
             yield break;
+        }
+
+        protected static (string, T) MakeProperty<T>(string name, IReadOnlyDictionary<string, T> values, string key)
+        {
+            return values.TryGetValue(key, out T value) ? (name, value) : (null, default);
+        }
+
+        protected static (string, T) MakeProperty<T>(string name, IReadOnlyDictionary<string, T> values)
+        {
+            return MakeProperty(name, values, name);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static (string, T) MakeProperty<T>(string name, T value)
+        {
+            return (name, value);
         }
     }
 }
